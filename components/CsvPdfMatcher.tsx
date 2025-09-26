@@ -60,21 +60,45 @@ const CsvPdfMatcher: React.FC = () => {
     try {
       const text = await file.text();
       
-      // Usar PapaParse para parsear el CSV (igual que en csvProcessor.ts)
+      // Función mejorada para parsear CSV con mejor manejo de errores
       const parseCSV = (csvText: string): TiendanubeOrder[] => {
+        console.log('Iniciando parseo de CSV...');
+        console.log('Primeras 500 caracteres del CSV:', csvText.substring(0, 500));
+        
         const lines = csvText.split('\n').filter(line => line.trim());
-        if (lines.length < 2) return [];
+        console.log('Total de líneas encontradas:', lines.length);
+        
+        if (lines.length < 2) {
+          console.log('No hay suficientes líneas en el CSV');
+          return [];
+        }
         
         const headers = lines[0].split(';').map(h => h.trim());
+        console.log('Headers encontrados:', headers);
+        
         const data: TiendanubeOrder[] = [];
         
         for (let i = 1; i < lines.length; i++) {
           const values = lines[i].split(';');
+          if (values.length < headers.length) {
+            console.log(`Línea ${i} tiene menos columnas que headers:`, values);
+            continue;
+          }
+          
           const row: any = {};
           headers.forEach((header, index) => {
             row[header] = values[index] || '';
           });
-          data.push(row as TiendanubeOrder);
+          
+          // Solo agregar si tiene número de orden
+          if (row['Número de orden'] && row['Número de orden'].trim()) {
+            data.push(row as TiendanubeOrder);
+          }
+        }
+        
+        console.log('Órdenes parseadas:', data.length);
+        if (data.length > 0) {
+          console.log('Primera orden de ejemplo:', data[0]);
         }
         
         return data;
@@ -99,16 +123,36 @@ const CsvPdfMatcher: React.FC = () => {
 
         totalOrdenes++;
         
-        // Buscar SKU en las columnas del CSV (puede estar en diferentes columnas)
+        // Buscar SKU en las columnas del CSV (más flexible)
         let sku = '';
-        const possibleSkuColumns = ['SKU', 'Producto', 'Código', 'Código de producto', 'Item'];
+        const possibleSkuColumns = [
+          'SKU', 'Producto', 'Código', 'Código de producto', 'Item',
+          'Producto/SKU', 'Código del producto', 'Referencia', 'Modelo'
+        ];
         
+        // Buscar en todas las columnas posibles
         for (const col of possibleSkuColumns) {
           if (order[col] && order[col].trim()) {
             sku = order[col].trim();
             break;
           }
         }
+        
+        // Si no encontramos SKU en las columnas conocidas, buscar en cualquier columna que contenga "sku" o "producto"
+        if (!sku) {
+          Object.keys(order).forEach(key => {
+            if (key.toLowerCase().includes('sku') || 
+                key.toLowerCase().includes('producto') || 
+                key.toLowerCase().includes('codigo') ||
+                key.toLowerCase().includes('item')) {
+              if (order[key] && order[key].trim()) {
+                sku = order[key].trim();
+              }
+            }
+          });
+        }
+        
+        console.log(`Orden ${numeroOrden}: SKU encontrado = "${sku}"`);
 
         if (sku) {
           ordenesConSkus++;
@@ -177,34 +221,59 @@ const CsvPdfMatcher: React.FC = () => {
     }
   };
 
-  // Función de matching automático
+  // Función de matching automático mejorada
   const procesarMatching = () => {
     if (Object.keys(ordenToSku).length === 0 || pdfData.length === 0) {
       setError('Por favor, carga tanto el archivo CSV como el PDF antes de procesar.');
       return;
     }
 
+    console.log('Iniciando matching...');
+    console.log('Órdenes disponibles en CSV:', Object.keys(ordenToSku));
+    console.log('Números internos del PDF:', pdfData.map(p => p.numeroInterno));
+
     const results: MatchResult[] = [];
 
     pdfData.forEach(pdfItem => {
-      const numeroOrden = pdfItem.numeroInterno;
-      const sku = ordenToSku[numeroOrden] || 'No encontrado';
+      const numeroInterno = pdfItem.numeroInterno;
+      let sku = 'No encontrado';
+      let encontrado = false;
       
-      // Buscar datos adicionales del cliente si están disponibles
-      // (esto requeriría almacenar más datos del CSV, por simplicidad usamos datos mock)
+      // Intentar matching exacto primero
+      if (ordenToSku[numeroInterno]) {
+        sku = ordenToSku[numeroInterno];
+        encontrado = true;
+      } else {
+        // Intentar matching parcial - buscar si el número interno está contenido en alguna orden
+        const ordenEncontrada = Object.keys(ordenToSku).find(orden => 
+          orden.includes(numeroInterno) || numeroInterno.includes(orden)
+        );
+        
+        if (ordenEncontrada) {
+          sku = ordenToSku[ordenEncontrada];
+          encontrado = true;
+          console.log(`Match parcial encontrado: ${numeroInterno} -> ${ordenEncontrada}`);
+        }
+      }
+      
+      console.log(`PDF ${numeroInterno}: SKU = "${sku}", Encontrado = ${encontrado}`);
+      
       results.push({
         numeroInterno: pdfItem.numeroInterno,
-        numeroOrden: numeroOrden,
+        numeroOrden: numeroInterno, // Usar el número interno como orden por ahora
         sku: sku,
         tracking: pdfItem.tracking,
         pagina: pdfItem.pagina,
-        encontrado: sku !== 'No encontrado',
+        encontrado: encontrado,
         nombreCliente: 'Cliente de la orden',
         email: 'cliente@email.com',
         direccion: 'Dirección del cliente'
       });
     });
 
+    console.log('Total matches procesados:', results.length);
+    console.log('Matches encontrados:', results.filter(r => r.encontrado).length);
+    
     setMatches(results);
     setError(null);
   };
@@ -459,6 +528,20 @@ const CsvPdfMatcher: React.FC = () => {
               className="bg-green-600 hover:bg-green-700 disabled:bg-green-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 flex items-center"
             >
               📥 Descargar Etiquetas HTML
+            </button>
+            
+            <button
+              onClick={() => {
+                console.log('=== DEBUG INFO ===');
+                console.log('CSV Stats:', csvStats);
+                console.log('Órdenes mapeadas:', Object.keys(ordenToSku));
+                console.log('PDF Data:', pdfData);
+                console.log('Matches actuales:', matches);
+                alert('Información de debug enviada a la consola. Abre las herramientas de desarrollador (F12) para ver los detalles.');
+              }}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 flex items-center"
+            >
+              🐛 Debug Info
             </button>
             
             <button
