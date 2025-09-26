@@ -229,6 +229,30 @@ const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
 
 export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, sucursalCSV, onDownload, onDownloadCombined, onDownloadExcel }) => {
   
+  // Función para convertir CSV a JSON para Excel
+  const csvToJsonForExcel = (csvContent: string): any[] => {
+    if (!csvContent || csvContent.trim() === '') return [];
+    
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].split(';').map(h => h.trim());
+    const data: any[] = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(';');
+      const row: any = {};
+      
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
+      });
+      
+      data.push(row);
+    }
+    
+    return data;
+  };
+  
   // Función para generar Excel con plantilla interna
   const generateExcelWithTemplate = async () => {
     try {
