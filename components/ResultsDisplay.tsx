@@ -232,14 +232,22 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
   // Función para generar Excel con plantilla interna
   const generateExcelWithTemplate = async () => {
     try {
-      console.log('Generando Excel con plantilla interna...');
+      console.log('=== INICIANDO GENERACIÓN DE EXCEL CON PLANTILLA ===');
+      console.log('Domicilio CSV length:', domicilioCSV.length);
+      console.log('Sucursal CSV length:', sucursalCSV.length);
       
       // Convertir CSV a arrays de objetos
+      console.log('Convirtiendo CSV a JSON...');
       const domicilioData = csvToJsonForExcel(domicilioCSV);
       const sucursalData = csvToJsonForExcel(sucursalCSV);
       
+      console.log('Datos convertidos - Domicilio:', domicilioData.length, 'Sucursal:', sucursalData.length);
+      
       // Generar Excel con plantilla
+      console.log('Llamando a excelTemplateProcessor...');
       const buffer = await excelTemplateProcessor.generateExcelWithInternalTemplate(domicilioData, sucursalData);
+      
+      console.log('Buffer generado, tamaño:', buffer.byteLength, 'bytes');
       
       // Crear y descargar archivo
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -258,8 +266,13 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
       
       console.log('Excel con plantilla generado exitosamente');
     } catch (error) {
-      console.error('Error generando Excel con plantilla:', error);
-      alert('Error al generar Excel con plantilla. Por favor, inténtalo de nuevo.');
+      console.error('=== ERROR GENERANDO EXCEL CON PLANTILLA ===');
+      console.error('Error completo:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Error desconocido');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack available');
+      
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`Error al generar Excel con plantilla: ${errorMessage}\n\nRevisa la consola para más detalles.`);
     }
   };
   return (

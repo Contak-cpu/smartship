@@ -45,16 +45,19 @@ export class ExcelTemplateProcessor {
       console.log('Cargando plantilla interna...');
       const response = await fetch('/templates/EnvioMasivoExcelPaquetes (10).xlsx');
       
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
       if (!response.ok) {
-        throw new Error(`Error al cargar plantilla: ${response.statusText}`);
+        throw new Error(`Error al cargar plantilla: ${response.status} ${response.statusText}`);
       }
       
       const arrayBuffer = await response.arrayBuffer();
-      console.log('Plantilla interna cargada exitosamente');
+      console.log('Plantilla interna cargada exitosamente, tamaño:', arrayBuffer.byteLength, 'bytes');
       return arrayBuffer;
     } catch (error) {
       console.error('Error cargando plantilla interna:', error);
-      throw new Error('No se pudo cargar la plantilla interna de Andreani');
+      throw new Error(`No se pudo cargar la plantilla interna de Andreani: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
 
@@ -170,8 +173,13 @@ export class ExcelTemplateProcessor {
 // Método simplificado para generar Excel con plantilla interna
 async generateExcelWithInternalTemplate(domicilioData: any[], sucursalData: any[]): Promise<ArrayBuffer> {
   try {
+    console.log('Iniciando generación de Excel con plantilla interna...');
+    console.log('Datos domicilio:', domicilioData.length, 'registros');
+    console.log('Datos sucursal:', sucursalData.length, 'registros');
+    
     // Cargar la plantilla interna
     const templateData = await this.loadTemplate();
+    console.log('Plantilla cargada:', templateData);
     
     // Generar Excel con los datos
     const processedData: ProcessedData = {
@@ -179,10 +187,14 @@ async generateExcelWithInternalTemplate(domicilioData: any[], sucursalData: any[
       sucursalData
     };
     
-    return await this.generateExcelWithTemplate(processedData, templateData);
+    console.log('Generando Excel con template...');
+    const result = await this.generateExcelWithTemplate(processedData, templateData);
+    console.log('Excel generado exitosamente, tamaño:', result.byteLength, 'bytes');
+    
+    return result;
   } catch (error) {
     console.error('Error generando Excel con plantilla interna:', error);
-    throw error;
+    throw new Error(`Error generando Excel: ${error instanceof Error ? error.message : 'Error desconocido'}`);
   }
 }
 }
