@@ -13,21 +13,17 @@ export default defineConfig({
         
         // Mostrar otros warnings
         warn(warning);
+      },
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          utils: ['xlsx']
+        }
       }
     },
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
-      },
-      mangle: {
-        safari10: true
-      }
-    }
+    minify: 'esbuild' // Usar esbuild en lugar de terser
   },
   esbuild: {
-    drop: ['console', 'debugger']
+    drop: ['console', 'debugger'] // Eliminar console y debugger en producción
   }
 });

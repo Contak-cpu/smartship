@@ -14,16 +14,17 @@ export default defineConfig({
     }
   },
   build: {
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Eliminar console.log en producción
-        drop_debugger: true, // Eliminar debugger en producción
-      },
-    },
+    minify: 'esbuild', // Usar esbuild que es más rápido y estable
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          utils: ['xlsx']
+        }
+      }
+    }
   },
-  define: {
-    // Definir variables de entorno para el logger
-    __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
+  esbuild: {
+    drop: ['console', 'debugger'] // Eliminar console y debugger en producción
   }
 });
