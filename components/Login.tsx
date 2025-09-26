@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 
 interface LoginProps {
   onLogin: (username: string) => void;
+  onGoBack?: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLogin }) => {
+export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -34,6 +35,21 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+        {/* Botón Volver */}
+        {onGoBack && (
+          <div className="flex justify-start">
+            <button
+              onClick={onGoBack}
+              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Volver a Precios
+            </button>
+          </div>
+        )}
+        
         <div className="text-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">🔐 SmartShip</h1>
           <p className="text-indigo-400 font-medium text-sm sm:text-base">Transformador de Pedidos Andreani</p>

@@ -17,7 +17,10 @@ export const ProPlanPage: React.FC<ProPlanPageProps> = ({ onGoBack }) => {
       <header className="border-b border-gray-200 dark:border-gray-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2 sm:gap-4">
+            <button 
+              onClick={() => window.location.reload()}
+              className="flex items-center gap-2 sm:gap-4 hover:opacity-80 transition-opacity"
+            >
               <div className="text-blue-500 size-6 sm:size-8">
                 <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                   <g clipPath="url(#clip0_6_535)">
@@ -31,7 +34,7 @@ export const ProPlanPage: React.FC<ProPlanPageProps> = ({ onGoBack }) => {
                 </svg>
               </div>
               <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">ShipSmart</h2>
-            </div>
+            </button>
             
             {/* Botón Volver */}
             <button

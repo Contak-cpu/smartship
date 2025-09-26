@@ -138,7 +138,7 @@ const App: React.FC = () => {
         />
       );
     }
-    return <Login onLogin={login} />;
+    return <Login onLogin={login} onGoBack={() => setShowPricing(true)} />;
   }
 
   const handleFileChange = (file: File | null) => {
