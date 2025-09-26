@@ -1221,6 +1221,7 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     const { codigo: celularCodigo, numero: celularNumero } = getCodigoArea(provincia, cleanPhone);
     
     const baseData = {
+      'Paquete Guardado Ej:': '', // Siempre vacío
       'Peso (grs)': 1,
       'Alto (cm)': 1,
       'Ancho (cm)': 1,

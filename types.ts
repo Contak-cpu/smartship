@@ -31,6 +31,7 @@ export interface AndreaniSucursalInfo {
 
 // Represents a row for the output Andreani Domicilio CSV
 export interface AndreaniDomicilioOutput {
+  'Paquete Guardado Ej:': string;
   'Peso (grs)': number;
   'Alto (cm)': number;
   'Ancho (cm)': number;
@@ -52,6 +53,7 @@ export interface AndreaniDomicilioOutput {
 
 // Represents a row for the output Andreani Sucursal CSV
 export interface AndreaniSucursalOutput {
+  'Paquete Guardado Ej:': string;
   'Peso (grs)': number;
   'Alto (cm)': number;
   'Ancho (cm)': number;
