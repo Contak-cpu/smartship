@@ -214,21 +214,21 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
-        <div className="flex justify-between items-center mb-4">
+      <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
           <div className="text-center flex-1">
-            <h1 className="text-4xl font-bold text-white mb-2">🚀 SmartShip</h1>
-            <p className="text-indigo-400 font-medium">Transformador de Pedidos Andreani</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">🚀 SmartShip</h1>
+            <p className="text-indigo-400 font-medium text-sm sm:text-base">Transformador de Pedidos Andreani</p>
           </div>
-          <div className="flex items-center space-x-3">
-            <span className="text-gray-400 text-sm">
+          <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3">
+            <span className="text-gray-400 text-xs sm:text-sm">
               Bienvenido, <span className="text-indigo-400 font-semibold">{username}</span>
             </span>
             <button
               onClick={logout}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300 flex items-center"
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300 flex items-center"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               Salir
@@ -242,7 +242,7 @@ const App: React.FC = () => {
           <button
             onClick={handleProcessClick}
             disabled={!selectedFile || status === ProcessStatus.PROCESSING}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
           >
             {status === ProcessStatus.PROCESSING ? 'Procesando...' : 'Procesar Archivo'}
           </button>
@@ -259,7 +259,7 @@ const App: React.FC = () => {
           />
         )}
       </div>
-       <footer className="text-center mt-8 text-gray-500 text-sm">
+       <footer className="text-center mt-6 sm:mt-8 text-gray-500 text-xs sm:text-sm">
         <p>Creado para automatizar la logística de envíos.</p>
       </footer>
     </div>

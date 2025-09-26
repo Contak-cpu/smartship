@@ -30,20 +30,23 @@ export const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, disabl
 
   return (
     <label 
-      className={`flex justify-center w-full h-32 px-4 transition bg-gray-700 border-2 border-gray-600 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-500 focus:outline-none ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+      className={`flex justify-center w-full h-28 sm:h-32 px-4 transition bg-gray-700 border-2 border-gray-600 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-500 focus:outline-none ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
       <span className="flex items-center space-x-2">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
           <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
         </svg>
-        <span className="font-medium text-gray-400">
+        <span className="font-medium text-gray-400 text-sm sm:text-base">
           {fileName ? (
-            <span className="text-green-400">{fileName}</span>
+            <span className="text-green-400 text-xs sm:text-sm break-all">{fileName}</span>
           ) : (
             <>
-              Arrastra y suelta tu archivo <span className="text-indigo-400">.CSV</span> o haz clic para buscar
+              <span className="hidden sm:inline">Arrastra y suelta tu archivo </span>
+              <span className="sm:hidden">Subir archivo </span>
+              <span className="text-indigo-400">.CSV</span>
+              <span className="hidden sm:inline"> o haz clic para buscar</span>
             </>
           )}
         </span>
