@@ -12,5 +12,18 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, '.'),
     }
+  },
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Eliminar console.log en producción
+        drop_debugger: true, // Eliminar debugger en producción
+      },
+    },
+  },
+  define: {
+    // Definir variables de entorno para el logger
+    __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
   }
 });
