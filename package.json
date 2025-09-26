@@ -13,11 +13,13 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/exceljs": "^0.5.3",
     "@types/node": "^22.14.0",
     "@types/xlsx": "^0.0.35",
     "@vitejs/plugin-react": "^5.0.0",

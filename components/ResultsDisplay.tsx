@@ -1,6 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
+import TemplateUploader from './TemplateUploader';
+import { excelTemplateProcessor, ProcessedData } from '../services/excelTemplateProcessor';
 
 interface ResultsDisplayProps {
   domicilioCSV: string;
@@ -226,6 +228,40 @@ const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
 
 
 export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, sucursalCSV, onDownload, onDownloadCombined, onDownloadExcel }) => {
+  
+  // Función para generar Excel con plantilla interna
+  const generateExcelWithTemplate = async () => {
+    try {
+      console.log('Generando Excel con plantilla interna...');
+      
+      // Convertir CSV a arrays de objetos
+      const domicilioData = csvToJsonForExcel(domicilioCSV);
+      const sucursalData = csvToJsonForExcel(sucursalCSV);
+      
+      // Generar Excel con plantilla
+      const buffer = await excelTemplateProcessor.generateExcelWithInternalTemplate(domicilioData, sucursalData);
+      
+      // Crear y descargar archivo
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const today = new Date();
+      const dateString = today.toISOString().split('T')[0];
+      link.download = `Pedidos_Andreani_Plantilla_${dateString}.xlsx`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log('Excel con plantilla generado exitosamente');
+    } catch (error) {
+      console.error('Error generando Excel con plantilla:', error);
+      alert('Error al generar Excel con plantilla. Por favor, inténtalo de nuevo.');
+    }
+  };
   return (
     <div className="bg-gray-900/50 p-4 sm:p-6 rounded-lg animate-fade-in border border-gray-700/50 shadow-xl">
         <h3 className="text-lg sm:text-xl font-bold text-center text-white mb-4 sm:mb-6">📥 Descargar Archivos Procesados</h3>
@@ -276,6 +312,24 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
                     <span className="ml-2">Excel.xlsx</span>
                 </button>
             </div>
+        </div>
+
+        {/* Tercera fila - Plantilla Andreani */}
+        <div className="mt-4">
+            <h4 className="text-xs sm:text-sm font-medium text-gray-300 mb-3 text-center">Con Plantilla Andreani</h4>
+            <div className="grid grid-cols-1 gap-3">
+                <button
+                    onClick={generateExcelWithTemplate}
+                    disabled={!domicilioCSV && !sucursalCSV}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 disabled:hover:scale-100 text-sm sm:text-base"
+                >
+                    <ExcelIcon />
+                    <span className="ml-2">📋 Excel con Plantilla Andreani</span>
+                </button>
+            </div>
+            <p className="text-xs text-gray-400 text-center mt-2">
+                Genera Excel con el formato exacto de la plantilla de Andreani
+            </p>
         </div>
         <style>{`
             @keyframes fade-in {
