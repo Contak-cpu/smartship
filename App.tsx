@@ -130,26 +130,6 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated]);
 
-  // Si no está autenticado, mostrar precios primero, luego login
-  if (!isAuthenticated) {
-    if (showProPlan) {
-      return <ProPlanPage onGoBack={() => setShowProPlan(false)} />;
-    }
-    if (showBasicPlan) {
-      return <BasicPlanPage onGoBack={() => setShowBasicPlan(false)} />;
-    }
-    if (showPricing) {
-      return (
-        <PricingPage 
-          onGoToLogin={() => setShowPricing(false)} 
-          onShowBasicPlan={() => setShowBasicPlan(true)}
-          onShowProPlan={() => setShowProPlan(true)}
-        />
-      );
-    }
-    return <Login onLogin={login} onGoBack={() => setShowPricing(true)} />;
-  }
-
   const handleFileChange = (file: File | null) => {
     setSelectedFile(file);
     setStatus(ProcessStatus.IDLE);
@@ -236,6 +216,26 @@ const App: React.FC = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  // Si no está autenticado, mostrar precios primero, luego login
+  if (!isAuthenticated) {
+    if (showProPlan) {
+      return <ProPlanPage onGoBack={() => setShowProPlan(false)} />;
+    }
+    if (showBasicPlan) {
+      return <BasicPlanPage onGoBack={() => setShowBasicPlan(false)} />;
+    }
+    if (showPricing) {
+      return (
+        <PricingPage 
+          onGoToLogin={() => setShowPricing(false)} 
+          onShowBasicPlan={() => setShowBasicPlan(true)}
+          onShowProPlan={() => setShowProPlan(true)}
+        />
+      );
+    }
+    return <Login onLogin={login} onGoBack={() => setShowPricing(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
