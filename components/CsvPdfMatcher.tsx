@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TiendanubeOrder } from '../types';
+import * as pdfParse from 'pdf-parse';
 
 interface PdfData {
   pagina: number;
@@ -190,7 +191,7 @@ const CsvPdfMatcher: React.FC = () => {
     }
   };
 
-  // Función para procesar PDF (simulación - en producción usaría una librería como pdf-parse)
+  // Función para procesar PDF real
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -205,16 +206,42 @@ const CsvPdfMatcher: React.FC = () => {
     setLoading(true);
 
     try {
-      // Simulación de extracción de PDF
-      // En producción, usarías pdf-parse o similar
-      const mockPdfData: PdfData[] = [
-        { pagina: 1, numeroInterno: '4274', tracking: 'AR123456789', contenido: 'N° Interno: #4274' },
-        { pagina: 2, numeroInterno: '4275', tracking: 'AR123456790', contenido: 'N° Interno: #4275' },
-        { pagina: 3, numeroInterno: '4276', tracking: 'AR123456791', contenido: 'N° Interno: #4276' },
-      ];
-
-      setPdfData(mockPdfData);
+      console.log('Iniciando procesamiento de PDF...');
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfData = await pdfParse(arrayBuffer);
+      
+      console.log('PDF procesado, texto extraído:', pdfData.text.substring(0, 500));
+      
+      // Buscar números internos en el texto del PDF
+      const numeroInternoRegex = /N°\s*Interno:\s*#?(\d+)/gi;
+      const trackingRegex = /(AR\d{9,})/gi;
+      
+      const matches = [...pdfData.text.matchAll(numeroInternoRegex)];
+      const trackingMatches = [...pdfData.text.matchAll(trackingRegex)];
+      
+      console.log('Números internos encontrados:', matches.map(m => m[1]));
+      console.log('Tracking encontrados:', trackingMatches.map(m => m[1]));
+      
+      const pdfDataArray: PdfData[] = [];
+      
+      // Crear un array de datos del PDF
+      matches.forEach((match, index) => {
+        const numeroInterno = match[1];
+        const tracking = trackingMatches[index] ? trackingMatches[index][1] : `AR${numeroInterno.padStart(9, '0')}`;
+        
+        pdfDataArray.push({
+          pagina: index + 1,
+          numeroInterno: numeroInterno,
+          tracking: tracking,
+          contenido: match[0]
+        });
+      });
+      
+      console.log('Datos del PDF procesados:', pdfDataArray);
+      setPdfData(pdfDataArray);
+      
     } catch (err) {
+      console.error('Error procesando PDF:', err);
       setError(err instanceof Error ? err.message : 'Error al procesar el archivo PDF.');
     } finally {
       setLoading(false);
@@ -535,9 +562,26 @@ const CsvPdfMatcher: React.FC = () => {
                 console.log('=== DEBUG INFO ===');
                 console.log('CSV Stats:', csvStats);
                 console.log('Órdenes mapeadas:', Object.keys(ordenToSku));
+                console.log('Primeras 5 órdenes con SKUs:', Object.entries(ordenToSku).slice(0, 5));
                 console.log('PDF Data:', pdfData);
                 console.log('Matches actuales:', matches);
-                alert('Información de debug enviada a la consola. Abre las herramientas de desarrollador (F12) para ver los detalles.');
+                console.log('Total órdenes en CSV:', Object.keys(ordenToSku).length);
+                console.log('Total números internos en PDF:', pdfData.length);
+                
+                // Mostrar información detallada
+                const debugInfo = `
+DEBUG INFO:
+- Total órdenes en CSV: ${Object.keys(ordenToSku).length}
+- Total números internos en PDF: ${pdfData.length}
+- Órdenes con SKUs: ${csvStats?.ordenesConSkus || 0}
+- Órdenes sin SKUs: ${csvStats?.ordenesSinSkus || 0}
+- Matches encontrados: ${matches.filter(m => m.encontrado).length}
+
+Primeras 5 órdenes: ${Object.keys(ordenToSku).slice(0, 5).join(', ')}
+Números internos PDF: ${pdfData.map(p => p.numeroInterno).join(', ')}
+                `;
+                
+                alert(debugInfo);
               }}
               className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 flex items-center"
             >
