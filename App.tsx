@@ -9,6 +9,7 @@ import { Login } from './components/Login';
 import { PricingPage } from './components/PricingPage';
 import { BasicPlanPage } from './components/BasicPlanPage';
 import { ProPlanPage } from './components/ProPlanPage';
+import CsvPdfMatcher from './components/CsvPdfMatcher';
 import { useAuth } from './hooks/useAuth';
 
 // Función para normalizar caracteres problemáticos en el CSV final
@@ -120,6 +121,7 @@ const App: React.FC = () => {
   const [showPricing, setShowPricing] = useState(true);
   const [showBasicPlan, setShowBasicPlan] = useState(false);
   const [showProPlan, setShowProPlan] = useState(false);
+  const [showMatcher, setShowMatcher] = useState(false);
 
   // Resetear estados de navegación cuando el usuario se autentica
   useEffect(() => {
@@ -127,6 +129,7 @@ const App: React.FC = () => {
       setShowPricing(false);
       setShowBasicPlan(false);
       setShowProPlan(false);
+      setShowMatcher(false);
     }
   }, [isAuthenticated]);
 
@@ -237,6 +240,39 @@ const App: React.FC = () => {
     return <Login onLogin={login} onGoBack={() => setShowPricing(true)} />;
   }
 
+  // Si está autenticado y quiere ver el matcher
+  if (showMatcher) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <div className="bg-gray-800 border-b border-gray-700 p-4">
+          <div className="max-w-6xl mx-auto flex justify-between items-center">
+            <button
+              onClick={() => setShowMatcher(false)}
+              className="text-indigo-400 hover:text-indigo-300 flex items-center gap-2 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Volver a SmartShip
+            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-gray-400 text-sm">
+                Bienvenido, <span className="text-indigo-400 font-semibold">{username}</span>
+              </span>
+              <button
+                onClick={logout}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300"
+              >
+                Salir
+              </button>
+            </div>
+          </div>
+        </div>
+        <CsvPdfMatcher />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
@@ -275,17 +311,29 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <FileUploader onFileSelect={handleFileChange} disabled={status === ProcessStatus.PROCESSING} />
-          
-          <button
-            onClick={handleProcessClick}
-            disabled={!selectedFile || status === ProcessStatus.PROCESSING}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
-          >
-            {status === ProcessStatus.PROCESSING ? 'Procesando...' : 'Procesar Archivo'}
-          </button>
-        </div>
+                <div className="space-y-4">
+                  <FileUploader onFileSelect={handleFileChange} disabled={status === ProcessStatus.PROCESSING} />
+                  
+                  <button
+                    onClick={handleProcessClick}
+                    disabled={!selectedFile || status === ProcessStatus.PROCESSING}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
+                  >
+                    {status === ProcessStatus.PROCESSING ? 'Procesando...' : 'Procesar Archivo'}
+                  </button>
+
+                  <div className="border-t border-gray-600 pt-4">
+                    <button
+                      onClick={() => setShowMatcher(true)}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
+                    >
+                      🔄 CSV-PDF Matcher
+                    </button>
+                    <p className="text-center text-gray-400 text-xs mt-2">
+                      Matching automático entre CSV de ventas y PDF de etiquetas
+                    </p>
+                  </div>
+                </div>
 
         <StatusDisplay status={status} error={error} />
         
