@@ -6,6 +6,7 @@ import { FileUploader } from './components/FileUploader';
 import { StatusDisplay } from './components/StatusDisplay';
 import { ResultsDisplay } from './components/ResultsDisplay';
 import { Login } from './components/Login';
+import { PricingPage } from './components/PricingPage';
 import { useAuth } from './hooks/useAuth';
 
 // Función para normalizar caracteres problemáticos en el CSV final
@@ -114,9 +115,13 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{ domicilioCSV: string; sucursalCSV: string } | null>(null);
+  const [showPricing, setShowPricing] = useState(true);
 
-  // Si no está autenticado, mostrar el login
+  // Si no está autenticado, mostrar precios primero, luego login
   if (!isAuthenticated) {
+    if (showPricing) {
+      return <PricingPage onGoToLogin={() => setShowPricing(false)} />;
+    }
     return <Login onLogin={login} />;
   }
 
