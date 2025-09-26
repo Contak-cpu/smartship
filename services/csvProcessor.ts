@@ -475,11 +475,11 @@ const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
 const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
   try {
     console.log('Iniciando carga de códigos postales...');
-    const response = await fetch('/Domicilios - Hoja 1.csv');
+    const response = await fetch('/provincia/localidad-enviosadomicilio.txt');
     console.log('Respuesta del servidor para códigos postales:', response.status, response.statusText);
     
     if (!response.ok) {
-      throw new Error(`No se pudo cargar Domicilios - Hoja 1.csv: ${response.statusText}`);
+      throw new Error(`No se pudo cargar provincia/localidad-enviosadomicilio.txt: ${response.statusText}`);
     }
     
     // Asegurar que la respuesta se lea como UTF-8
@@ -499,18 +499,22 @@ const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
     
     const codigosPostales = new Map<string, string>();
     
-    // Saltar la primera línea que es el header "ProvinciaLocalidaCodigosPostales"
-    for (let i = 1; i < lines.length; i++) {
+    // Procesar todas las líneas del archivo
+    for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (line) {
-        // El formato es: PROVINCIA / LOCALIDAD / CP
-        // Extraer el código postal (últimos 4 dígitos)
-        const parts = line.split(' / ');
-        if (parts.length === 3) {
-          const codigoPostal = parts[2].trim();
+        // El formato es: PROVINCIA / LOCALIDAD / CP	TAB	PROVINCIA / LOCALIDAD / CP
+        // Usar solo la primera parte (antes del tab)
+        const parts = line.split('\t');
+        const provinciaLocalidadCP = parts[0].trim();
+        
+        // Extraer el código postal (últimos 4 dígitos después del último /)
+        const cpMatch = provinciaLocalidadCP.match(/\/(\d{4})$/);
+        if (cpMatch) {
+          const codigoPostal = cpMatch[1];
           // Solo agregar si es un código postal válido de 4 dígitos
           if (/^\d{4}$/.test(codigoPostal)) {
-            codigosPostales.set(codigoPostal, line);
+            codigosPostales.set(codigoPostal, provinciaLocalidadCP);
           }
         }
       }
@@ -521,8 +525,8 @@ const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
     
     return codigosPostales;
   } catch (error) {
-    console.error("Failed to fetch or parse Domicilios - Hoja 1.csv:", error);
-    throw new Error("No se pudo cargar el archivo de códigos postales. Asegúrese que 'public/Domicilios - Hoja 1.csv' exista.");
+    console.error("Failed to fetch or parse provincia/localidad-enviosadomicilio.txt:", error);
+    throw new Error("No se pudo cargar el archivo de códigos postales. Asegúrese que 'provincia/localidad-enviosadomicilio.txt' exista.");
   }
 };
 
@@ -1262,7 +1266,7 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       domicilios.push({
         ...baseData,
         'Calle *': calleNormalizada, // Dirección normalizada
-        'Número *': getColumnValue(order, 17), // Número
+        'Número *': getColumnValue(order, 17).replace(/^SN$/i, '0'), // Número (reemplazar SN con 0)
         'Piso': pisoNormalizado, // Piso normalizado
         'Departamento': pisoNormalizado, // As per spec, use 'Piso' for both
         'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
