@@ -88,19 +88,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </button>
         </form>
 
-        <div className="text-center">
-          <p className="text-gray-500 text-sm">
-            Usuarios de prueba:
-          </p>
-          <div className="mt-2 space-y-1">
-            <p className="text-gray-400 text-xs">
-              <span className="text-indigo-400">Yael</span> / <span className="text-gray-300">123</span>
-            </p>
-            <p className="text-gray-400 text-xs">
-              <span className="text-indigo-400">Erick</span> / <span className="text-gray-300">123</span>
-            </p>
-          </div>
-        </div>
 
         <footer className="text-center mt-8 text-gray-500 text-sm">
           <p>Creado para automatizar la logística de envíos.</p>
