@@ -2,9 +2,11 @@ import React from 'react';
 
 interface PricingPageProps {
   onGoToLogin: () => void;
+  onShowBasicPlan: () => void;
+  onShowProPlan: () => void;
 }
 
-export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin }) => {
+export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBasicPlan, onShowProPlan }) => {
   const handlePlanSelection = (planName: string) => {
     const message = `Hola! Me interesa el plan ${planName} de ShipSmart. ¿Podrías darme más información?`;
     const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
@@ -69,10 +71,10 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin }) => {
                 Para pequeñas empresas y startups que están despegando.
               </p>
               <button 
-                onClick={() => handlePlanSelection('Básico')}
+                onClick={onShowBasicPlan}
                 className="mt-6 sm:mt-8 w-full bg-blue-100 hover:bg-blue-200 text-blue-600 font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
               >
-                Elegir Básico
+                Ver Detalles
               </button>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
@@ -112,10 +114,10 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin }) => {
                 Para empresas en crecimiento que necesitan más potencia y automatización.
               </p>
               <button 
-                onClick={() => handlePlanSelection('Pro')}
+                onClick={onShowProPlan}
                 className="mt-6 sm:mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
               >
-                Elegir Pro
+                Ver Detalles
               </button>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">

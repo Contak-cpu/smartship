@@ -7,6 +7,8 @@ import { StatusDisplay } from './components/StatusDisplay';
 import { ResultsDisplay } from './components/ResultsDisplay';
 import { Login } from './components/Login';
 import { PricingPage } from './components/PricingPage';
+import { BasicPlanPage } from './components/BasicPlanPage';
+import { ProPlanPage } from './components/ProPlanPage';
 import { useAuth } from './hooks/useAuth';
 
 // Función para normalizar caracteres problemáticos en el CSV final
@@ -116,11 +118,25 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{ domicilioCSV: string; sucursalCSV: string } | null>(null);
   const [showPricing, setShowPricing] = useState(true);
+  const [showBasicPlan, setShowBasicPlan] = useState(false);
+  const [showProPlan, setShowProPlan] = useState(false);
 
   // Si no está autenticado, mostrar precios primero, luego login
   if (!isAuthenticated) {
+    if (showProPlan) {
+      return <ProPlanPage onGoBack={() => setShowProPlan(false)} />;
+    }
+    if (showBasicPlan) {
+      return <BasicPlanPage onGoBack={() => setShowBasicPlan(false)} />;
+    }
     if (showPricing) {
-      return <PricingPage onGoToLogin={() => setShowPricing(false)} />;
+      return (
+        <PricingPage 
+          onGoToLogin={() => setShowPricing(false)} 
+          onShowBasicPlan={() => setShowBasicPlan(true)}
+          onShowProPlan={() => setShowProPlan(true)}
+        />
+      );
     }
     return <Login onLogin={login} />;
   }

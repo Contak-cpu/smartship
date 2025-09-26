@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Detalles del Plan Pro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13a4ec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101c22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex min-h-screen w-full flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-primary/20 dark:border-primary/30 px-10 py-4 text-gray-800 dark:text-gray-200">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 text-primary">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_6_535)">
+<path clip-rule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fill-rule="evenodd"></path>
+</g>
+<defs>
+<clipPath id="clip0_6_535">
+<rect fill="white" height="48" width="48"></rect>
+</clipPath>
+</defs>
+</svg>
+</div>
+<h2 class="text-xl font-bold">ShipSmart</h2>
+</div>
+<nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+<a class="hover:text-primary transition-colors" href="#">Panel</a>
+<a class="hover:text-primary transition-colors" href="#">Pedidos</a>
+<a class="hover:text-primary transition-colors" href="#">Productos</a>
+<a class="hover:text-primary transition-colors" href="#">Análisis</a>
+<a class="hover:text-primary transition-colors" href="#">Ajustes</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center rounded-full h-10 w-10 bg-primary/10 hover:bg-primary/20 text-gray-600 dark:text-gray-300 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">help_outline</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBIuTLJcXBJKCsfVoztNfrQmcTMi9GhSap_8FvxQk4Yy0OFN0bFAdjkTBkNeD03nOWosU8XOYMrM5zPL-7kiwF2_YwgOJjaNNFzLl6ntP2zcExcmSDc5fzjrk4VEwECSTVyQko2PJN8iMyp2KbaknigeOTfwV4QAV2CjX_gHWEXnRA9iTnuzh0lxeFfO_YDrXpNvLvQZnfaJ6kxu-Bc_yr5qJnQK9pGONJkP5OlVolSUL62b9Fary4pJbEu7VafqzDeHFcLKqY3D9Y");'></div>
+</div>
+</header>
+<main class="flex-1 w-full max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+<div class="space-y-12">
+<div class="text-center">
+<p class="text-base font-semibold text-primary uppercase tracking-wider">Plan Pro</p>
+<h1 class="mt-2 text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight sm:text-5xl">Todas las funciones que necesitas y más.</h1>
+<p class="mt-5 max-w-2xl mx-auto text-xl text-gray-500 dark:text-gray-400">Desbloquea potentes herramientas para optimizar tus envíos, ahorrar dinero y escalar tu negocio sin esfuerzo.</p>
+</div>
+<div class="bg-white dark:bg-background-dark/50 p-8 rounded-xl shadow-lg border border-primary/10">
+<h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">¿Qué incluye?</h2>
+<div class="space-y-8">
+<div>
+<h3 class="text-lg font-semibold text-primary mb-4">Características principales</h3>
+<div class="grid md:grid-cols-2 gap-x-8 gap-y-4 text-gray-600 dark:text-gray-300">
+<div class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<p class="font-medium text-gray-800 dark:text-gray-100">Etiquetas ilimitadas</p>
+<p class="text-sm">Genera tantas etiquetas de envío como necesites sin restricciones.</p>
+</div>
+</div>
+<div class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<p class="font-medium text-gray-800 dark:text-gray-100">Análisis avanzado</p>
+<p class="text-sm">Obtén información más detallada sobre el rendimiento y los costes de tus envíos.</p>
+</div>
+</div>
+<div class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<p class="font-medium text-gray-800 dark:text-gray-100">Soporte prioritario</p>
+<p class="text-sm">Recibe tiempos de respuesta más rápidos de nuestro equipo de soporte dedicado.</p>
+</div>
+</div>
+<div class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<p class="font-medium text-gray-800 dark:text-gray-100">Integración multi-transportista</p>
+<p class="text-sm">Conéctate sin problemas con múltiples transportistas para optimizar tu estrategia.</p>
+</div>
+</div>
+<div class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<p class="font-medium text-gray-800 dark:text-gray-100">Informes personalizados</p>
+<p class="text-sm">Crea informes personalizados adaptados a las necesidades específicas de tu negocio.</p>
+</div>
+</div>
+<div class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<p class="font-medium text-gray-800 dark:text-gray-100">Gestor de cuenta dedicado</p>
+<p class="text-sm">Obtén asistencia y orientación personalizadas de un experto dedicado.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="border-t border-primary/20 dark:border-primary/30 pt-8">
+<h3 class="text-lg font-semibold text-primary mb-4">Limitaciones</h3>
+<div class="grid md:grid-cols-2 gap-x-8 gap-y-4 text-gray-600 dark:text-gray-300">
+<div class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-yellow-500 dark:text-yellow-400 mt-1">info</span>
+<div>
+<p class="font-medium text-gray-800 dark:text-gray-100">Máximo 10 usuarios</p>
+<p class="text-sm">El plan Pro admite un máximo de 10 usuarios por cuenta.</p>
+</div>
+</div>
+<div class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-yellow-500 dark:text-yellow-400 mt-1">info</span>
+<div>
+<p class="font-medium text-gray-800 dark:text-gray-100">Llamadas a la API limitadas</p>
+<p class="text-sm">Las llamadas a la API se miden para garantizar un rendimiento óptimo para todos los usuarios.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<h2 class="text-center text-3xl font-bold text-gray-900 dark:text-white mb-8">Preguntas frecuentes</h2>
+<div class="space-y-4">
+<details class="group bg-white dark:bg-background-dark/50 p-6 rounded-lg border border-primary/10">
+<summary class="flex items-center justify-between cursor-pointer font-medium text-gray-900 dark:text-white">
+                                ¿Cuál es la diferencia entre los planes Básico y Pro?
+                                <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<p class="mt-4 text-gray-600 dark:text-gray-300">El plan Pro ofrece etiquetas ilimitadas, análisis avanzado, soporte prioritario, integración multi-transportista, informes personalizados y un gestor de cuenta dedicado. El plan Básico es ideal para empezar, pero tiene limitaciones en el volumen de etiquetas y en las funciones avanzadas, lo que convierte al plan Pro en la mejor opción para empresas en crecimiento.</p>
+</details>
+<details class="group bg-white dark:bg-background-dark/50 p-6 rounded-lg border border-primary/10">
+<summary class="flex items-center justify-between cursor-pointer font-medium text-gray-900 dark:text-white">
+                                ¿Puedo cambiar mi plan en cualquier momento?
+                                <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<p class="mt-4 text-gray-600 dark:text-gray-300">Sí, puedes cambiar fácilmente de plan desde la configuración de tu cuenta. Las actualizaciones se aplican inmediatamente, mientras que los cambios a un plan inferior se aplican al final de tu ciclo de facturación actual.</p>
+</details>
+<details class="group bg-white dark:bg-background-dark/50 p-6 rounded-lg border border-primary/10">
+<summary class="flex items-center justify-between cursor-pointer font-medium text-gray-900 dark:text-white">
+                                ¿Hay una prueba gratuita disponible para el plan Pro?
+                                <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<p class="mt-4 text-gray-600 dark:text-gray-300">Ofrecemos una prueba gratuita de 14 días para el plan Pro. Esto te permite experimentar todas las funciones avanzadas y ver el valor por ti mismo antes de comprometerte. No se requiere tarjeta de crédito para iniciar tu prueba.</p>
+</details>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row items-center justify-center gap-6 pt-6">
+<button class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 rounded-lg bg-primary/10 text-primary font-bold hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+                        Volver a Precios
+                    </button>
+<button class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 rounded-lg bg-primary text-white font-bold hover:opacity-90 transition-opacity">
+                        Actualizar a Pro
+                        <span class="material-symbols-outlined">rocket_launch</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

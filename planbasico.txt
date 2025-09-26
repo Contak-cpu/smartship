@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShipSmart - Plan Básico</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#13a4ec",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101c22",
+          },
+          fontFamily: {
+            "display": ["Inter"]
+          },
+          borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200">
+<div class="relative flex h-auto min-h-screen w-full flex-col">
+<header class="sticky top-0 z-20 w-full bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+<div class="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
+<div class="flex items-center gap-4">
+<svg class="h-8 w-8 text-primary" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_6_535)"><path clip-rule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fill-rule="evenodd"></path></g>
+<defs><clipPath id="clip0_6_535"><rect fill="white" height="48" width="48"></rect></clipPath></defs>
+</svg>
+<h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">ShipSmart</h2>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Panel</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Pedidos</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Productos</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Análisis</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Ajustes</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center rounded-full h-10 w-10 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAuPCN930ULUvIYi0upBl-3Pl3Yj3o1JHjN1sNnX40ys7OprpQOQquJ08Ct994OmhQ8KHEbpzL07iSIYLxwxpXLcV09lVyMV3EDOa5A5eZGFxcJ-wfNRw1Dw6L6MxA8gN-VZVhHh-n37vhd6msb2V5C3kVQkI9c7RHnV-7LNn6QgYn0qDWu_qAX6bzbpwkqE2nc3MA5255xgyKV8rn_Kr4ISNFf0DlNiG2fEGT6s9wUCoxu3z95B7pWfaWYOlRtiRv9f1Lj90Udc6o");'></div>
+</div>
+</div>
+</header>
+<main class="flex-1 w-full max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+<div class="flex flex-col gap-12">
+<div>
+<div class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">
+<a class="hover:text-primary transition-colors" href="#">Precios</a>
+<span class="mx-2 text-gray-400 dark:text-gray-500">/</span>
+<span class="text-gray-800 dark:text-gray-200">Básico</span>
+</div>
+<h1 class="text-4xl font-extrabold tracking-tighter text-gray-900 dark:text-white sm:text-5xl">Plan Básico</h1>
+<p class="mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
+            Para particulares y pequeñas empresas que buscan optimizar sus procesos de envío y ahorrar en costes. Al menos un 10% de ahorro en todas las etiquetas.
+          </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="md:col-span-2 space-y-10">
+<section>
+<h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">Características</h2>
+<ul class="space-y-4">
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<h3 class="font-semibold text-gray-800 dark:text-gray-200">Envíos Ilimitados</h3>
+<p class="text-gray-600 dark:text-gray-300">Procese tantos envíos como necesite sin ninguna restricción.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<h3 class="font-semibold text-gray-800 dark:text-gray-200">Generación Automatizada de Etiquetas</h3>
+<p class="text-gray-600 dark:text-gray-300">Genere automáticamente etiquetas de envío para las principales empresas de transporte.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<h3 class="font-semibold text-gray-800 dark:text-gray-200">Seguimiento en Tiempo Real</h3>
+<p class="text-gray-600 dark:text-gray-300">Realice un seguimiento de sus envíos en tiempo real desde el despacho hasta la entrega.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<h3 class="font-semibold text-gray-800 dark:text-gray-200">Análisis Básico</h3>
+<p class="text-gray-600 dark:text-gray-300">Acceda a análisis básicos para monitorear el rendimiento de sus envíos.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary mt-1">check_circle</span>
+<div>
+<h3 class="font-semibold text-gray-800 dark:text-gray-200">Soporte por Correo Electrónico</h3>
+<p class="text-gray-600 dark:text-gray-300">Obtenga soporte por correo electrónico para cualquier pregunta o problema.</p>
+</div>
+</li>
+</ul>
+</section>
+<section>
+<h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">Limitaciones</h2>
+<ul class="space-y-4">
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-red-500 mt-1">cancel</span>
+<div>
+<h3 class="font-semibold text-gray-800 dark:text-gray-200">Sin Soporte Dedicado</h3>
+<p class="text-gray-600 dark:text-gray-300">El soporte se proporciona únicamente por correo electrónico, sin un equipo de soporte dedicado.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-red-500 mt-1">cancel</span>
+<div>
+<h3 class="font-semibold text-gray-800 dark:text-gray-200">Análisis Limitado</h3>
+<p class="text-gray-600 dark:text-gray-300">Los análisis se limitan a métricas e informes básicos.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-red-500 mt-1">cancel</span>
+<div>
+<h3 class="font-semibold text-gray-800 dark:text-gray-200">Sin Integraciones Personalizadas</h3>
+<p class="text-gray-600 dark:text-gray-300">Las integraciones personalizadas con otras plataformas no están disponibles.</p>
+</div>
+</li>
+</ul>
+</section>
+</div>
+<aside class="space-y-8">
+<div class="bg-white dark:bg-background-dark p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Plan Actual</h3>
+<p class="mt-4 text-4xl font-extrabold text-gray-900 dark:text-white">29 $<span class="text-base font-medium text-gray-500 dark:text-gray-400">/mes</span></p>
+<p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Facturado mensualmente.</p>
+<button class="mt-6 w-full bg-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors">Actualizar Plan</button>
+<button class="mt-2 w-full bg-transparent text-gray-600 dark:text-gray-300 font-bold py-2 px-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Contactar a Ventas</button>
+</div>
+<section>
+<h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">Preguntas Frecuentes</h2>
+<div class="space-y-4">
+<details class="group bg-white dark:bg-background-dark p-4 rounded-lg border border-gray-200 dark:border-gray-800">
+<summary class="flex cursor-pointer items-center justify-between font-semibold text-gray-800 dark:text-gray-200 list-none">
+                    ¿Qué incluye el plan Básico?
+                    <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<p class="mt-2 text-gray-600 dark:text-gray-300">El plan Básico incluye envíos ilimitados, generación automática de etiquetas, seguimiento en tiempo real, análisis básicos y soporte por correo electrónico. Está diseñado para que particulares y pequeñas empresas comiencen a ahorrar en envíos de inmediato.</p>
+</details>
+<details class="group bg-white dark:bg-background-dark p-4 rounded-lg border border-gray-200 dark:border-gray-800">
+<summary class="flex cursor-pointer items-center justify-between font-semibold text-gray-800 dark:text-gray-200 list-none">
+                    ¿Cómo funciona la generación automática de etiquetas?
+                     <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<p class="mt-2 text-gray-600 dark:text-gray-300">Nuestro sistema se integra con los principales transportistas. Una vez que ingresa los detalles y el destino de su paquete, obtiene automáticamente las mejores tarifas y genera una etiqueta de envío imprimible para usted.</p>
+</details>
+<details class="group bg-white dark:bg-background-dark p-4 rounded-lg border border-gray-200 dark:border-gray-800">
+<summary class="flex cursor-pointer items-center justify-between font-semibold text-gray-800 dark:text-gray-200 list-none">
+                    ¿Qué tipo de soporte se proporciona?
+                     <span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<p class="mt-2 text-gray-600 dark:text-gray-300">El plan Básico incluye soporte por correo electrónico. Nuestro equipo está disponible para responder sus preguntas y resolver problemas. Para obtener soporte instantáneo y un administrador de cuenta dedicado, considere nuestro plan Profesional.</p>
+</details>
+</div>
+</section>
+</aside>
+</div>
+<div class="border-t border-gray-200 dark:border-gray-800 pt-8 mt-8 flex justify-start">
+<button class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">arrow_back</span>
+                Volver a Precios
+            </button>
+</div>
+</div>
+</main>
+</div>
+</body></html>
