@@ -1,0 +1,10 @@
+[33mf1fbcd1[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m fix: Arreglar error de sintaxis en BasicPlanPage.tsx
+[33ma347e4e[m fix: Arreglar error de sintaxis en ProPlanPage.tsx
+[33m8e3dffe[m feat: Actualizar colores de páginas de planes para coincidir con diseño original
+[33mf2dc8de[m feat: Reemplazar emoji cohete por logo SVG en app principal
+[33m23dbc2b[m fix: Resolver errores críticos de React y Tailwind CSS
+[33m6fecd87[m fix: Resetear estados de navegación después del login
+[33m7dab6e3[m fix: Navegación mejorada con logos clickeables y botón volver
+[33mef13ca6[m feat: Páginas detalladas de planes con navegación completa
+[33m8b3f52b[m feat: Optimización completa para dispositivos móviles
+[33m16a0b9d[m feat: Agregar página de precios antes del login
