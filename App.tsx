@@ -5,6 +5,8 @@ import { processOrders, fixEncoding, combineCSVs } from './services/csvProcessor
 import { FileUploader } from './components/FileUploader';
 import { StatusDisplay } from './components/StatusDisplay';
 import { ResultsDisplay } from './components/ResultsDisplay';
+import { Login } from './components/Login';
+import { useAuth } from './hooks/useAuth';
 
 // Función para normalizar caracteres problemáticos en el CSV final
 const normalizarCSVFinal = (content: string): string => {
@@ -107,10 +109,16 @@ const limpiarSeparacionFilas = (content: string): string => {
 
 
 const App: React.FC = () => {
+  const { isAuthenticated, username, login, logout } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{ domicilioCSV: string; sucursalCSV: string } | null>(null);
+
+  // Si no está autenticado, mostrar el login
+  if (!isAuthenticated) {
+    return <Login onLogin={login} />;
+  }
 
   const handleFileChange = (file: File | null) => {
     setSelectedFile(file);
@@ -202,9 +210,25 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-2">Transformador de Pedidos</h1>
-          <p className="text-indigo-400 font-medium">Tiendanube a Andreani</p>
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold text-white mb-2">🚀 SmartShip</h1>
+            <p className="text-indigo-400 font-medium">Transformador de Pedidos Andreani</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <span className="text-gray-400 text-sm">
+              Bienvenido, <span className="text-indigo-400 font-semibold">{username}</span>
+            </span>
+            <button
+              onClick={logout}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300 flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Salir
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
