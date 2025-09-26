@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ProcessStatus } from './types';
 import { processOrders, fixEncoding, combineCSVs } from './services/csvProcessor';
 import { FileUploader } from './components/FileUploader';
@@ -120,6 +120,15 @@ const App: React.FC = () => {
   const [showPricing, setShowPricing] = useState(true);
   const [showBasicPlan, setShowBasicPlan] = useState(false);
   const [showProPlan, setShowProPlan] = useState(false);
+
+  // Resetear estados de navegación cuando el usuario se autentica
+  useEffect(() => {
+    if (isAuthenticated) {
+      setShowPricing(false);
+      setShowBasicPlan(false);
+      setShowProPlan(false);
+    }
+  }, [isAuthenticated]);
 
   // Si no está autenticado, mostrar precios primero, luego login
   if (!isAuthenticated) {
