@@ -1,0 +1,5 @@
+{
+  "name": "Transformador de Pedidos Andreani",
+  "description": "Una aplicación para transformar archivos CSV de pedidos de Tiendanube al formato requerido por Andreani para envíos a domicilio y a sucursal.",
+  "requestFramePermissions": []
+}
