@@ -5,6 +5,8 @@ import {
   AndreaniDomicilioOutput,
   AndreaniSucursalOutput
 } from '../types';
+import { getDomiciliosMapping } from './domiciliosData';
+import { getSucursalesData } from './sucursalesData';
 
 // PapaParse is loaded from a CDN and available as a global variable.
 declare const Papa: any;
@@ -422,56 +424,10 @@ export const combineCSVs = (domicilioCSV: string, sucursalCSV: string): string =
 
 const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
   try {
-    console.log('=== INICIANDO CARGA DE SUCURSALES ===');
-    console.log('Fetching from: /sucursales.csv');
-    const response = await fetch('/sucursales.csv');
-    console.log('Respuesta del servidor:', response.status, response.statusText);
+    console.log('=== INICIANDO CARGA DE SUCURSALES (DATOS EMBEBIDOS) ===');
     
-    if (!response.ok) {
-      throw new Error(`No se pudo cargar sucursales.csv: ${response.statusText}`);
-    }
-    
-    // Asegurar que la respuesta se lea como UTF-8
-    const arrayBuffer = await response.arrayBuffer();
-    const decoder = new TextDecoder('utf-8');
-    let csvText = decoder.decode(arrayBuffer);
-    console.log('Tamaño del archivo de sucursales:', csvText.length, 'caracteres');
-    console.log('Primeras 200 caracteres:', csvText.substring(0, 200));
-    
-    // Corregir problemas de codificación en el archivo de sucursales (versión suave)
-    csvText = fixEncodingSoft(csvText);
-    
-    // Parsear manualmente el CSV porque tiene un formato especial
-    const lines = csvText.split('\n').filter(line => line.trim());
-    console.log('Número de líneas en sucursales:', lines.length);
-    console.log('Primera línea:', lines[0]);
-    
-    const sucursales: AndreaniSucursalInfo[] = [];
-    
-    for (const line of lines) {
-      // Manejar líneas que pueden tener comillas
-      let processedLine = line.trim();
-      
-      // Remover comillas al inicio y final de la línea
-      processedLine = processedLine.replace(/^"|"$/g, '');
-      
-      // Buscar la primera coma que separa el nombre de la dirección
-      const firstCommaIndex = processedLine.indexOf(',');
-      if (firstCommaIndex > 0) {
-        const nombreSucursal = processedLine.substring(0, firstCommaIndex).trim();
-        const direccion = processedLine.substring(firstCommaIndex + 1).trim();
-        
-        // Remover comillas adicionales de la dirección
-        const direccionLimpia = direccion.replace(/^"|"$/g, '');
-        
-        if (nombreSucursal && direccionLimpia) {
-          sucursales.push({
-            nombre_sucursal: nombreSucursal,
-            direccion: direccionLimpia
-          });
-        }
-      }
-    }
+    // Usar datos embebidos en lugar de archivo externo
+    const sucursales = getSucursalesData();
     
     console.log('✅ Sucursales cargadas exitosamente:', sucursales.length);
     console.log('Primera sucursal:', sucursales[0]);
@@ -479,68 +435,20 @@ const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
     
     return sucursales;
   } catch (error) {
-    console.error("Failed to fetch or parse sucursales.csv:", error);
-    throw new Error("No se pudo cargar el archivo de sucursales. Asegúrese que 'public/sucursales.csv' exista.");
+    console.error("Failed to load embedded sucursales data:", error);
+    throw new Error("No se pudo cargar los datos de sucursales embebidos.");
   }
 };
 
-// Función para cargar el mapeo de códigos postales desde el archivo de configuración
+// Función para cargar el mapeo de códigos postales desde datos embebidos
 const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
   try {
-    console.log('Iniciando carga de códigos postales desde archivo de configuración...');
-    const response = await fetch('/Domicilios.csv');
-    console.log('Respuesta del servidor para códigos postales:', response.status, response.statusText);
+    console.log('=== INICIANDO CARGA DE CÓDIGOS POSTALES (DATOS EMBEBIDOS) ===');
     
-    if (!response.ok) {
-      throw new Error(`No se pudo cargar Domicilios.csv: ${response.statusText}`);
-    }
+    // Usar datos embebidos en lugar de archivo externo
+    const codigosPostales = getDomiciliosMapping();
     
-    // Asegurar que la respuesta se lea como UTF-8
-    const arrayBuffer = await response.arrayBuffer();
-    const decoder = new TextDecoder('utf-8');
-    let csvText = decoder.decode(arrayBuffer);
-    console.log('Tamaño del archivo de configuración:', csvText.length, 'caracteres');
-    console.log('Primeras 200 caracteres:', csvText.substring(0, 200));
-    
-    // Corregir problemas de codificación (versión suave)
-    csvText = fixEncodingSoft(csvText);
-    
-    // Parsear el CSV
-    const lines = csvText.split('\n').filter(line => line.trim());
-    console.log('Número de líneas en archivo de configuración:', lines.length);
-    console.log('Primera línea:', lines[0]);
-    
-    const codigosPostales = new Map<string, string>();
-    
-    // Procesar todas las líneas del archivo (saltando el header)
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (line) {
-        // El formato es simple: cada línea es directamente el valor
-        // ProvinciaLocalidaCodigosPostales
-        // BUENOS AIRES / 11 DE SEPTIEMBRE / 1657
-        // BUENOS AIRES / 12 DE AGOSTO / 2701
-        
-        const provinciaLocalidadCP = line.trim();
-        
-        // Extraer el código postal (últimos 4 dígitos después del último /)
-        const cpMatch = provinciaLocalidadCP.match(/\/(\d{4})$/);
-        if (cpMatch) {
-          const codigoPostal = cpMatch[1];
-          // Solo agregar si es un código postal válido de 4 dígitos
-          if (/^\d{4}$/.test(codigoPostal)) {
-            codigosPostales.set(codigoPostal, provinciaLocalidadCP);
-            
-            // Debug: mostrar algunos ejemplos
-            if (i <= 5 || codigoPostal === '5000' || codigoPostal === '3265' || codigoPostal === '9000') {
-              console.log(`Mapeo agregado: ${codigoPostal} -> ${provinciaLocalidadCP}`);
-            }
-          }
-        }
-      }
-    }
-    
-    console.log('Códigos postales cargados:', codigosPostales.size);
+    console.log('✅ Códigos postales cargados exitosamente:', codigosPostales.size);
     console.log('Ejemplo de mapeo:', Array.from(codigosPostales.entries()).slice(0, 5));
     
     // Verificar específicamente algunos códigos que sabemos que existen
@@ -552,8 +460,8 @@ const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
     
     return codigosPostales;
   } catch (error) {
-    console.error("Failed to fetch or parse Domicilios.csv:", error);
-    throw new Error("No se pudo cargar el archivo de configuración. Asegúrese que 'Domicilios.csv' exista en la carpeta public.");
+    console.error("Failed to load embedded domicilios data:", error);
+    throw new Error("No se pudo cargar los datos de códigos postales embebidos.");
   }
 };
 
