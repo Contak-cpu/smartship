@@ -1821,13 +1821,26 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
       console.log(`=== DEBUGGING CÓDIGO POSTAL ${codigoPostal} (SHOPIFY) ===`);
       console.log('¿Existe en mapeo domiciliosData.ts?', codigosPostales.has(codigoPostal));
       
+      // Intentar búsqueda exacta primero
       if (codigosPostales.has(codigoPostal)) {
         formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
         console.log(`✅ Código postal ${codigoPostal} encontrado TAL CUAL en domiciliosData.ts: ${formatoProvinciaLocalidadCP}`);
       } else {
         console.log(`❌ Código postal ${codigoPostal} NO encontrado en domiciliosData.ts`);
         
-        // FALLBACK: Buscar por PROVINCIA + LOCALIDAD
+        // Buscar por coincidencia parcial en el código postal
+        let encontradoPorCoincidenciaParcial = false;
+        for (const [cp, formato] of codigosPostales.entries()) {
+          if (formato.includes(codigoPostal) || codigoPostal.includes(cp)) {
+            formatoProvinciaLocalidadCP = formato;
+            encontradoPorCoincidenciaParcial = true;
+            console.log(`✅ Encontrado por coincidencia parcial: ${codigoPostal} -> ${formato}`);
+            break;
+          }
+        }
+        
+        if (!encontradoPorCoincidenciaParcial) {
+          // FALLBACK: Buscar por PROVINCIA + LOCALIDAD
         const provinciaPedido = provinciaCompleta.toUpperCase();
         const localidadPedido = localidad.toUpperCase();
         
@@ -1871,11 +1884,12 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
           }
         }
         
-        if (!encontradoPorProvinciaLocalidad) {
-          console.log(`❌ No encontrado por PROVINCIA + LOCALIDAD tampoco`);
-          // Último fallback: formato por defecto
-          formatoProvinciaLocalidadCP = `${provinciaPedido} / ${localidadPedido} / ${codigoPostal}`;
-          console.log('Usando formato de fallback final:', formatoProvinciaLocalidadCP);
+          if (!encontradoPorProvinciaLocalidad) {
+            console.log(`❌ No encontrado por PROVINCIA + LOCALIDAD tampoco`);
+            // Último fallback: formato por defecto
+            formatoProvinciaLocalidadCP = `${provinciaPedido} / ${localidadPedido} / ${codigoPostal}`;
+            console.log('Usando formato de fallback final:', formatoProvinciaLocalidadCP);
+          }
         }
       }
 
