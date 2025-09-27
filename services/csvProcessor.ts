@@ -1190,24 +1190,22 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       // Obtener el código postal del pedido
       const codigoPostalPedido = getColumnValue(order, 21).trim(); // Código postal
       
-      // Buscar el formato exacto en el mapeo de códigos postales
-      let formatoProvinciaLocalidadCP = `${getColumnValue(order, 22)} / ${getColumnValue(order, 19)} / ${codigoPostalPedido}`;
+      // Buscar el formato EXACTO en domiciliosData.ts - TAL CUAL como está definido
+      let formatoProvinciaLocalidadCP = '';
       
       console.log(`=== DEBUGGING CÓDIGO POSTAL ${codigoPostalPedido} ===`);
-      console.log('Provincia:', getColumnValue(order, 22));
-      console.log('Localidad:', getColumnValue(order, 19));
-      console.log('Código postal:', codigoPostalPedido);
-      console.log('Formato por defecto:', formatoProvinciaLocalidadCP);
-      console.log('¿Existe en mapeo?', codigosPostales.has(codigoPostalPedido));
+      console.log('¿Existe en mapeo domiciliosData.ts?', codigosPostales.has(codigoPostalPedido));
       
       if (codigosPostales.has(codigoPostalPedido)) {
         formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostalPedido)!;
-        console.log(`✅ Código postal ${codigoPostalPedido} encontrado: ${formatoProvinciaLocalidadCP}`);
+        console.log(`✅ Código postal ${codigoPostalPedido} encontrado TAL CUAL en domiciliosData.ts: ${formatoProvinciaLocalidadCP}`);
       } else {
-        console.log(`❌ Código postal ${codigoPostalPedido} NO encontrado en el mapeo`);
+        console.log(`❌ Código postal ${codigoPostalPedido} NO encontrado en domiciliosData.ts`);
         console.log('Total códigos en mapeo:', codigosPostales.size);
         console.log('Algunos ejemplos del mapeo:', Array.from(codigosPostales.entries()).slice(0, 3));
-        console.log('Usando formato por defecto:', formatoProvinciaLocalidadCP);
+        // Si no se encuentra, usar un formato de fallback
+        formatoProvinciaLocalidadCP = `${getColumnValue(order, 22)} / ${getColumnValue(order, 19)} / ${codigoPostalPedido}`;
+        console.log('Usando formato de fallback:', formatoProvinciaLocalidadCP);
       }
       
       // Normalizar campos de dirección para evitar caracteres inválidos
@@ -1400,92 +1398,22 @@ export const processVentasOrders = async (csvContent: string): Promise<{
         .replace(/[…]/g, '...')
         .replace(/[]/g, '');
 
-      // Buscar el formato correcto en el mapeo de códigos postales
-      // Usar el mismo sistema que processOrders
-      let formatoProvinciaLocalidadCP = `${provincia} / ${ciudad} / ${codigoPostal}`;
+      // Buscar el formato EXACTO en domiciliosData.ts - TAL CUAL como está definido
+      let formatoProvinciaLocalidadCP = '';
       
       console.log(`=== DEBUGGING CÓDIGO POSTAL ${codigoPostal} (VENTAS) ===`);
-      console.log('Provincia:', provincia);
-      console.log('Ciudad:', ciudad);
-      console.log('Código postal:', codigoPostal);
-      console.log('Formato por defecto:', formatoProvinciaLocalidadCP);
-      console.log('¿Existe en mapeo?', codigosPostales.has(codigoPostal));
+      console.log('¿Existe en mapeo domiciliosData.ts?', codigosPostales.has(codigoPostal));
       
       if (codigosPostales.has(codigoPostal)) {
         formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
-        console.log(`✅ Código postal ${codigoPostal} encontrado: ${formatoProvinciaLocalidadCP}`);
+        console.log(`✅ Código postal ${codigoPostal} encontrado TAL CUAL en domiciliosData.ts: ${formatoProvinciaLocalidadCP}`);
       } else {
-        console.log(`❌ Código postal ${codigoPostal} NO encontrado en el mapeo`);
+        console.log(`❌ Código postal ${codigoPostal} NO encontrado en domiciliosData.ts`);
         console.log('Total códigos en mapeo:', codigosPostales.size);
         console.log('Algunos ejemplos del mapeo:', Array.from(codigosPostales.entries()).slice(0, 3));
-        console.log('Usando formato por defecto:', formatoProvinciaLocalidadCP);
-        
-        // Buscar por PROVINCIA / LOCALIDAD como fallback
-        console.log(`🔍 Buscando por PROVINCIA / LOCALIDAD: "${provincia} / ${ciudad}"`);
-        
-        // Buscar en todos los valores del mapeo
-        let encontradoPorProvinciaLocalidad = false;
-        for (const [cp, formato] of codigosPostales.entries()) {
-          // Normalizar para comparar (quitar acentos y convertir a mayúsculas)
-          const formatoNormalizado = formato
-            .replace(/[áàäâ]/g, 'a')
-            .replace(/[éèëê]/g, 'e')
-            .replace(/[íìïî]/g, 'i')
-            .replace(/[óòöô]/g, 'o')
-            .replace(/[úùüû]/g, 'u')
-            .replace(/[ñ]/g, 'n')
-            .replace(/[ÁÀÄÂ]/g, 'A')
-            .replace(/[ÉÈËÊ]/g, 'E')
-            .replace(/[ÍÌÏÎ]/g, 'I')
-            .replace(/[ÓÒÖÔ]/g, 'O')
-            .replace(/[ÚÙÜÛ]/g, 'U')
-            .replace(/[Ñ]/g, 'N')
-            .toUpperCase();
-          
-          const provinciaNormalizada = provincia
-            .replace(/[áàäâ]/g, 'a')
-            .replace(/[éèëê]/g, 'e')
-            .replace(/[íìïî]/g, 'i')
-            .replace(/[óòöô]/g, 'o')
-            .replace(/[úùüû]/g, 'u')
-            .replace(/[ñ]/g, 'n')
-            .replace(/[ÁÀÄÂ]/g, 'A')
-            .replace(/[ÉÈËÊ]/g, 'E')
-            .replace(/[ÍÌÏÎ]/g, 'I')
-            .replace(/[ÓÒÖÔ]/g, 'O')
-            .replace(/[ÚÙÜÛ]/g, 'U')
-            .replace(/[Ñ]/g, 'N')
-            .toUpperCase();
-          
-          const ciudadNormalizada = ciudad
-            .replace(/[áàäâ]/g, 'a')
-            .replace(/[éèëê]/g, 'e')
-            .replace(/[íìïî]/g, 'i')
-            .replace(/[óòöô]/g, 'o')
-            .replace(/[úùüû]/g, 'u')
-            .replace(/[ñ]/g, 'n')
-            .replace(/[ÁÀÄÂ]/g, 'A')
-            .replace(/[ÉÈËÊ]/g, 'E')
-            .replace(/[ÍÌÏÎ]/g, 'I')
-            .replace(/[ÓÒÖÔ]/g, 'O')
-            .replace(/[ÚÙÜÛ]/g, 'U')
-            .replace(/[Ñ]/g, 'N')
-            .toUpperCase();
-          
-          const patronBusqueda = `${provinciaNormalizada} / ${ciudadNormalizada}`;
-          
-          if (formatoNormalizado.includes(patronBusqueda)) {
-            formatoProvinciaLocalidadCP = formato;
-            encontradoPorProvinciaLocalidad = true;
-            console.log(`✅ Encontrado por PROVINCIA / LOCALIDAD: ${formato}`);
-            break;
-          }
-        }
-        
-        if (!encontradoPorProvinciaLocalidad) {
-          console.log(`❌ No encontrado por PROVINCIA / LOCALIDAD tampoco`);
-          console.log('Manteniendo formato por defecto:', formatoProvinciaLocalidadCP);
-        }
+        // Si no se encuentra, usar un formato de fallback
+        formatoProvinciaLocalidadCP = `${provincia} / ${localidad} / ${codigoPostal}`;
+        console.log('Usando formato de fallback:', formatoProvinciaLocalidadCP);
       }
 
       domicilios.push({
