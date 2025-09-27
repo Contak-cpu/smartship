@@ -383,13 +383,31 @@ const parseCSV = <T,>(csvText: string): Promise<T[]> => {
 
 const unparseCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]): string => {
   if (data.length === 0) return "";
-  return Papa.unparse(data, { 
-    delimiter: ';',
-    quotes: true,
-    quoteChar: '"',
-    escapeChar: '"',
-    newline: '\n'
+  
+  // Crear encabezados limpios sin "Ej:" y otros textos innecesarios
+  const headers = Object.keys(data[0]).map(header => {
+    // Limpiar encabezados para que sean más simples
+    return header
+      .replace(/ Ej:.*$/, '') // Quitar "Ej: ..."
+      .replace(/\n.*$/, '') // Quitar saltos de línea y texto después
+      .trim();
   });
+  
+  // Crear el CSV manualmente para tener control total
+  const csvLines = [headers.join(';')];
+  
+  data.forEach(row => {
+    const values = headers.map(header => {
+      // Encontrar el valor correspondiente en el objeto original
+      const originalKey = Object.keys(row).find(key => 
+        key.replace(/ Ej:.*$/, '').replace(/\n.*$/, '').trim() === header
+      );
+      return row[originalKey as keyof typeof row] || '';
+    });
+    csvLines.push(values.join(';'));
+  });
+  
+  return csvLines.join('\n');
 };
 
 // Función para combinar domicilios y sucursales en un solo CSV
