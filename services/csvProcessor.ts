@@ -423,11 +423,11 @@ export const combineCSVs = (domicilioCSV: string, sucursalCSV: string): string =
 const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
   try {
     console.log('Iniciando carga de sucursales...');
-    const response = await fetch('/sucursales.csv');
+    const response = await fetch('/SUCURSALES - DIRECCIONES - Hoja 1.csv');
     console.log('Respuesta del servidor:', response.status, response.statusText);
     
     if (!response.ok) {
-      throw new Error(`No se pudo cargar sucursales.csv: ${response.statusText}`);
+      throw new Error(`No se pudo cargar SUCURSALES - DIRECCIONES - Hoja 1.csv: ${response.statusText}`);
     }
     
     // Asegurar que la respuesta se lea como UTF-8
