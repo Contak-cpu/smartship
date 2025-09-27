@@ -514,7 +514,21 @@ const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
           const codigoPostal = cpMatch[1];
           // Solo agregar si es un código postal válido de 4 dígitos
           if (/^\d{4}$/.test(codigoPostal)) {
-            codigosPostales.set(codigoPostal, provinciaLocalidadCP);
+            // Normalizar el formato para que sea consistente
+            const formatoNormalizado = provinciaLocalidadCP
+              .replace(/CORDOBA/g, 'CÓRDOBA')
+              .replace(/ENTRE RIOS/g, 'ENTRE RÍOS')
+              .replace(/CHUBUT/g, 'CHUBUT')
+              .replace(/SANTA FE/g, 'SANTA FE')
+              .replace(/TUCUMAN/g, 'TUCUMÁN')
+              .replace(/MENDOZA/g, 'MENDOZA');
+            
+            codigosPostales.set(codigoPostal, formatoNormalizado);
+            
+            // Debug: mostrar algunos ejemplos
+            if (i < 5 || codigoPostal === '5000' || codigoPostal === '3265' || codigoPostal === '9000') {
+              console.log(`Mapeo agregado: ${codigoPostal} -> ${formatoNormalizado}`);
+            }
           }
         }
       }
