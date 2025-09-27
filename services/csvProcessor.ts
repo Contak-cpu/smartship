@@ -1774,8 +1774,11 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
     const piso = firstLine['Shipping Address2'] || firstLine['Billing Address2'] || '';
     
     const localidad = firstLine['Shipping City'] || firstLine['Billing City'] || '';
-    const codigoPostal = (firstLine['Shipping Zip'] || firstLine['Billing Zip'] || '').replace(/'/g, '').trim();
+    const codigoPostalRaw = firstLine['Shipping Zip'] || firstLine['Billing Zip'] || '';
+    const codigoPostal = codigoPostalRaw.replace(/'/g, '').trim();
     const provinciaCompleta = firstLine['Shipping Province'] || firstLine['Billing Province'] || '';
+    
+    console.log(`[DEBUG ${orderNumber}] Código postal RAW: "${codigoPostalRaw}" -> Limpiado: "${codigoPostal}"`);
     
     // Determinar método de envío basado en Shipping Method
     const shippingMethod = firstLine['Shipping Method'] || '';
