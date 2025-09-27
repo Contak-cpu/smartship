@@ -521,34 +521,8 @@ const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
         
         // La columna ProvinciaLocalidaCodigosPostales está en la posición 4 (índice 4)
         if (columns.length > 4 && columns[4]) {
-          let provinciaLocalidadCP = columns[4].trim();
-          
-          // Corregir problemas de encoding específicos
-          provinciaLocalidadCP = provinciaLocalidadCP
-            .replace(/CORDOBA/g, 'CÓRDOBA')
-            .replace(/ENTRE RIOS/g, 'ENTRE RÍOS')
-            .replace(/TUCUMAN/g, 'TUCUMÁN')
-            .replace(/SANTA FE/g, 'SANTA FE')
-            .replace(/CHUBUT/g, 'CHUBUT')
-            .replace(/MENDOZA/g, 'MENDOZA')
-            .replace(/BUENOS AIRES/g, 'BUENOS AIRES')
-            .replace(/CAPITAL FEDERAL/g, 'CAPITAL FEDERAL')
-            .replace(/RIO NEGRO/g, 'RÍO NEGRO')
-            .replace(/NEUQUEN/g, 'NEUQUÉN')
-            .replace(/SANTIAGO DEL ESTERO/g, 'SANTIAGO DEL ESTERO')
-            .replace(/SAN JUAN/g, 'SAN JUAN')
-            .replace(/SAN LUIS/g, 'SAN LUIS')
-            .replace(/LA PAMPA/g, 'LA PAMPA')
-            .replace(/SANTA CRUZ/g, 'SANTA CRUZ')
-            .replace(/TIERRA DEL FUEGO/g, 'TIERRA DEL FUEGO')
-            .replace(/FORMOSA/g, 'FORMOSA')
-            .replace(/CHACO/g, 'CHACO')
-            .replace(/CORRIENTES/g, 'CORRIENTES')
-            .replace(/MISIONES/g, 'MISIONES')
-            .replace(/SALTA/g, 'SALTA')
-            .replace(/JUJUY/g, 'JUJUY')
-            .replace(/LA RIOJA/g, 'LA RIOJA')
-            .replace(/CATAMARCA/g, 'CATAMARCA');
+          // COPIAR EXACTAMENTE el valor sin modificaciones
+          const provinciaLocalidadCP = columns[4].trim();
           
           // Extraer el código postal (últimos 4 dígitos después del último /)
           const cpMatch = provinciaLocalidadCP.match(/\/(\d{4})$/);
@@ -570,6 +544,13 @@ const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
     
     console.log('Códigos postales cargados:', codigosPostales.size);
     console.log('Ejemplo de mapeo:', Array.from(codigosPostales.entries()).slice(0, 5));
+    
+    // Verificar específicamente algunos códigos que sabemos que existen
+    console.log('Verificando códigos específicos:');
+    console.log('5000:', codigosPostales.get('5000'));
+    console.log('3265:', codigosPostales.get('3265'));
+    console.log('9000:', codigosPostales.get('9000'));
+    console.log('1657:', codigosPostales.get('1657'));
     
     return codigosPostales;
   } catch (error) {
@@ -1517,12 +1498,21 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       // Usar ciudad en lugar de localidad para el formato correcto
       let formatoProvinciaLocalidadCP = `${provincia} / ${ciudad} / ${codigoPostal}`;
       
+      console.log(`🔍 Buscando código postal: "${codigoPostal}"`);
+      console.log(`📊 Total códigos en mapeo: ${codigosPostales.size}`);
+      
       if (codigosPostales.has(codigoPostal)) {
         formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
         console.log(`✅ Código postal ${codigoPostal} encontrado: ${formatoProvinciaLocalidadCP}`);
       } else {
         console.log(`❌ Código postal ${codigoPostal} NO encontrado en el mapeo`);
-        console.log(`Formato por defecto: ${formatoProvinciaLocalidadCP}`);
+        console.log(`⚠️ Formato por defecto: ${formatoProvinciaLocalidadCP}`);
+        
+        // Buscar códigos similares para debug
+        const codigosSimilares = Array.from(codigosPostales.keys()).filter(cp => 
+          cp.includes(codigoPostal) || codigoPostal.includes(cp)
+        );
+        console.log('🔍 Códigos similares encontrados:', codigosSimilares.slice(0, 3));
       }
 
       domicilios.push({
