@@ -1493,8 +1493,7 @@ export const processVentasOrders = async (csvContent: string): Promise<{
         .replace(/[]/g, '');
 
       // Buscar el formato correcto en el mapeo de códigos postales
-      // Usar ciudad en lugar de localidad para el formato correcto
-      let formatoProvinciaLocalidadCP = `${provincia} / ${ciudad} / ${codigoPostal}`;
+      let formatoProvinciaLocalidadCP = 'FORMATO NO ENCONTRADO';
       
       console.log(`🔍 Buscando código postal: "${codigoPostal}"`);
       console.log(`📊 Total códigos en mapeo: ${codigosPostales.size}`);
@@ -1504,13 +1503,16 @@ export const processVentasOrders = async (csvContent: string): Promise<{
         console.log(`✅ Código postal ${codigoPostal} encontrado: ${formatoProvinciaLocalidadCP}`);
       } else {
         console.log(`❌ Código postal ${codigoPostal} NO encontrado en el mapeo`);
-        console.log(`⚠️ Formato por defecto: ${formatoProvinciaLocalidadCP}`);
         
         // Buscar códigos similares para debug
         const codigosSimilares = Array.from(codigosPostales.keys()).filter(cp => 
           cp.includes(codigoPostal) || codigoPostal.includes(cp)
         );
         console.log('🔍 Códigos similares encontrados:', codigosSimilares.slice(0, 3));
+        
+        // Mostrar algunos ejemplos del mapeo para debug
+        console.log('📋 Primeros 5 códigos en mapeo:', Array.from(codigosPostales.keys()).slice(0, 5));
+        console.log('📋 Últimos 5 códigos en mapeo:', Array.from(codigosPostales.keys()).slice(-5));
       }
 
       domicilios.push({
