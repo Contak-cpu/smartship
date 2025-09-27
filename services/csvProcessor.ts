@@ -1495,13 +1495,15 @@ export const processVentasOrders = async (csvContent: string): Promise<{
         .replace(/[]/g, '');
 
       // Buscar el formato correcto en el mapeo de códigos postales
-      let formatoProvinciaLocalidadCP = `${provincia} / ${localidad} / ${codigoPostal}`;
+      // Usar ciudad en lugar de localidad para el formato correcto
+      let formatoProvinciaLocalidadCP = `${provincia} / ${ciudad} / ${codigoPostal}`;
       
       if (codigosPostales.has(codigoPostal)) {
         formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
         console.log(`✅ Código postal ${codigoPostal} encontrado: ${formatoProvinciaLocalidadCP}`);
       } else {
         console.log(`❌ Código postal ${codigoPostal} NO encontrado en el mapeo`);
+        console.log(`Formato por defecto: ${formatoProvinciaLocalidadCP}`);
       }
 
       domicilios.push({
