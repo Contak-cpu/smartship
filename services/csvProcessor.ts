@@ -423,12 +423,12 @@ export const combineCSVs = (domicilioCSV: string, sucursalCSV: string): string =
 const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
   try {
     console.log('=== INICIANDO CARGA DE SUCURSALES ===');
-    console.log('Fetching from: /SUCURSALES - DIRECCIONES - Hoja 1.csv');
-    const response = await fetch('/SUCURSALES - DIRECCIONES - Hoja 1.csv');
+    console.log('Fetching from: /sucursales.csv');
+    const response = await fetch('/sucursales.csv');
     console.log('Respuesta del servidor:', response.status, response.statusText);
     
     if (!response.ok) {
-      throw new Error(`No se pudo cargar SUCURSALES - DIRECCIONES - Hoja 1.csv: ${response.statusText}`);
+      throw new Error(`No se pudo cargar sucursales.csv: ${response.statusText}`);
     }
     
     // Asegurar que la respuesta se lea como UTF-8
@@ -480,7 +480,7 @@ const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
     return sucursales;
   } catch (error) {
     console.error("Failed to fetch or parse sucursales.csv:", error);
-    throw new Error("No se pudo cargar el archivo de sucursales. Asegúrese que 'public/SUCURSALES - DIRECCIONES - Hoja 1.csv' exista.");
+    throw new Error("No se pudo cargar el archivo de sucursales. Asegúrese que 'public/sucursales.csv' exista.");
   }
 };
 
@@ -488,11 +488,11 @@ const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
 const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
   try {
     console.log('Iniciando carga de códigos postales desde archivo de configuración...');
-    const response = await fetch('/EnvioMasivoAndreani.xlsm - Configuracion.csv');
+    const response = await fetch('/Domicilios.csv');
     console.log('Respuesta del servidor para códigos postales:', response.status, response.statusText);
     
     if (!response.ok) {
-      throw new Error(`No se pudo cargar EnvioMasivoAndreani.xlsm - Configuracion.csv: ${response.statusText}`);
+      throw new Error(`No se pudo cargar Domicilios.csv: ${response.statusText}`);
     }
     
     // Asegurar que la respuesta se lea como UTF-8
@@ -573,8 +573,8 @@ const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
     
     return codigosPostales;
   } catch (error) {
-    console.error("Failed to fetch or parse EnvioMasivoAndreani.xlsm - Configuracion.csv:", error);
-    throw new Error("No se pudo cargar el archivo de configuración. Asegúrese que 'EnvioMasivoAndreani.xlsm - Configuracion.csv' exista en la carpeta public.");
+    console.error("Failed to fetch or parse Domicilios.csv:", error);
+    throw new Error("No se pudo cargar el archivo de configuración. Asegúrese que 'Domicilios.csv' exista en la carpeta public.");
   }
 };
 
