@@ -1848,27 +1848,37 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
     console.log(`[DEBUG ${orderNumber}] Calle extraída: "${calle}"`);
     console.log(`[DEBUG ${orderNumber}] Partes de dirección:`, direccionParts);
     
-    // Extraer número de la dirección (buscar números al final de la calle)
+    // Extraer número de la dirección (solo números puros)
     let numero = '';
+    
+    // Primero intentar extraer de la segunda parte después de la coma
     if (direccionParts.length > 1) {
-      numero = direccionParts[1]?.trim() || '';
-      console.log(`[DEBUG ${orderNumber}] Número de segunda parte: "${numero}"`);
-    } else {
-      // Si no hay coma, buscar números al final de la calle
-      const numeroMatch = calle.match(/(\d+)(?:\s*[a-zA-Z]*)?\s*$/);
+      const segundaParte = direccionParts[1]?.trim() || '';
+      console.log(`[DEBUG ${orderNumber}] Segunda parte de dirección: "${segundaParte}"`);
+      // Buscar solo números en la segunda parte
+      const numeroMatch = segundaParte.match(/\d+/);
       if (numeroMatch) {
-        numero = numeroMatch[1];
-        console.log(`[DEBUG ${orderNumber}] Número extraído de calle: "${numero}"`);
+        numero = numeroMatch[0];
+        console.log(`[DEBUG ${orderNumber}] Número encontrado en segunda parte: "${numero}"`);
       }
     }
     
-    // Si el número contiene letras, limpiarlo
-    numero = numero.replace(/[^0-9]/g, '');
-    if (!numero || numero === '0') {
-      numero = '0'; // Valor por defecto si no se encuentra número
+    // Si no se encontró en la segunda parte, buscar en toda la dirección
+    if (!numero) {
+      const numeroMatch = direccion.match(/\d+/);
+      if (numeroMatch) {
+        numero = numeroMatch[0];
+        console.log(`[DEBUG ${orderNumber}] Número encontrado en dirección completa: "${numero}"`);
+      }
     }
     
-    console.log(`[DEBUG ${orderNumber}] Número final: "${numero}"`);
+    // Si aún no se encuentra número, usar 0 por defecto
+    if (!numero || numero === '0') {
+      numero = '0';
+      console.log(`[DEBUG ${orderNumber}] Usando número por defecto: "${numero}"`);
+    }
+    
+    console.log(`[DEBUG ${orderNumber}] Número final (solo números): "${numero}"`);
     
     const piso = firstLine['Shipping Address2'] || firstLine['Billing Address2'] || '';
     
