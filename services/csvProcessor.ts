@@ -915,6 +915,7 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     parseCSV<TiendanubeOrder>(tiendanubeCsvText),
   ]);
 
+  console.log('=== INFORMACIÓN DE PROCESAMIENTO ===');
   console.log('Total orders loaded:', tiendanubeOrders.length);
   
   // Función para obtener el valor de una columna por posición
@@ -949,6 +950,10 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
 
   const domicilios: AndreaniDomicilioOutput[] = [];
   const sucursalesOutput: AndreaniSucursalOutput[] = [];
+  
+  let contadorDomicilios = 0;
+  let contadorSucursales = 0;
+  let contadorNoProcesados = 0;
 
   for (const order of tiendanubeOrders) {
     // Helper function to split name and surname
@@ -1185,7 +1190,8 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     console.log('Processing order:', baseData['Numero Interno'], 'Medio de envío:', medioEnvio);
     
     if (medioEnvio && medioEnvio.includes("Andreani Estandar") && medioEnvio.includes("domicilio")) {
-      // console.log('Adding to domicilios:', baseData['Numero Interno']);
+      contadorDomicilios++;
+      console.log(`[DOMICILIO ${contadorDomicilios}] Agregando pedido:`, baseData['Numero Interno']);
       
       // Obtener el código postal del pedido
       const codigoPostalPedido = getColumnValue(order, 21).trim(); // Código postal
@@ -1267,8 +1273,8 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
         'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
       });
     } else if (medioEnvio && medioEnvio.includes('Punto de retiro')) {
-      console.log('=== PROCESANDO SUCURSAL ===');
-      console.log('Adding to sucursales:', baseData['Numero Interno']);
+      contadorSucursales++;
+      console.log(`[SUCURSAL ${contadorSucursales}] Agregando pedido:`, baseData['Numero Interno']);
       // Construir dirección completa con TODA la información disponible
       const calle = getColumnValue(order, 16); // Dirección
       const numero = getColumnValue(order, 17); // Número
@@ -1316,10 +1322,16 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
         'Sucursal *': nombreSucursal,
       });
     } else {
-      // console.log('Order not processed - unknown shipping method:', medioEnvio);
+      contadorNoProcesados++;
+      console.log(`[NO PROCESADO ${contadorNoProcesados}] Pedido ${baseData['Numero Interno']} - Medio de envío desconocido:`, medioEnvio);
     }
   }
 
+  console.log('=== RESUMEN DE PROCESAMIENTO ===');
+  console.log(`Total pedidos procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
+  console.log(`- Domicilios: ${contadorDomicilios}`);
+  console.log(`- Sucursales: ${contadorSucursales}`);
+  console.log(`- No procesados: ${contadorNoProcesados}`);
   console.log('Final results - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
 
   return {
@@ -1352,6 +1364,13 @@ export const processVentasOrders = async (csvContent: string): Promise<{
 
   const domicilios: any[] = [];
   const sucursalesOutput: any[] = [];
+  
+  let contadorDomicilios = 0;
+  let contadorSucursales = 0;
+  let contadorNoProcesados = 0;
+
+  console.log('=== PROCESANDO ARCHIVO DE VENTAS ===');
+  console.log('Total líneas de datos:', lines.length - 1);
 
   // Procesar cada línea de datos
   for (let i = 1; i < lines.length; i++) {
@@ -1403,6 +1422,8 @@ export const processVentasOrders = async (csvContent: string): Promise<{
 
     // Determinar si es envío a domicilio o sucursal
     if (medioEnvio.includes('domicilio')) {
+      contadorDomicilios++;
+      console.log(`[DOMICILIO ${contadorDomicilios}] Procesando pedido:`, numeroOrden);
       // Procesar envío a domicilio
       const calleNormalizada = direccion.replace(/[áàäâ]/g, 'a')
         .replace(/[éèëê]/g, 'e')
@@ -1519,6 +1540,8 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       });
 
     } else if (medioEnvio.includes('Punto de retiro') || medioEnvio.includes('sucursal')) {
+      contadorSucursales++;
+      console.log(`[SUCURSAL ${contadorSucursales}] Procesando pedido:`, numeroOrden);
       // Procesar envío a sucursal
       const direccionCompleta = `${direccion} ${numero} ${piso} ${localidad} ${ciudad}`.trim();
       const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales);
@@ -1527,9 +1550,17 @@ export const processVentasOrders = async (csvContent: string): Promise<{
         ...baseData,
         'Sucursal * \nEj: 9 DE JULIO': nombreSucursal,
       });
+    } else {
+      contadorNoProcesados++;
+      console.log(`[NO PROCESADO ${contadorNoProcesados}] Pedido ${numeroOrden} - Medio de envío desconocido:`, medioEnvio);
     }
   }
 
+  console.log('=== RESUMEN DE PROCESAMIENTO (VENTAS) ===');
+  console.log(`Total pedidos procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
+  console.log(`- Domicilios: ${contadorDomicilios}`);
+  console.log(`- Sucursales: ${contadorSucursales}`);
+  console.log(`- No procesados: ${contadorNoProcesados}`);
   console.log('Resultados finales - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
 
   return {
