@@ -442,114 +442,6 @@ const unparseCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]):
   return csvLines.join('\n');
 };
 
-// Función específica para generar CSV de Shopify con encabezados correctos
-const unparseShopifyCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]): string => {
-  if (data.length === 0) return "";
-  
-  // Usar los encabezados originales con formato "Ej:" y saltos de línea
-  const headers = [
-    'Paquete Guardado \nEj: 1',
-    'Peso (grs)\nEj: ',
-    'Alto (cm)\nEj: ', 
-    'Ancho (cm)\nEj: ',
-    'Profundidad (cm)\nEj: ',
-    'Valor declarado ($ C/IVA) *\nEj: ',
-    'Numero Interno\nEj: ',
-    'Nombre *\nEj: ',
-    'Apellido *\nEj: ',
-    'DNI *\nEj: ',
-    'Email *\nEj: ',
-    'Celular código *\nEj: ',
-    'Celular número *\nEj: '
-  ];
-  
-  // Agregar columnas específicas según el tipo de datos
-  if (data.length > 0 && 'Calle *' in data[0]) {
-    // Es un domicilio
-    headers.push('Calle *\nEj: ', 'Número *\nEj: ', 'Piso\nEj: ', 'Departamento\nEj: ', 'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657', 'Observaciones\nEj: ');
-  } else if (data.length > 0 && 'Sucursal *' in data[0]) {
-    // Es una sucursal
-    headers.push('Sucursal * \nEj: 9 DE JULIO');
-  }
-  
-  // Crear el CSV manualmente
-  const csvLines = [headers.join(';')];
-  
-  data.forEach(row => {
-    const values = headers.map(header => {
-      // Mapear encabezados a las claves del objeto
-      let value = '';
-      switch (header) {
-        case 'Paquete Guardado \nEj: 1':
-          value = row['Paquete Guardado Ej:'] || '';
-          break;
-        case 'Peso (grs)\nEj: ':
-          value = row['Peso (grs)'] || '';
-          break;
-        case 'Alto (cm)\nEj: ':
-          value = row['Alto (cm)'] || '';
-          break;
-        case 'Ancho (cm)\nEj: ':
-          value = row['Ancho (cm)'] || '';
-          break;
-        case 'Profundidad (cm)\nEj: ':
-          value = row['Profundidad (cm)'] || '';
-          break;
-        case 'Valor declarado ($ C/IVA) *\nEj: ':
-          value = row['Valor declarado ($ C/IVA) *'] || '';
-          break;
-        case 'Numero Interno\nEj: ':
-          value = row['Numero Interno'] || '';
-          break;
-        case 'Nombre *\nEj: ':
-          value = row['Nombre *'] || '';
-          break;
-        case 'Apellido *\nEj: ':
-          value = row['Apellido *'] || '';
-          break;
-        case 'DNI *\nEj: ':
-          value = row['DNI *'] || '';
-          break;
-        case 'Email *\nEj: ':
-          value = row['Email *'] || '';
-          break;
-        case 'Celular código *\nEj: ':
-          value = row['Celular código *'] || '';
-          break;
-        case 'Celular número *\nEj: ':
-          value = row['Celular número *'] || '';
-          break;
-        case 'Calle *\nEj: ':
-          value = row['Calle *'] || '';
-          break;
-        case 'Número *\nEj: ':
-          value = row['Número *'] || '';
-          break;
-        case 'Piso\nEj: ':
-          value = row['Piso'] || '';
-          break;
-        case 'Departamento\nEj: ':
-          value = row['Departamento'] || '';
-          break;
-        case 'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657':
-          value = row['Provincia / Localidad / CP *'] || '';
-          break;
-        case 'Observaciones\nEj: ':
-          value = ''; // Campo observaciones siempre vacío
-          break;
-        case 'Sucursal * \nEj: 9 DE JULIO':
-          value = row['Sucursal *'] || '';
-          break;
-        default:
-          value = '';
-      }
-      return value;
-    });
-    csvLines.push(values.join(';'));
-  });
-  
-  return csvLines.join('\n');
-};
 
 // Función para combinar domicilios y sucursales en un solo CSV
 export const combineCSVs = (domicilioCSV: string, sucursalCSV: string): string => {
@@ -1579,19 +1471,19 @@ export const processVentasOrders = async (csvContent: string): Promise<{
 
     // Datos base para ambos tipos
     const baseData = {
-      'Paquete Guardado \nEj: 1': '',
-      'Peso (grs)\nEj: ': '1',
-      'Alto (cm)\nEj: ': '1',
-      'Ancho (cm)\nEj: ': '1',
-      'Profundidad (cm)\nEj: ': '1',
-      'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado,
-      'Numero Interno\nEj: ': numeroOrden,
-      'Nombre *\nEj: ': nombreCompleto,
-      'Apellido *\nEj: ': apellidoComprador,
-      'DNI *\nEj: ': dni,
-      'Email *\nEj: ': email,
-      'Celular código *\nEj: ': codigoArea,
-      'Celular número *\nEj: ': numeroTelefono,
+      'Paquete Guardado Ej:': '',
+      'Peso (grs)': 1,
+      'Alto (cm)': 1,
+      'Ancho (cm)': 1,
+      'Profundidad (cm)': 1,
+      'Valor declarado ($ C/IVA) *': valorDeclarado,
+      'Numero Interno': numeroOrden,
+      'Nombre *': nombreCompleto,
+      'Apellido *': apellidoComprador,
+      'DNI *': dni,
+      'Email *': email,
+      'Celular código *': codigoArea,
+      'Celular número *': numeroTelefono,
     };
 
     // Determinar si es envío a domicilio o sucursal
@@ -1705,12 +1597,11 @@ export const processVentasOrders = async (csvContent: string): Promise<{
 
       domicilios.push({
         ...baseData,
-        'Calle *\nEj: ': calleNormalizada,
-        'Número *\nEj: ': numero,
-        'Piso\nEj: ': pisoNormalizado,
-        'Departamento\nEj: ': pisoNormalizado,
-        'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657': formatoProvinciaLocalidadCP,
-        'Observaciones\nEj: ': '',
+        'Calle *': calleNormalizada,
+        'Número *': numero,
+        'Piso': pisoNormalizado,
+        'Departamento': pisoNormalizado,
+        'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
       });
 
     } else if (medioEnvio.includes('Punto de retiro') || medioEnvio.includes('sucursal')) {
@@ -1722,7 +1613,7 @@ export const processVentasOrders = async (csvContent: string): Promise<{
 
       sucursalesOutput.push({
         ...baseData,
-        'Sucursal * \nEj: 9 DE JULIO': nombreSucursal,
+        'Sucursal *': nombreSucursal,
       });
     } else {
       contadorNoProcesados++;
@@ -2047,8 +1938,8 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
 
   return {
-    domicilioCSV: unparseShopifyCSV(domicilios),
-    sucursalCSV: unparseShopifyCSV(sucursalesOutput),
+    domicilioCSV: unparseCSV(domicilios),
+    sucursalCSV: unparseCSV(sucursalesOutput),
     processingInfo: {
       totalOrders: shopifyOrders.length,
       domiciliosProcessed: contadorDomicilios,
