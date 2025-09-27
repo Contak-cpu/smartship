@@ -516,26 +516,24 @@ const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (line) {
-        // El formato es: Sucursal,,ItemNoGenerico,,ProvinciaLocalidaCodigosPostales,ProvinciaLocalidaCodigosPostalesLlegaHoy
-        const columns = line.split(',');
+        // El formato es simple: cada línea es directamente el valor
+        // ProvinciaLocalidaCodigosPostales
+        // BUENOS AIRES / 11 DE SEPTIEMBRE / 1657
+        // BUENOS AIRES / 12 DE AGOSTO / 2701
         
-        // La columna ProvinciaLocalidaCodigosPostales está en la posición 4 (índice 4)
-        if (columns.length > 4 && columns[4]) {
-          // COPIAR EXACTAMENTE el valor sin modificaciones
-          const provinciaLocalidadCP = columns[4].trim();
-          
-          // Extraer el código postal (últimos 4 dígitos después del último /)
-          const cpMatch = provinciaLocalidadCP.match(/\/(\d{4})$/);
-          if (cpMatch) {
-            const codigoPostal = cpMatch[1];
-            // Solo agregar si es un código postal válido de 4 dígitos
-            if (/^\d{4}$/.test(codigoPostal)) {
-              codigosPostales.set(codigoPostal, provinciaLocalidadCP);
-              
-              // Debug: mostrar algunos ejemplos
-              if (i <= 5 || codigoPostal === '5000' || codigoPostal === '3265' || codigoPostal === '9000') {
-                console.log(`Mapeo agregado: ${codigoPostal} -> ${provinciaLocalidadCP}`);
-              }
+        const provinciaLocalidadCP = line.trim();
+        
+        // Extraer el código postal (últimos 4 dígitos después del último /)
+        const cpMatch = provinciaLocalidadCP.match(/\/(\d{4})$/);
+        if (cpMatch) {
+          const codigoPostal = cpMatch[1];
+          // Solo agregar si es un código postal válido de 4 dígitos
+          if (/^\d{4}$/.test(codigoPostal)) {
+            codigosPostales.set(codigoPostal, provinciaLocalidadCP);
+            
+            // Debug: mostrar algunos ejemplos
+            if (i <= 5 || codigoPostal === '5000' || codigoPostal === '3265' || codigoPostal === '9000') {
+              console.log(`Mapeo agregado: ${codigoPostal} -> ${provinciaLocalidadCP}`);
             }
           }
         }
