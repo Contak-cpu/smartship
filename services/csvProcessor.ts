@@ -1840,10 +1840,36 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
     const { codigo: celularCodigo, numero: celularNumero } = getCodigoArea(provincia, phoneToProcess);
     
     // Extraer dirección de envío
-    const direccionCompleta = firstLine['Shipping Street'] || firstLine['Billing Street'] || '';
+    const direccionCompleta = firstLine['Shipping Address1'] || firstLine['Billing Address1'] || '';
     const direccionParts = direccionCompleta.split(',');
     const calle = direccionParts[0]?.trim() || '';
-    const numero = direccionParts[1]?.trim() || '';
+    
+    console.log(`[DEBUG ${orderNumber}] Dirección completa: "${direccionCompleta}"`);
+    console.log(`[DEBUG ${orderNumber}] Calle extraída: "${calle}"`);
+    console.log(`[DEBUG ${orderNumber}] Partes de dirección:`, direccionParts);
+    
+    // Extraer número de la dirección (buscar números al final de la calle)
+    let numero = '';
+    if (direccionParts.length > 1) {
+      numero = direccionParts[1]?.trim() || '';
+      console.log(`[DEBUG ${orderNumber}] Número de segunda parte: "${numero}"`);
+    } else {
+      // Si no hay coma, buscar números al final de la calle
+      const numeroMatch = calle.match(/(\d+)(?:\s*[a-zA-Z]*)?\s*$/);
+      if (numeroMatch) {
+        numero = numeroMatch[1];
+        console.log(`[DEBUG ${orderNumber}] Número extraído de calle: "${numero}"`);
+      }
+    }
+    
+    // Si el número contiene letras, limpiarlo
+    numero = numero.replace(/[^0-9]/g, '');
+    if (!numero || numero === '0') {
+      numero = '0'; // Valor por defecto si no se encuentra número
+    }
+    
+    console.log(`[DEBUG ${orderNumber}] Número final: "${numero}"`);
+    
     const piso = firstLine['Shipping Address2'] || firstLine['Billing Address2'] || '';
     
     const localidad = firstLine['Shipping City'] || firstLine['Billing City'] || '';
@@ -1853,6 +1879,10 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
     // Determinar método de envío basado en Shipping Method
     const shippingMethod = firstLine['Shipping Method'] || '';
     console.log(`Procesando orden ${orderNumber}, método de envío: ${shippingMethod}`);
+
+    // Extraer DNI del campo Shipping Company
+    const dni = firstLine['Shipping Company'] || firstLine['Billing Company'] || '';
+    console.log(`[DEBUG ${orderNumber}] DNI extraído de Shipping Company: "${dni}"`);
 
     // Datos base para ambos tipos
     const baseData = {
@@ -1865,7 +1895,7 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
       'Numero Interno': orderNumber.replace('#', ''), // Remover # del número de orden
       'Nombre *': nombreNormalizado || '',
       'Apellido *': apellidoNormalizado || '',
-      'DNI *': '', // Shopify no incluye DNI por defecto
+      'DNI *': dni, // Extraer DNI del campo Shipping Company
       'Email *': firstLine.Email || '',
       'Celular código *': celularCodigo,
       'Celular número *': celularNumero,
@@ -1951,7 +1981,7 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
       domicilios.push({
         ...baseData,
         'Calle *': calleNormalizada,
-        'Número *': numero || '0',
+        'Número *': numero, // Ya está limpio y con valor por defecto
         'Piso': pisoNormalizado,
         'Departamento': pisoNormalizado,
         'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
