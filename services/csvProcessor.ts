@@ -1377,3 +1377,159 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     sucursalCSV: unparseCSV(sucursalesOutput),
   };
 };
+
+// Nueva función para procesar el formato de ventas específico
+export const processVentasOrders = async (csvContent: string): Promise<{
+  domicilioCSV: string;
+  sucursalCSV: string;
+}> => {
+  console.log('Procesando archivo de ventas...');
+  
+  // Cargar datos necesarios
+  const [codigosPostales, sucursales] = await Promise.all([
+    fetchCodigosPostales(),
+    fetchSucursales()
+  ]);
+
+  // Parsear el CSV de ventas
+  const lines = csvContent.split('\n').filter(line => line.trim());
+  if (lines.length < 2) {
+    throw new Error('El archivo CSV no tiene datos válidos');
+  }
+
+  const headers = lines[0].split(';');
+  console.log('Headers del archivo de ventas:', headers);
+
+  const domicilios: any[] = [];
+  const sucursalesOutput: any[] = [];
+
+  // Procesar cada línea de datos
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const values = line.split(';');
+    if (values.length < headers.length) continue;
+
+    // Extraer datos del pedido
+    const numeroOrden = values[0]?.replace(/"/g, '') || '';
+    const nombreComprador = values[11]?.replace(/"/g, '') || '';
+    const apellidoComprador = nombreComprador.split(' ')[0] || '';
+    const nombreCompleto = nombreComprador.split(' ').slice(1).join(' ') || '';
+    const dni = values[12]?.replace(/"/g, '') || '';
+    const email = values[1]?.replace(/"/g, '') || '';
+    const telefono = values[13]?.replace(/"/g, '') || '';
+    const direccion = values[16]?.replace(/"/g, '') || '';
+    const numero = values[17]?.replace(/"/g, '') || '';
+    const piso = values[18]?.replace(/"/g, '') || '';
+    const localidad = values[19]?.replace(/"/g, '') || '';
+    const ciudad = values[20]?.replace(/"/g, '') || '';
+    const codigoPostal = values[21]?.replace(/"/g, '') || '';
+    const provincia = values[22]?.replace(/"/g, '') || '';
+    const medioEnvio = values[24]?.replace(/"/g, '') || '';
+    const valorDeclarado = values[9]?.replace(/"/g, '') || '4500';
+
+    // Separar código de área y número de teléfono
+    const telefonoLimpio = telefono.replace(/[^\d]/g, '');
+    const codigoArea = telefonoLimpio.substring(0, telefonoLimpio.length - 8) || '11';
+    const numeroTelefono = telefonoLimpio.substring(telefonoLimpio.length - 8) || '00000000';
+
+    // Datos base para ambos tipos
+    const baseData = {
+      'Paquete Guardado \nEj: 1': '',
+      'Peso (grs)\nEj: ': '1',
+      'Alto (cm)\nEj: ': '1',
+      'Ancho (cm)\nEj: ': '1',
+      'Profundidad (cm)\nEj: ': '1',
+      'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado,
+      'Numero Interno\nEj: ': numeroOrden,
+      'Nombre *\nEj: ': nombreCompleto,
+      'Apellido *\nEj: ': apellidoComprador,
+      'DNI *\nEj: ': dni,
+      'Email *\nEj: ': email,
+      'Celular código *\nEj: ': codigoArea,
+      'Celular número *\nEj: ': numeroTelefono,
+    };
+
+    // Determinar si es envío a domicilio o sucursal
+    if (medioEnvio.includes('domicilio')) {
+      // Procesar envío a domicilio
+      const calleNormalizada = direccion.replace(/[áàäâ]/g, 'a')
+        .replace(/[éèëê]/g, 'e')
+        .replace(/[íìïî]/g, 'i')
+        .replace(/[óòöô]/g, 'o')
+        .replace(/[úùüû]/g, 'u')
+        .replace(/[ñ]/g, 'n')
+        .replace(/[ÁÀÄÂ]/g, 'A')
+        .replace(/[ÉÈËÊ]/g, 'E')
+        .replace(/[ÍÌÏÎ]/g, 'I')
+        .replace(/[ÓÒÖÔ]/g, 'O')
+        .replace(/[ÚÙÜÛ]/g, 'U')
+        .replace(/[Ñ]/g, 'N')
+        .replace(/[ç]/g, 'c')
+        .replace(/[Ç]/g, 'C')
+        .replace(/['']/g, '')
+        .replace(/[""]/g, '"')
+        .replace(/[–—]/g, '-')
+        .replace(/[…]/g, '...')
+        .replace(/[]/g, '');
+
+      const pisoNormalizado = piso.replace(/[áàäâ]/g, 'a')
+        .replace(/[éèëê]/g, 'e')
+        .replace(/[íìïî]/g, 'i')
+        .replace(/[óòöô]/g, 'o')
+        .replace(/[úùüû]/g, 'u')
+        .replace(/[ñ]/g, 'n')
+        .replace(/[ÁÀÄÂ]/g, 'A')
+        .replace(/[ÉÈËÊ]/g, 'E')
+        .replace(/[ÍÌÏÎ]/g, 'I')
+        .replace(/[ÓÒÖÔ]/g, 'O')
+        .replace(/[ÚÙÜÛ]/g, 'U')
+        .replace(/[Ñ]/g, 'N')
+        .replace(/[ç]/g, 'c')
+        .replace(/[Ç]/g, 'C')
+        .replace(/['']/g, '')
+        .replace(/[""]/g, '"')
+        .replace(/[–—]/g, '-')
+        .replace(/[…]/g, '...')
+        .replace(/[]/g, '');
+
+      // Buscar el formato correcto en el mapeo de códigos postales
+      let formatoProvinciaLocalidadCP = `${provincia} / ${localidad} / ${codigoPostal}`;
+      
+      if (codigosPostales.has(codigoPostal)) {
+        formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
+        console.log(`✅ Código postal ${codigoPostal} encontrado: ${formatoProvinciaLocalidadCP}`);
+      } else {
+        console.log(`❌ Código postal ${codigoPostal} NO encontrado en el mapeo`);
+      }
+
+      domicilios.push({
+        ...baseData,
+        'Calle *\nEj: ': calleNormalizada,
+        'Número *\nEj: ': numero,
+        'Piso\nEj: ': pisoNormalizado,
+        'Departamento\nEj: ': pisoNormalizado,
+        'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657': formatoProvinciaLocalidadCP,
+        'Observaciones\nEj: ': '',
+      });
+
+    } else if (medioEnvio.includes('Punto de retiro') || medioEnvio.includes('sucursal')) {
+      // Procesar envío a sucursal
+      const direccionCompleta = `${direccion} ${numero} ${piso} ${localidad} ${ciudad}`.trim();
+      const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales);
+
+      sucursalesOutput.push({
+        ...baseData,
+        'Sucursal * \nEj: 9 DE JULIO': nombreSucursal,
+      });
+    }
+  }
+
+  console.log('Resultados finales - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
+
+  return {
+    domicilioCSV: unparseCSV(domicilios),
+    sucursalCSV: unparseCSV(sucursalesOutput),
+  };
+};

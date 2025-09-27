@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { ProcessStatus } from './types';
-import { processOrders, fixEncoding, combineCSVs } from './services/csvProcessor';
+import { processOrders, processVentasOrders, fixEncoding, combineCSVs } from './services/csvProcessor';
 import { FileUploader } from './components/FileUploader';
 import { StatusDisplay } from './components/StatusDisplay';
 import { ResultsDisplay } from './components/ResultsDisplay';
@@ -190,7 +190,19 @@ const App: React.FC = () => {
           throw new Error('El archivo está vacío o no se pudo leer.');
         }
         console.log('Starting to process CSV...');
-        const processedData = await processOrders(csvText);
+        
+        // Detectar el tipo de archivo basado en el contenido
+        const isVentasFile = csvText.includes('Número de orden') && csvText.includes('Email') && csvText.includes('Estado de la orden');
+        
+        let processedData;
+        if (isVentasFile) {
+          console.log('Detectado archivo de ventas, usando processVentasOrders...');
+          processedData = await processVentasOrders(csvText);
+        } else {
+          console.log('Detectado archivo de pedidos Andreani, usando processOrders...');
+          processedData = await processOrders(csvText);
+        }
+        
         console.log('Processing completed:', processedData);
         setResults(processedData);
         setStatus(ProcessStatus.SUCCESS);
