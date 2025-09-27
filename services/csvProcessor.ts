@@ -422,7 +422,8 @@ export const combineCSVs = (domicilioCSV: string, sucursalCSV: string): string =
 
 const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
   try {
-    console.log('Iniciando carga de sucursales...');
+    console.log('=== INICIANDO CARGA DE SUCURSALES ===');
+    console.log('Fetching from: /SUCURSALES - DIRECCIONES - Hoja 1.csv');
     const response = await fetch('/SUCURSALES - DIRECCIONES - Hoja 1.csv');
     console.log('Respuesta del servidor:', response.status, response.statusText);
     
@@ -461,8 +462,9 @@ const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
       }
     }
     
-    console.log('Sucursales cargadas:', sucursales.length);
+    console.log('✅ Sucursales cargadas exitosamente:', sucursales.length);
     console.log('Primera sucursal:', sucursales[0]);
+    console.log('=== FIN CARGA DE SUCURSALES ===');
     
     return sucursales;
   } catch (error) {
@@ -751,7 +753,10 @@ const calcularSimilitud = (str1: string, str2: string): number => {
 // Función para encontrar la sucursal correcta basándose en la dirección
 const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucursalInfo[]): string => {
   const direccionNormalizada = direccionPedido.toLowerCase().trim();
+  console.log('=== DEBUG SUCURSAL ===');
   console.log('Buscando sucursal para dirección:', direccionNormalizada);
+  console.log('Total sucursales disponibles:', sucursales.length);
+  console.log('Primeras 3 sucursales:', sucursales.slice(0, 3));
   
   // Extraer componentes específicos de la dirección del pedido
   const componentes = direccionPedido.split(',').map(c => c.trim());
@@ -934,7 +939,10 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
                   'con similitud:', coincidenciasDifusas[0].similitud.toFixed(2));
       return coincidenciasDifusas[0].sucursal.nombre_sucursal;
     } else {
-      console.log('No se encontraron coincidencias');
+      console.log('❌ No se encontraron coincidencias');
+      console.log('Dirección buscada:', direccionNormalizada);
+      console.log('Total sucursales revisadas:', sucursales.length);
+      console.log('=== FIN DEBUG SUCURSAL ===');
       return 'SUCURSAL NO ENCONTRADA';
     }
   }
