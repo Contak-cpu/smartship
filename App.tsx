@@ -194,7 +194,9 @@ const App: React.FC = () => {
         // Detectar el tipo de archivo basado en el contenido
         const isVentasFile = csvText.includes('Número de orden') && csvText.includes('Email') && csvText.includes('Estado de la orden');
         const isShopifyFile = csvText.includes('Name,Email,Financial Status') || 
-                             (csvText.includes('Name') && csvText.includes('Financial Status') && csvText.includes('Shipping Method'));
+                             (csvText.includes('Name') && csvText.includes('Financial Status') && csvText.includes('Shipping Method')) ||
+                             csvText.includes('Andreani - Envio a Domicilio') ||
+                             csvText.includes('Andreani - Despacho Express');
         
         let processedData;
         if (isShopifyFile) {

@@ -283,6 +283,37 @@ const parseAndreaniCSV = (csvText: string): any[] => {
   return data;
 };
 
+// Función específica para parsear CSV de Shopify (usa comas como separador)
+const parseShopifyCSV = <T,>(csvText: string): Promise<T[]> => {
+  return new Promise((resolve, reject) => {
+    console.log('Parseando CSV de Shopify con comas como separador...');
+    
+    // Remover BOM si existe y corregir codificación
+    let cleanText = csvText.replace(/^\uFEFF/, '');
+    cleanText = fixEncoding(cleanText);
+    
+    Papa.parse(cleanText, {
+      header: true,
+      skipEmptyLines: true,
+      delimiter: ',', // Usar comas como separador para Shopify
+      quoteChar: '"',
+      escapeChar: '"',
+      complete: (results: { data: T[]; errors: any[] }) => {
+        if (results.errors.length > 0) {
+          console.error("Shopify CSV Parsing Errors:", results.errors);
+        }
+        console.log('Total de filas de Shopify parseadas:', results.data.length);
+        console.log('Primera fila de Shopify:', results.data[0]);
+        resolve(results.data);
+      },
+      error: (error: Error) => {
+        console.error('Error parsing Shopify CSV:', error);
+        reject(error);
+      },
+    });
+  });
+};
+
 const parseCSV = <T,>(csvText: string): Promise<T[]> => {
   return new Promise((resolve, reject) => {
     console.log('Iniciando parsing del CSV de entrada...');
@@ -1638,8 +1669,8 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
     fetchSucursales()
   ]);
 
-  // Parsear el CSV de Shopify
-  const shopifyOrders = await parseCSV<ShopifyOrder>(shopifyCsvText);
+  // Parsear el CSV de Shopify (usar comas como separador)
+  const shopifyOrders = await parseShopifyCSV(shopifyCsvText);
   
   console.log('Total órdenes de Shopify cargadas:', shopifyOrders.length);
   console.log('Primera orden de ejemplo:', shopifyOrders[0]);
@@ -1733,7 +1764,9 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
 
     // Determinar si es envío a domicilio o sucursal
     if (shippingMethod.includes('domicilio') || shippingMethod.includes('Domicilio') || 
-        shippingMethod.includes('Envio a Domicilio') || shippingMethod.includes('Envío a Domicilio')) {
+        shippingMethod.includes('Envio a Domicilio') || shippingMethod.includes('Envío a Domicilio') ||
+        shippingMethod.includes('Andreani - Envio a Domicilio') || shippingMethod.includes('Andreani - Envío a Domicilio') ||
+        shippingMethod.includes('Andreani - Despacho Express')) {
       
       contadorDomicilios++;
       console.log(`[DOMICILIO ${contadorDomicilios}] Procesando pedido:`, orderNumber);
