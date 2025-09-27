@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { ProcessStatus, ProcessingInfo } from './types';
-import { processOrders, processVentasOrders, fixEncoding, combineCSVs } from './services/csvProcessor';
+import { processOrders, processVentasOrders, processShopifyOrders, fixEncoding, combineCSVs } from './services/csvProcessor';
 import { FileUploader } from './components/FileUploader';
 import { StatusDisplay } from './components/StatusDisplay';
 import { ResultsDisplay } from './components/ResultsDisplay';
@@ -193,9 +193,14 @@ const App: React.FC = () => {
         
         // Detectar el tipo de archivo basado en el contenido
         const isVentasFile = csvText.includes('Número de orden') && csvText.includes('Email') && csvText.includes('Estado de la orden');
+        const isShopifyFile = csvText.includes('Name,Email,Financial Status') || 
+                             (csvText.includes('Name') && csvText.includes('Financial Status') && csvText.includes('Shipping Method'));
         
         let processedData;
-        if (isVentasFile) {
+        if (isShopifyFile) {
+          console.log('Detectado archivo de Shopify, usando processShopifyOrders...');
+          processedData = await processShopifyOrders(csvText);
+        } else if (isVentasFile) {
           console.log('Detectado archivo de ventas, usando processVentasOrders...');
           processedData = await processVentasOrders(csvText);
         } else {
@@ -307,7 +312,7 @@ const App: React.FC = () => {
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-white">SmartShip</h1>
             </div>
-            <p className="text-indigo-400 font-medium text-sm sm:text-base">Transformador de Pedidos Andreani</p>
+            <p className="text-indigo-400 font-medium text-sm sm:text-base">Transformador de Pedidos Multi-Formato</p>
           </div>
           <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3">
             <span className="text-gray-400 text-xs sm:text-sm">
@@ -349,7 +354,7 @@ const App: React.FC = () => {
         )}
       </div>
        <footer className="text-center mt-6 sm:mt-8 text-gray-500 text-xs sm:text-sm">
-        <p>Creado para automatizar la logística de envíos.</p>
+        <p>Soporta archivos CSV de Andreani, Shopify y formatos de ventas.</p>
       </footer>
     </div>
   );

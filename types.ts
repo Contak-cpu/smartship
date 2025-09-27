@@ -77,3 +77,87 @@ export interface AndreaniSucursalOutput {
   'Celular número *': string;
   'Sucursal *': string;
 }
+
+// Represents a row from Shopify orders export CSV
+export interface ShopifyOrder {
+  Name: string; // Order number like #1306
+  Email: string;
+  'Financial Status': string;
+  'Paid at': string;
+  'Fulfillment Status': string;
+  'Fulfilled at': string;
+  'Accepts Marketing': string;
+  Currency: string;
+  Subtotal: string;
+  Shipping: string;
+  Taxes: string;
+  Total: string;
+  'Discount Code': string;
+  'Discount Amount': string;
+  'Shipping Method': string;
+  'Created at': string;
+  'Lineitem quantity': string;
+  'Lineitem name': string;
+  'Lineitem price': string;
+  'Lineitem compare at price': string;
+  'Lineitem sku': string;
+  'Lineitem requires shipping': string;
+  'Lineitem taxable': string;
+  'Lineitem fulfillment status': string;
+  'Billing Name': string;
+  'Billing Street': string;
+  'Billing Address1': string;
+  'Billing Address2': string;
+  'Billing Company': string;
+  'Billing City': string;
+  'Billing Zip': string;
+  'Billing Province': string;
+  'Billing Country': string;
+  'Billing Phone': string;
+  'Shipping Name': string;
+  'Shipping Street': string;
+  'Shipping Address1': string;
+  'Shipping Address2': string;
+  'Shipping Company': string;
+  'Shipping City': string;
+  'Shipping Zip': string;
+  'Shipping Province': string;
+  'Shipping Country': string;
+  'Shipping Phone': string;
+  Notes: string;
+  'Note Attributes': string;
+  'Cancelled at': string;
+  'Payment Method': string;
+  'Payment Reference': string;
+  'Refunded Amount': string;
+  Vendor: string;
+  'Outstanding Balance': string;
+  Employee: string;
+  Location: string;
+  'Device ID': string;
+  Id: string;
+  Tags: string;
+  'Risk Level': string;
+  Source: string;
+  'Lineitem discount': string;
+  'Tax 1 Name': string;
+  'Tax 1 Value': string;
+  'Tax 2 Name': string;
+  'Tax 2 Value': string;
+  'Tax 3 Name': string;
+  'Tax 3 Value': string;
+  'Tax 4 Name': string;
+  'Tax 4 Value': string;
+  'Tax 5 Name': string;
+  'Tax 5 Value': string;
+  Phone: string;
+  'Receipt Number': string;
+  Duties: string;
+  'Billing Province Name': string;
+  'Shipping Province Name': string;
+  'Payment ID': string;
+  'Payment Terms Name': string;
+  'Next Payment Due At': string;
+  'Payment References': string;
+  [key: string]: string; // Allow other properties
+}

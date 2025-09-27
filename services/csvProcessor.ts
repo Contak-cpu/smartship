@@ -1,6 +1,7 @@
 
 import { 
   TiendanubeOrder, 
+  ShopifyOrder,
   AndreaniSucursalInfo,
   AndreaniDomicilioOutput,
   AndreaniSucursalOutput
@@ -1615,4 +1616,403 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       processingLogs: processingLogs
     }
   };
+};
+
+// Nueva función para procesar archivos CSV de Shopify
+export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
+  domicilioCSV: string;
+  sucursalCSV: string;
+  processingInfo?: {
+    totalOrders: number;
+    domiciliosProcessed: number;
+    sucursalesProcessed: number;
+    noProcessed: number;
+    processingLogs: string[];
+  };
+}> => {
+  console.log('=== PROCESANDO ARCHIVO SHOPIFY ===');
+  
+  // Cargar datos necesarios
+  const [codigosPostales, sucursales] = await Promise.all([
+    fetchCodigosPostales(),
+    fetchSucursales()
+  ]);
+
+  // Parsear el CSV de Shopify
+  const shopifyOrders = await parseCSV<ShopifyOrder>(shopifyCsvText);
+  
+  console.log('Total órdenes de Shopify cargadas:', shopifyOrders.length);
+  console.log('Primera orden de ejemplo:', shopifyOrders[0]);
+
+  const domicilios: AndreaniDomicilioOutput[] = [];
+  const sucursalesOutput: AndreaniSucursalOutput[] = [];
+  
+  let contadorDomicilios = 0;
+  let contadorSucursales = 0;
+  let contadorNoProcesados = 0;
+
+  // Agrupar órdenes por número (ya que Shopify puede tener múltiples líneas por orden)
+  const ordersGrouped = new Map<string, ShopifyOrder[]>();
+  
+  for (const order of shopifyOrders) {
+    const orderNumber = order.Name; // Ej: #1306
+    if (!ordersGrouped.has(orderNumber)) {
+      ordersGrouped.set(orderNumber, []);
+    }
+    ordersGrouped.get(orderNumber)!.push(order);
+  }
+
+  console.log('Órdenes agrupadas:', ordersGrouped.size);
+
+  // Procesar cada orden agrupada
+  for (const [orderNumber, orderLines] of ordersGrouped) {
+    // Usar la primera línea para obtener datos del cliente (las líneas adicionales son productos)
+    const firstLine = orderLines[0];
+    
+    // Verificar que el pedido esté pagado
+    if (firstLine['Financial Status'] !== 'paid') {
+      contadorNoProcesados++;
+      console.log(`[NO PROCESADO] Pedido ${orderNumber} - No está pagado: ${firstLine['Financial Status']}`);
+      continue;
+    }
+
+    // Extraer información del cliente
+    const nombreCompleto = firstLine['Shipping Name'] || firstLine['Billing Name'] || '';
+    const [nombre, ...apellidoParts] = nombreCompleto.split(' ');
+    const apellido = apellidoParts.join(' ');
+    
+    // Normalizar nombres
+    const nombreNormalizado = normalizarNombre(nombre);
+    const apellidoNormalizado = normalizarNombre(apellido);
+
+    // Extraer teléfono
+    const telefono = firstLine['Shipping Phone'] || firstLine['Billing Phone'] || firstLine.Phone || '';
+    const cleanPhone = telefono.replace(/\D/g, '');
+    
+    // Remover prefijo internacional +54 si existe
+    let phoneToProcess = cleanPhone;
+    if (phoneToProcess.startsWith('54')) {
+      phoneToProcess = phoneToProcess.substring(2);
+    }
+    
+    // Obtener código de área y número
+    const provincia = firstLine['Shipping Province'] || firstLine['Billing Province'] || '';
+    const { codigo: celularCodigo, numero: celularNumero } = getCodigoArea(provincia, phoneToProcess);
+    
+    // Extraer dirección de envío
+    const direccionCompleta = firstLine['Shipping Street'] || firstLine['Billing Street'] || '';
+    const direccionParts = direccionCompleta.split(',');
+    const calle = direccionParts[0]?.trim() || '';
+    const numero = direccionParts[1]?.trim() || '';
+    const piso = firstLine['Shipping Address2'] || firstLine['Billing Address2'] || '';
+    
+    const localidad = firstLine['Shipping City'] || firstLine['Billing City'] || '';
+    const codigoPostal = firstLine['Shipping Zip'] || firstLine['Billing Zip'] || '';
+    const provinciaCompleta = firstLine['Shipping Province'] || firstLine['Billing Province'] || '';
+    
+    // Determinar método de envío basado en Shipping Method
+    const shippingMethod = firstLine['Shipping Method'] || '';
+    console.log(`Procesando orden ${orderNumber}, método de envío: ${shippingMethod}`);
+
+    // Datos base para ambos tipos
+    const baseData = {
+      'Paquete Guardado Ej:': '',
+      'Peso (grs)': 1,
+      'Alto (cm)': 1,
+      'Ancho (cm)': 1,
+      'Profundidad (cm)': 1,
+      'Valor declarado ($ C/IVA) *': 4500,
+      'Numero Interno': orderNumber.replace('#', ''), // Remover # del número de orden
+      'Nombre *': nombreNormalizado || '',
+      'Apellido *': apellidoNormalizado || '',
+      'DNI *': '', // Shopify no incluye DNI por defecto
+      'Email *': firstLine.Email || '',
+      'Celular código *': celularCodigo,
+      'Celular número *': celularNumero,
+    };
+
+    // Determinar si es envío a domicilio o sucursal
+    if (shippingMethod.includes('domicilio') || shippingMethod.includes('Domicilio') || 
+        shippingMethod.includes('Envio a Domicilio') || shippingMethod.includes('Envío a Domicilio')) {
+      
+      contadorDomicilios++;
+      console.log(`[DOMICILIO ${contadorDomicilios}] Procesando pedido:`, orderNumber);
+      
+      // Buscar el formato de código postal
+      let formatoProvinciaLocalidadCP = '';
+      
+      if (codigosPostales.has(codigoPostal)) {
+        formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
+        console.log(`✅ Código postal ${codigoPostal} encontrado: ${formatoProvinciaLocalidadCP}`);
+      } else {
+        console.log(`❌ Código postal ${codigoPostal} NO encontrado, usando fallback`);
+        formatoProvinciaLocalidadCP = `${provinciaCompleta} / ${localidad} / ${codigoPostal}`;
+      }
+
+      // Normalizar campos de dirección
+      const calleNormalizada = normalizarNombre(calle);
+      const pisoNormalizado = normalizarNombre(piso);
+      
+      domicilios.push({
+        ...baseData,
+        'Calle *': calleNormalizada,
+        'Número *': numero || '0',
+        'Piso': pisoNormalizado,
+        'Departamento': pisoNormalizado,
+        'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
+      });
+
+    } else if (shippingMethod.includes('sucursal') || shippingMethod.includes('Sucursal') || 
+               shippingMethod.includes('Punto de retiro') || shippingMethod.includes('retiro')) {
+      
+      contadorSucursales++;
+      console.log(`[SUCURSAL ${contadorSucursales}] Procesando pedido:`, orderNumber);
+      
+      // Construir dirección completa para buscar sucursal
+      let direccionCompletaSucursal = `${calle} ${numero}`.trim();
+      if (piso && piso.trim()) {
+        direccionCompletaSucursal += `, ${piso}`;
+      }
+      if (localidad && localidad.trim()) {
+        direccionCompletaSucursal += `, ${localidad}`;
+      }
+      if (codigoPostal && codigoPostal.trim()) {
+        direccionCompletaSucursal += `, ${codigoPostal}`;
+      }
+      if (provinciaCompleta && provinciaCompleta.trim()) {
+        direccionCompletaSucursal += `, ${provinciaCompleta}`;
+      }
+
+      const nombreSucursal = findSucursalByAddress(direccionCompletaSucursal, sucursales);
+      console.log('Sucursal encontrada:', nombreSucursal);
+
+      sucursalesOutput.push({
+        ...baseData,
+        'Sucursal *': nombreSucursal,
+      });
+
+    } else {
+      contadorNoProcesados++;
+      console.log(`[NO PROCESADO ${contadorNoProcesados}] Pedido ${orderNumber} - Método de envío desconocido:`, shippingMethod);
+    }
+  }
+
+  console.log('=== RESUMEN DE PROCESAMIENTO (SHOPIFY) ===');
+  console.log(`Total órdenes procesadas: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
+  console.log(`- Domicilios: ${contadorDomicilios}`);
+  console.log(`- Sucursales: ${contadorSucursales}`);
+  console.log(`- No procesados: ${contadorNoProcesados}`);
+
+  // Recopilar logs de procesamiento
+  const processingLogs: string[] = [];
+  processingLogs.push(`Total órdenes cargadas: ${shopifyOrders.length}`);
+  processingLogs.push(`Domicilios procesados: ${contadorDomicilios}`);
+  processingLogs.push(`Sucursales procesadas: ${contadorSucursales}`);
+  processingLogs.push(`No procesados: ${contadorNoProcesados}`);
+  processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
+
+  return {
+    domicilioCSV: unparseCSV(domicilios),
+    sucursalCSV: unparseCSV(sucursalesOutput),
+    processingInfo: {
+      totalOrders: shopifyOrders.length,
+      domiciliosProcessed: contadorDomicilios,
+      sucursalesProcessed: contadorSucursales,
+      noProcessed: contadorNoProcesados,
+      processingLogs: processingLogs
+    }
+  };
+};
+
+// Función auxiliar para obtener código de área (reutilizada del código existente)
+const getCodigoArea = (provincia: string, phone: string): { codigo: string; numero: string } => {
+  const provinciaLower = provincia.toLowerCase();
+  
+  // Buenos Aires
+  if (provinciaLower.includes('buenos aires') || provinciaLower.includes('capital federal')) {
+    if (phone.startsWith('11')) {
+      return { codigo: '11', numero: phone.substring(2) };
+    }
+    if (phone.startsWith('221')) {
+      return { codigo: '221', numero: phone.substring(3) };
+    }
+    if (phone.startsWith('223')) {
+      return { codigo: '223', numero: phone.substring(3) };
+    }
+    if (phone.startsWith('291')) {
+      return { codigo: '291', numero: phone.substring(3) };
+    }
+  }
+  
+  // Córdoba
+  if (provinciaLower.includes('córdoba') || provinciaLower.includes('cordoba')) {
+    if (phone.startsWith('351')) {
+      return { codigo: '351', numero: phone.substring(3) };
+    }
+    if (phone.startsWith('3541')) {
+      return { codigo: '3541', numero: phone.substring(4) };
+    }
+    if (phone.startsWith('358')) {
+      return { codigo: '358', numero: phone.substring(3) };
+    }
+  }
+  
+  // Santa Fe
+  if (provinciaLower.includes('santa fe')) {
+    if (phone.startsWith('341')) {
+      return { codigo: '341', numero: phone.substring(3) };
+    }
+    if (phone.startsWith('342')) {
+      return { codigo: '342', numero: phone.substring(3) };
+    }
+  }
+  
+  // Mendoza
+  if (provinciaLower.includes('mendoza')) {
+    if (phone.startsWith('261')) {
+      return { codigo: '261', numero: phone.substring(3) };
+    }
+  }
+  
+  // Tucumán
+  if (provinciaLower.includes('tucumán') || provinciaLower.includes('tucuman')) {
+    if (phone.startsWith('381')) {
+      return { codigo: '381', numero: phone.substring(3) };
+    }
+  }
+  
+  // Entre Ríos
+  if (provinciaLower.includes('entre ríos') || provinciaLower.includes('entre rios')) {
+    if (phone.startsWith('343')) {
+      return { codigo: '343', numero: phone.substring(3) };
+    }
+  }
+  
+  // Salta
+  if (provinciaLower.includes('salta')) {
+    if (phone.startsWith('387')) {
+      return { codigo: '387', numero: phone.substring(3) };
+    }
+  }
+  
+  // Misiones
+  if (provinciaLower.includes('misiones')) {
+    if (phone.startsWith('376')) {
+      return { codigo: '376', numero: phone.substring(3) };
+    }
+  }
+  
+  // Chaco
+  if (provinciaLower.includes('chaco')) {
+    if (phone.startsWith('362')) {
+      return { codigo: '362', numero: phone.substring(3) };
+    }
+  }
+  
+  // Corrientes
+  if (provinciaLower.includes('corrientes')) {
+    if (phone.startsWith('379')) {
+      return { codigo: '379', numero: phone.substring(3) };
+    }
+  }
+  
+  // Formosa
+  if (provinciaLower.includes('formosa')) {
+    if (phone.startsWith('370')) {
+      return { codigo: '370', numero: phone.substring(3) };
+    }
+  }
+  
+  // Jujuy
+  if (provinciaLower.includes('jujuy')) {
+    if (phone.startsWith('388')) {
+      return { codigo: '388', numero: phone.substring(3) };
+    }
+  }
+  
+  // La Rioja
+  if (provinciaLower.includes('la rioja')) {
+    if (phone.startsWith('380')) {
+      return { codigo: '380', numero: phone.substring(3) };
+    }
+  }
+  
+  // Catamarca
+  if (provinciaLower.includes('catamarca')) {
+    if (phone.startsWith('383')) {
+      return { codigo: '383', numero: phone.substring(3) };
+    }
+  }
+  
+  // Santiago del Estero
+  if (provinciaLower.includes('santiago del estero')) {
+    if (phone.startsWith('385')) {
+      return { codigo: '385', numero: phone.substring(3) };
+    }
+  }
+  
+  // San Juan
+  if (provinciaLower.includes('san juan')) {
+    if (phone.startsWith('264')) {
+      return { codigo: '264', numero: phone.substring(3) };
+    }
+  }
+  
+  // San Luis
+  if (provinciaLower.includes('san luis')) {
+    if (phone.startsWith('2652')) {
+      return { codigo: '2652', numero: phone.substring(4) };
+    }
+  }
+  
+  // La Pampa
+  if (provinciaLower.includes('la pampa')) {
+    if (phone.startsWith('2954')) {
+      return { codigo: '2954', numero: phone.substring(4) };
+    }
+  }
+  
+  // Río Negro
+  if (provinciaLower.includes('río negro') || provinciaLower.includes('rio negro')) {
+    if (phone.startsWith('2944')) {
+      return { codigo: '2944', numero: phone.substring(4) };
+    }
+    if (phone.startsWith('2920')) {
+      return { codigo: '2920', numero: phone.substring(4) };
+    }
+  }
+  
+  // Neuquén
+  if (provinciaLower.includes('neuquén') || provinciaLower.includes('neuquen')) {
+    if (phone.startsWith('299')) {
+      return { codigo: '299', numero: phone.substring(3) };
+    }
+  }
+  
+  // Chubut
+  if (provinciaLower.includes('chubut')) {
+    if (phone.startsWith('297')) {
+      return { codigo: '297', numero: phone.substring(3) };
+    }
+    if (phone.startsWith('2965')) {
+      return { codigo: '2965', numero: phone.substring(4) };
+    }
+  }
+  
+  // Santa Cruz
+  if (provinciaLower.includes('santa cruz')) {
+    if (phone.startsWith('2966')) {
+      return { codigo: '2966', numero: phone.substring(4) };
+    }
+  }
+  
+  // Tierra del Fuego
+  if (provinciaLower.includes('tierra del fuego')) {
+    if (phone.startsWith('2901')) {
+      return { codigo: '2901', numero: phone.substring(4) };
+    }
+  }
+  
+  // Si no encuentra coincidencia, usar los primeros 4 dígitos como fallback
+  return { codigo: phone.substring(0, 4), numero: phone.substring(4) };
 };
