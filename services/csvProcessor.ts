@@ -1252,11 +1252,21 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       // Buscar el formato exacto en el mapeo de códigos postales
       let formatoProvinciaLocalidadCP = `${getColumnValue(order, 22)} / ${getColumnValue(order, 19)} / ${codigoPostalPedido}`;
       
+      console.log(`=== DEBUGGING CÓDIGO POSTAL ${codigoPostalPedido} ===`);
+      console.log('Provincia:', getColumnValue(order, 22));
+      console.log('Localidad:', getColumnValue(order, 19));
+      console.log('Código postal:', codigoPostalPedido);
+      console.log('Formato por defecto:', formatoProvinciaLocalidadCP);
+      console.log('¿Existe en mapeo?', codigosPostales.has(codigoPostalPedido));
+      
       if (codigosPostales.has(codigoPostalPedido)) {
         formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostalPedido)!;
-        console.log(`Código postal ${codigoPostalPedido} encontrado: ${formatoProvinciaLocalidadCP}`);
+        console.log(`✅ Código postal ${codigoPostalPedido} encontrado: ${formatoProvinciaLocalidadCP}`);
       } else {
-        console.log(`Código postal ${codigoPostalPedido} NO encontrado en el mapeo, usando formato por defecto`);
+        console.log(`❌ Código postal ${codigoPostalPedido} NO encontrado en el mapeo`);
+        console.log('Total códigos en mapeo:', codigosPostales.size);
+        console.log('Algunos ejemplos del mapeo:', Array.from(codigosPostales.entries()).slice(0, 3));
+        console.log('Usando formato por defecto:', formatoProvinciaLocalidadCP);
       }
       
       // Normalizar campos de dirección para evitar caracteres inválidos
