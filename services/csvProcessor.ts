@@ -442,6 +442,112 @@ const unparseCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]):
   return csvLines.join('\n');
 };
 
+// Función específica para generar CSV de Shopify con encabezados correctos
+const unparseShopifyCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]): string => {
+  if (data.length === 0) return "";
+  
+  // Usar los encabezados específicos de Andreani con formato correcto
+  const headers = [
+    'Paquete Guardado',
+    'Peso (grs)',
+    'Alto (cm)', 
+    'Ancho (cm)',
+    'Profundidad (cm)',
+    'Valor declarado ($ C/IVA) *',
+    'Numero Interno',
+    'Nombre *',
+    'Apellido *',
+    'DNI *',
+    'Email *',
+    'Celular código *',
+    'Celular número *'
+  ];
+  
+  // Agregar columnas específicas según el tipo de datos
+  if (data.length > 0 && 'Calle *' in data[0]) {
+    // Es un domicilio
+    headers.push('Calle *', 'Número *', 'Piso', 'Departamento', 'Provincia / Localidad / CP *');
+  } else if (data.length > 0 && 'Sucursal *' in data[0]) {
+    // Es una sucursal
+    headers.push('Sucursal *');
+  }
+  
+  // Crear el CSV manualmente
+  const csvLines = [headers.join(';')];
+  
+  data.forEach(row => {
+    const values = headers.map(header => {
+      // Mapear encabezados a las claves del objeto
+      let value = '';
+      switch (header) {
+        case 'Paquete Guardado':
+          value = row['Paquete Guardado Ej:'] || '';
+          break;
+        case 'Peso (grs)':
+          value = row['Peso (grs)'] || '';
+          break;
+        case 'Alto (cm)':
+          value = row['Alto (cm)'] || '';
+          break;
+        case 'Ancho (cm)':
+          value = row['Ancho (cm)'] || '';
+          break;
+        case 'Profundidad (cm)':
+          value = row['Profundidad (cm)'] || '';
+          break;
+        case 'Valor declarado ($ C/IVA) *':
+          value = row['Valor declarado ($ C/IVA) *'] || '';
+          break;
+        case 'Numero Interno':
+          value = row['Numero Interno'] || '';
+          break;
+        case 'Nombre *':
+          value = row['Nombre *'] || '';
+          break;
+        case 'Apellido *':
+          value = row['Apellido *'] || '';
+          break;
+        case 'DNI *':
+          value = row['DNI *'] || '';
+          break;
+        case 'Email *':
+          value = row['Email *'] || '';
+          break;
+        case 'Celular código *':
+          value = row['Celular código *'] || '';
+          break;
+        case 'Celular número *':
+          value = row['Celular número *'] || '';
+          break;
+        case 'Calle *':
+          value = row['Calle *'] || '';
+          break;
+        case 'Número *':
+          value = row['Número *'] || '';
+          break;
+        case 'Piso':
+          value = row['Piso'] || '';
+          break;
+        case 'Departamento':
+          value = row['Departamento'] || '';
+          break;
+        case 'Provincia / Localidad / CP *':
+          value = row['Provincia / Localidad / CP *'] || '';
+          break;
+        case 'Sucursal *':
+          value = row['Sucursal *'] || '';
+          break;
+        default:
+          value = '';
+      }
+      return value;
+    });
+    csvLines.push(values.join(';'));
+  });
+  
+  return csvLines.join('\n');
+};
+
 // Función para combinar domicilios y sucursales en un solo CSV
 export const combineCSVs = (domicilioCSV: string, sucursalCSV: string): string => {
   let combinedContent = '';
@@ -1738,7 +1844,7 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
     const piso = firstLine['Shipping Address2'] || firstLine['Billing Address2'] || '';
     
     const localidad = firstLine['Shipping City'] || firstLine['Billing City'] || '';
-    const codigoPostal = firstLine['Shipping Zip'] || firstLine['Billing Zip'] || '';
+    const codigoPostal = (firstLine['Shipping Zip'] || firstLine['Billing Zip'] || '').replace(/'/g, '').trim();
     const provinciaCompleta = firstLine['Shipping Province'] || firstLine['Billing Province'] || '';
     
     // Determinar método de envío basado en Shipping Method
@@ -1771,15 +1877,68 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
       contadorDomicilios++;
       console.log(`[DOMICILIO ${contadorDomicilios}] Procesando pedido:`, orderNumber);
       
-      // Buscar el formato de código postal
+      // Buscar el formato EXACTO en domiciliosData.ts - TAL CUAL como está definido
       let formatoProvinciaLocalidadCP = '';
+      
+      console.log(`=== DEBUGGING CÓDIGO POSTAL ${codigoPostal} (SHOPIFY) ===`);
+      console.log('¿Existe en mapeo domiciliosData.ts?', codigosPostales.has(codigoPostal));
       
       if (codigosPostales.has(codigoPostal)) {
         formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
-        console.log(`✅ Código postal ${codigoPostal} encontrado: ${formatoProvinciaLocalidadCP}`);
+        console.log(`✅ Código postal ${codigoPostal} encontrado TAL CUAL en domiciliosData.ts: ${formatoProvinciaLocalidadCP}`);
       } else {
-        console.log(`❌ Código postal ${codigoPostal} NO encontrado, usando fallback`);
-        formatoProvinciaLocalidadCP = `${provinciaCompleta} / ${localidad} / ${codigoPostal}`;
+        console.log(`❌ Código postal ${codigoPostal} NO encontrado en domiciliosData.ts`);
+        
+        // FALLBACK: Buscar por PROVINCIA + LOCALIDAD
+        const provinciaPedido = provinciaCompleta.toUpperCase();
+        const localidadPedido = localidad.toUpperCase();
+        
+        console.log(`🔍 Buscando por PROVINCIA + LOCALIDAD: "${provinciaPedido} / ${localidadPedido}"`);
+        
+        let encontradoPorProvinciaLocalidad = false;
+        for (const [cp, formato] of codigosPostales.entries()) {
+          // Normalizar para comparar (quitar acentos y convertir a mayúsculas)
+          const formatoNormalizado = formato
+            .replace(/[áàäâ]/g, 'A')
+            .replace(/[éèëê]/g, 'E')
+            .replace(/[íìïî]/g, 'I')
+            .replace(/[óòöô]/g, 'O')
+            .replace(/[úùüû]/g, 'U')
+            .replace(/[ñ]/g, 'N')
+            .toUpperCase();
+          
+          const provinciaNormalizada = provinciaPedido
+            .replace(/[áàäâ]/g, 'A')
+            .replace(/[éèëê]/g, 'E')
+            .replace(/[íìïî]/g, 'I')
+            .replace(/[óòöô]/g, 'O')
+            .replace(/[úùüû]/g, 'U')
+            .replace(/[ñ]/g, 'N');
+          
+          const localidadNormalizada = localidadPedido
+            .replace(/[áàäâ]/g, 'A')
+            .replace(/[éèëê]/g, 'E')
+            .replace(/[íìïî]/g, 'I')
+            .replace(/[óòöô]/g, 'O')
+            .replace(/[úùüû]/g, 'U')
+            .replace(/[ñ]/g, 'N');
+          
+          const patronBusqueda = `${provinciaNormalizada} / ${localidadNormalizada}`;
+          
+          if (formatoNormalizado.includes(patronBusqueda)) {
+            formatoProvinciaLocalidadCP = formato;
+            encontradoPorProvinciaLocalidad = true;
+            console.log(`✅ Encontrado por PROVINCIA + LOCALIDAD: ${formato}`);
+            break;
+          }
+        }
+        
+        if (!encontradoPorProvinciaLocalidad) {
+          console.log(`❌ No encontrado por PROVINCIA + LOCALIDAD tampoco`);
+          // Último fallback: formato por defecto
+          formatoProvinciaLocalidadCP = `${provinciaPedido} / ${localidadPedido} / ${codigoPostal}`;
+          console.log('Usando formato de fallback final:', formatoProvinciaLocalidadCP);
+        }
       }
 
       // Normalizar campos de dirección
@@ -1845,8 +2004,8 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
 
   return {
-    domicilioCSV: unparseCSV(domicilios),
-    sucursalCSV: unparseCSV(sucursalesOutput),
+    domicilioCSV: unparseShopifyCSV(domicilios),
+    sucursalCSV: unparseShopifyCSV(sucursalesOutput),
     processingInfo: {
       totalOrders: shopifyOrders.length,
       domiciliosProcessed: contadorDomicilios,
