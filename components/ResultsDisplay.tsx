@@ -22,14 +22,10 @@ const ExcelIcon = () => (
     </svg>
 );
 
-// Función para agregar encabezados combinados
-const addCombinedHeaders = (sheet: any, type: 'domicilio' | 'sucursal') => {
+// Función para agregar encabezados combinados (versión simple que no mueve datos)
+const addCombinedHeadersSimple = (sheet: any, type: 'domicilio' | 'sucursal') => {
     // Insertar fila vacía al inicio para los encabezados combinados
     XLSX.utils.sheet_add_aoa(sheet, [['']], { origin: 'A1' });
-    
-    // Mover todos los datos una fila hacia abajo (incluyendo los encabezados originales)
-    const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1:A1');
-    range.s.r = 1; // Empezar desde la fila 2
     
     // Configurar los encabezados combinados según el tipo
     if (type === 'domicilio') {
@@ -174,13 +170,11 @@ const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
         if (domicilioCSV && domicilioCSV.trim()) {
             const domicilioData = csvToJsonForExcel(domicilioCSV);
             if (domicilioData.length > 0) {
+                // Crear hoja directamente sin modificar encabezados
                 const domicilioSheet = XLSX.utils.json_to_sheet(domicilioData);
                 
-                // Agregar encabezados combinados para domicilios
-                addCombinedHeaders(domicilioSheet, 'domicilio');
-                
-                // Restaurar encabezados originales con formato completo en la fila 2
-                restoreOriginalHeaders(domicilioSheet, 'domicilio');
+                // Agregar encabezados combinados para domicilios (sin mover datos)
+                addCombinedHeadersSimple(domicilioSheet, 'domicilio');
                 
                 XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'Domicilios');
             }
@@ -190,13 +184,11 @@ const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
         if (sucursalCSV && sucursalCSV.trim()) {
             const sucursalData = csvToJsonForExcel(sucursalCSV);
             if (sucursalData.length > 0) {
+                // Crear hoja directamente sin modificar encabezados
                 const sucursalSheet = XLSX.utils.json_to_sheet(sucursalData);
                 
-                // Agregar encabezados combinados para sucursales
-                addCombinedHeaders(sucursalSheet, 'sucursal');
-                
-                // Restaurar encabezados originales con formato completo en la fila 2
-                restoreOriginalHeaders(sucursalSheet, 'sucursal');
+                // Agregar encabezados combinados para sucursales (sin mover datos)
+                addCombinedHeadersSimple(sucursalSheet, 'sucursal');
                 
                 XLSX.utils.book_append_sheet(workbook, sucursalSheet, 'Sucursales');
             }
