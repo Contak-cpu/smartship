@@ -423,12 +423,12 @@ export const combineCSVs = (domicilioCSV: string, sucursalCSV: string): string =
 const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
   try {
     console.log('=== INICIANDO CARGA DE SUCURSALES ===');
-    console.log('Fetching from: /SUCURSALES - DIRECCIONES - Hoja 1.csv');
-    const response = await fetch('/SUCURSALES - DIRECCIONES - Hoja 1.csv');
+    console.log('Fetching from: /sucursales-simple.csv');
+    const response = await fetch('/sucursales-simple.csv');
     console.log('Respuesta del servidor:', response.status, response.statusText);
     
     if (!response.ok) {
-      throw new Error(`No se pudo cargar SUCURSALES - DIRECCIONES - Hoja 1.csv: ${response.statusText}`);
+      throw new Error(`No se pudo cargar sucursales-simple.csv: ${response.statusText}`);
     }
     
     // Asegurar que la respuesta se lea como UTF-8
@@ -469,7 +469,7 @@ const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
     return sucursales;
   } catch (error) {
     console.error("Failed to fetch or parse sucursales.csv:", error);
-    throw new Error("No se pudo cargar el archivo de sucursales. Asegúrese que 'public/sucursales.csv' exista.");
+    throw new Error("No se pudo cargar el archivo de sucursales. Asegúrese que 'public/sucursales-simple.csv' exista.");
   }
 };
 
