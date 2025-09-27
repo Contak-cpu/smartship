@@ -29787,7 +29787,9 @@ export const DOMICILIOS_DATA = [
   "TUCUMAN / TRANQUITAS / 4101",
   "TUCUMAN / TRES ALMACENES / 4132",
   "TUCUMAN / TRES POZOS / 4178",
-  "TUCUMAN / TRES SARGENTOS / 4101"
+  "TUCUMAN / TRES SARGENTOS / 4101",
+  "BUENOS AIRES / PINEYRO / 1870",
+  "SANTA FE / VILLA CANAS / 2607"
 ];
 
 // Función para obtener el mapeo de códigos postales
@@ -29800,7 +29802,11 @@ export const getDomiciliosMapping = (): Map<string, string> => {
     if (cpMatch) {
       const codigoPostal = cpMatch[1];
       if (/^\d{4,5}$/.test(codigoPostal)) {
-        mapping.set(codigoPostal, domicilio);
+        // Solo guardar la primera ocurrencia para cada código postal
+        // (esto evita sobrescribir con múltiples localidades)
+        if (!mapping.has(codigoPostal)) {
+          mapping.set(codigoPostal, domicilio);
+        }
       }
     }
   }
