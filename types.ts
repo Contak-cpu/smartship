@@ -6,6 +6,15 @@ export enum ProcessStatus {
   ERROR = 'ERROR',
 }
 
+// Información de procesamiento para mostrar en el frontend
+export interface ProcessingInfo {
+  totalOrders: number;
+  domiciliosProcessed: number;
+  sucursalesProcessed: number;
+  noProcessed: number;
+  processingLogs: string[];
+}
+
 // Represents a row from the input Tiendanube CSV
 export interface TiendanubeOrder {
   'Número de orden': string;

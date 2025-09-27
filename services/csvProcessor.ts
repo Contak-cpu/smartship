@@ -1334,9 +1334,24 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
   console.log(`- No procesados: ${contadorNoProcesados}`);
   console.log('Final results - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
 
+  // Recopilar logs de procesamiento
+  const processingLogs: string[] = [];
+  processingLogs.push(`Total pedidos cargados: ${tiendanubeOrders.length}`);
+  processingLogs.push(`Domicilios procesados: ${contadorDomicilios}`);
+  processingLogs.push(`Sucursales procesadas: ${contadorSucursales}`);
+  processingLogs.push(`No procesados: ${contadorNoProcesados}`);
+  processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
+
   return {
     domicilioCSV: unparseCSV(domicilios),
     sucursalCSV: unparseCSV(sucursalesOutput),
+    processingInfo: {
+      totalOrders: tiendanubeOrders.length,
+      domiciliosProcessed: contadorDomicilios,
+      sucursalesProcessed: contadorSucursales,
+      noProcessed: contadorNoProcesados,
+      processingLogs: processingLogs
+    }
   };
 };
 
@@ -1563,8 +1578,23 @@ export const processVentasOrders = async (csvContent: string): Promise<{
   console.log(`- No procesados: ${contadorNoProcesados}`);
   console.log('Resultados finales - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
 
+  // Recopilar logs de procesamiento
+  const processingLogs: string[] = [];
+  processingLogs.push(`Total pedidos cargados: ${lines.length - 1}`);
+  processingLogs.push(`Domicilios procesados: ${contadorDomicilios}`);
+  processingLogs.push(`Sucursales procesadas: ${contadorSucursales}`);
+  processingLogs.push(`No procesados: ${contadorNoProcesados}`);
+  processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
+
   return {
     domicilioCSV: unparseCSV(domicilios),
     sucursalCSV: unparseCSV(sucursalesOutput),
+    processingInfo: {
+      totalOrders: lines.length - 1,
+      domiciliosProcessed: contadorDomicilios,
+      sucursalesProcessed: contadorSucursales,
+      noProcessed: contadorNoProcesados,
+      processingLogs: processingLogs
+    }
   };
 };

@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { ProcessStatus } from './types';
+import { ProcessStatus, ProcessingInfo } from './types';
 import { processOrders, processVentasOrders, fixEncoding, combineCSVs } from './services/csvProcessor';
 import { FileUploader } from './components/FileUploader';
 import { StatusDisplay } from './components/StatusDisplay';
@@ -154,7 +154,7 @@ const App: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<{ domicilioCSV: string; sucursalCSV: string } | null>(null);
+  const [results, setResults] = useState<{ domicilioCSV: string; sucursalCSV: string; processingInfo: ProcessingInfo } | null>(null);
   const [showPricing, setShowPricing] = useState(true);
   const [showBasicPlan, setShowBasicPlan] = useState(false);
   const [showProPlan, setShowProPlan] = useState(false);
@@ -337,7 +337,7 @@ const App: React.FC = () => {
           </button>
         </div>
 
-        <StatusDisplay status={status} error={error} />
+        <StatusDisplay status={status} error={error} processingInfo={results?.processingInfo} />
         
         {status === ProcessStatus.SUCCESS && results && (
           <ResultsDisplay 

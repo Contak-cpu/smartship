@@ -1,13 +1,14 @@
 
 import React from 'react';
-import { ProcessStatus } from '../types';
+import { ProcessStatus, ProcessingInfo } from '../types';
 
 interface StatusDisplayProps {
   status: ProcessStatus;
   error: string | null;
+  processingInfo?: ProcessingInfo;
 }
 
-export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error }) => {
+export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, processingInfo }) => {
   const getStatusContent = () => {
     switch (status) {
       case ProcessStatus.IDLE:
@@ -36,9 +37,40 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error }) =
         <p className={`font-medium ${color} text-sm sm:text-base`}>{text}</p>
       </div>
       {status === ProcessStatus.SUCCESS && (
-        <p className="text-center text-gray-300 text-xs sm:text-sm font-medium">
-          ¡Ahora solo tienes que copiar los datos de cada hoja en la plantilla de Andreani Original!
-        </p>
+        <div className="text-center">
+          <p className="text-gray-300 text-xs sm:text-sm font-medium mb-3">
+            ¡Ahora solo tienes que copiar los datos de cada hoja en la plantilla de Andreani Original!
+          </p>
+          
+          {processingInfo && (
+            <div className="bg-gray-800/50 p-3 rounded-lg border border-gray-600">
+              <h4 className="text-green-400 font-semibold text-sm mb-2">📊 Resumen de Procesamiento</h4>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-gray-700/50 p-2 rounded">
+                  <div className="text-gray-400">Total cargados:</div>
+                  <div className="text-white font-semibold">{processingInfo.totalOrders}</div>
+                </div>
+                <div className="bg-green-700/20 p-2 rounded border border-green-600/30">
+                  <div className="text-green-400">Domicilios:</div>
+                  <div className="text-green-300 font-semibold">{processingInfo.domiciliosProcessed}</div>
+                </div>
+                <div className="bg-teal-700/20 p-2 rounded border border-teal-600/30">
+                  <div className="text-teal-400">Sucursales:</div>
+                  <div className="text-teal-300 font-semibold">{processingInfo.sucursalesProcessed}</div>
+                </div>
+                <div className="bg-red-700/20 p-2 rounded border border-red-600/30">
+                  <div className="text-red-400">No procesados:</div>
+                  <div className="text-red-300 font-semibold">{processingInfo.noProcessed}</div>
+                </div>
+              </div>
+              {processingInfo.noProcessed > 0 && (
+                <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-600/30 rounded text-yellow-300 text-xs">
+                  ⚠️ {processingInfo.noProcessed} pedidos no se procesaron. Verifica los medios de envío en el archivo original.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
