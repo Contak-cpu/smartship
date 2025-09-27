@@ -446,30 +446,30 @@ const unparseCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]):
 const unparseShopifyCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]): string => {
   if (data.length === 0) return "";
   
-  // Usar los encabezados específicos de Andreani con formato correcto
+  // Usar los encabezados originales con formato "Ej:" y saltos de línea
   const headers = [
-    'Paquete Guardado',
-    'Peso (grs)',
-    'Alto (cm)', 
-    'Ancho (cm)',
-    'Profundidad (cm)',
-    'Valor declarado ($ C/IVA) *',
-    'Numero Interno',
-    'Nombre *',
-    'Apellido *',
-    'DNI *',
-    'Email *',
-    'Celular código *',
-    'Celular número *'
+    'Paquete Guardado \nEj: 1',
+    'Peso (grs)\nEj: ',
+    'Alto (cm)\nEj: ', 
+    'Ancho (cm)\nEj: ',
+    'Profundidad (cm)\nEj: ',
+    'Valor declarado ($ C/IVA) *\nEj: ',
+    'Numero Interno\nEj: ',
+    'Nombre *\nEj: ',
+    'Apellido *\nEj: ',
+    'DNI *\nEj: ',
+    'Email *\nEj: ',
+    'Celular código *\nEj: ',
+    'Celular número *\nEj: '
   ];
   
   // Agregar columnas específicas según el tipo de datos
   if (data.length > 0 && 'Calle *' in data[0]) {
     // Es un domicilio
-    headers.push('Calle *', 'Número *', 'Piso', 'Departamento', 'Provincia / Localidad / CP *');
+    headers.push('Calle *\nEj: ', 'Número *\nEj: ', 'Piso\nEj: ', 'Departamento\nEj: ', 'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657', 'Observaciones\nEj: ');
   } else if (data.length > 0 && 'Sucursal *' in data[0]) {
     // Es una sucursal
-    headers.push('Sucursal *');
+    headers.push('Sucursal * \nEj: 9 DE JULIO');
   }
   
   // Crear el CSV manualmente
@@ -480,61 +480,64 @@ const unparseShopifyCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutp
       // Mapear encabezados a las claves del objeto
       let value = '';
       switch (header) {
-        case 'Paquete Guardado':
+        case 'Paquete Guardado \nEj: 1':
           value = row['Paquete Guardado Ej:'] || '';
           break;
-        case 'Peso (grs)':
+        case 'Peso (grs)\nEj: ':
           value = row['Peso (grs)'] || '';
           break;
-        case 'Alto (cm)':
+        case 'Alto (cm)\nEj: ':
           value = row['Alto (cm)'] || '';
           break;
-        case 'Ancho (cm)':
+        case 'Ancho (cm)\nEj: ':
           value = row['Ancho (cm)'] || '';
           break;
-        case 'Profundidad (cm)':
+        case 'Profundidad (cm)\nEj: ':
           value = row['Profundidad (cm)'] || '';
           break;
-        case 'Valor declarado ($ C/IVA) *':
+        case 'Valor declarado ($ C/IVA) *\nEj: ':
           value = row['Valor declarado ($ C/IVA) *'] || '';
           break;
-        case 'Numero Interno':
+        case 'Numero Interno\nEj: ':
           value = row['Numero Interno'] || '';
           break;
-        case 'Nombre *':
+        case 'Nombre *\nEj: ':
           value = row['Nombre *'] || '';
           break;
-        case 'Apellido *':
+        case 'Apellido *\nEj: ':
           value = row['Apellido *'] || '';
           break;
-        case 'DNI *':
+        case 'DNI *\nEj: ':
           value = row['DNI *'] || '';
           break;
-        case 'Email *':
+        case 'Email *\nEj: ':
           value = row['Email *'] || '';
           break;
-        case 'Celular código *':
+        case 'Celular código *\nEj: ':
           value = row['Celular código *'] || '';
           break;
-        case 'Celular número *':
+        case 'Celular número *\nEj: ':
           value = row['Celular número *'] || '';
           break;
-        case 'Calle *':
+        case 'Calle *\nEj: ':
           value = row['Calle *'] || '';
           break;
-        case 'Número *':
+        case 'Número *\nEj: ':
           value = row['Número *'] || '';
           break;
-        case 'Piso':
+        case 'Piso\nEj: ':
           value = row['Piso'] || '';
           break;
-        case 'Departamento':
+        case 'Departamento\nEj: ':
           value = row['Departamento'] || '';
           break;
-        case 'Provincia / Localidad / CP *':
+        case 'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657':
           value = row['Provincia / Localidad / CP *'] || '';
           break;
-        case 'Sucursal *':
+        case 'Observaciones\nEj: ':
+          value = ''; // Campo observaciones siempre vacío
+          break;
+        case 'Sucursal * \nEj: 9 DE JULIO':
           value = row['Sucursal *'] || '';
           break;
         default:
