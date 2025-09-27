@@ -1401,18 +1401,26 @@ export const processVentasOrders = async (csvContent: string): Promise<{
         .replace(/[]/g, '');
 
       // Buscar el formato correcto en el mapeo de códigos postales
-      let formatoProvinciaLocalidadCP = 'FORMATO NO ENCONTRADO';
+      // Usar el mismo sistema que processOrders
+      let formatoProvinciaLocalidadCP = `${provincia} / ${ciudad} / ${codigoPostal}`;
       
-      console.log(`🔍 Buscando código postal: "${codigoPostal}"`);
-      console.log(`📊 Total códigos en mapeo: ${codigosPostales.size}`);
+      console.log(`=== DEBUGGING CÓDIGO POSTAL ${codigoPostal} (VENTAS) ===`);
+      console.log('Provincia:', provincia);
+      console.log('Ciudad:', ciudad);
+      console.log('Código postal:', codigoPostal);
+      console.log('Formato por defecto:', formatoProvinciaLocalidadCP);
+      console.log('¿Existe en mapeo?', codigosPostales.has(codigoPostal));
       
       if (codigosPostales.has(codigoPostal)) {
         formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
         console.log(`✅ Código postal ${codigoPostal} encontrado: ${formatoProvinciaLocalidadCP}`);
       } else {
         console.log(`❌ Código postal ${codigoPostal} NO encontrado en el mapeo`);
+        console.log('Total códigos en mapeo:', codigosPostales.size);
+        console.log('Algunos ejemplos del mapeo:', Array.from(codigosPostales.entries()).slice(0, 3));
+        console.log('Usando formato por defecto:', formatoProvinciaLocalidadCP);
         
-        // Buscar por PROVINCIA / LOCALIDAD
+        // Buscar por PROVINCIA / LOCALIDAD como fallback
         console.log(`🔍 Buscando por PROVINCIA / LOCALIDAD: "${provincia} / ${ciudad}"`);
         
         // Buscar en todos los valores del mapeo
@@ -1476,16 +1484,7 @@ export const processVentasOrders = async (csvContent: string): Promise<{
         
         if (!encontradoPorProvinciaLocalidad) {
           console.log(`❌ No encontrado por PROVINCIA / LOCALIDAD tampoco`);
-          
-          // Buscar códigos similares para debug
-          const codigosSimilares = Array.from(codigosPostales.keys()).filter(cp => 
-            cp.includes(codigoPostal) || codigoPostal.includes(cp)
-          );
-          console.log('🔍 Códigos similares encontrados:', codigosSimilares.slice(0, 3));
-          
-          // Mostrar algunos ejemplos del mapeo para debug
-          console.log('📋 Primeros 5 códigos en mapeo:', Array.from(codigosPostales.keys()).slice(0, 5));
-          console.log('📋 Últimos 5 códigos en mapeo:', Array.from(codigosPostales.keys()).slice(-5));
+          console.log('Manteniendo formato por defecto:', formatoProvinciaLocalidadCP);
         }
       }
 
