@@ -423,12 +423,12 @@ export const combineCSVs = (domicilioCSV: string, sucursalCSV: string): string =
 const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
   try {
     console.log('=== INICIANDO CARGA DE SUCURSALES ===');
-    console.log('Fetching from: /sucursales-simple.csv');
-    const response = await fetch('/sucursales-simple.csv');
+    console.log('Fetching from: /SUCURSALES - DIRECCIONES - Hoja 1.csv');
+    const response = await fetch('/SUCURSALES - DIRECCIONES - Hoja 1.csv');
     console.log('Respuesta del servidor:', response.status, response.statusText);
     
     if (!response.ok) {
-      throw new Error(`No se pudo cargar sucursales-simple.csv: ${response.statusText}`);
+      throw new Error(`No se pudo cargar SUCURSALES - DIRECCIONES - Hoja 1.csv: ${response.statusText}`);
     }
     
     // Asegurar que la respuesta se lea como UTF-8
@@ -449,16 +449,27 @@ const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
     const sucursales: AndreaniSucursalInfo[] = [];
     
     for (const line of lines) {
+      // Manejar líneas que pueden tener comillas
+      let processedLine = line.trim();
+      
+      // Remover comillas al inicio y final de la línea
+      processedLine = processedLine.replace(/^"|"$/g, '');
+      
       // Buscar la primera coma que separa el nombre de la dirección
-      const firstCommaIndex = line.indexOf(',');
+      const firstCommaIndex = processedLine.indexOf(',');
       if (firstCommaIndex > 0) {
-        const nombreSucursal = line.substring(0, firstCommaIndex).trim();
-        const direccion = line.substring(firstCommaIndex + 1).trim().replace(/^"|"$/g, ''); // Remover comillas
+        const nombreSucursal = processedLine.substring(0, firstCommaIndex).trim();
+        const direccion = processedLine.substring(firstCommaIndex + 1).trim();
         
-        sucursales.push({
-          nombre_sucursal: nombreSucursal,
-          direccion: direccion
-        });
+        // Remover comillas adicionales de la dirección
+        const direccionLimpia = direccion.replace(/^"|"$/g, '');
+        
+        if (nombreSucursal && direccionLimpia) {
+          sucursales.push({
+            nombre_sucursal: nombreSucursal,
+            direccion: direccionLimpia
+          });
+        }
       }
     }
     
@@ -469,7 +480,7 @@ const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
     return sucursales;
   } catch (error) {
     console.error("Failed to fetch or parse sucursales.csv:", error);
-    throw new Error("No se pudo cargar el archivo de sucursales. Asegúrese que 'public/sucursales-simple.csv' exista.");
+    throw new Error("No se pudo cargar el archivo de sucursales. Asegúrese que 'public/SUCURSALES - DIRECCIONES - Hoja 1.csv' exista.");
   }
 };
 
