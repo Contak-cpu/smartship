@@ -1504,15 +1504,81 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       } else {
         console.log(`❌ Código postal ${codigoPostal} NO encontrado en el mapeo`);
         
-        // Buscar códigos similares para debug
-        const codigosSimilares = Array.from(codigosPostales.keys()).filter(cp => 
-          cp.includes(codigoPostal) || codigoPostal.includes(cp)
-        );
-        console.log('🔍 Códigos similares encontrados:', codigosSimilares.slice(0, 3));
+        // Buscar por PROVINCIA / LOCALIDAD
+        console.log(`🔍 Buscando por PROVINCIA / LOCALIDAD: "${provincia} / ${ciudad}"`);
         
-        // Mostrar algunos ejemplos del mapeo para debug
-        console.log('📋 Primeros 5 códigos en mapeo:', Array.from(codigosPostales.keys()).slice(0, 5));
-        console.log('📋 Últimos 5 códigos en mapeo:', Array.from(codigosPostales.keys()).slice(-5));
+        // Buscar en todos los valores del mapeo
+        let encontradoPorProvinciaLocalidad = false;
+        for (const [cp, formato] of codigosPostales.entries()) {
+          // Normalizar para comparar (quitar acentos y convertir a mayúsculas)
+          const formatoNormalizado = formato
+            .replace(/[áàäâ]/g, 'a')
+            .replace(/[éèëê]/g, 'e')
+            .replace(/[íìïî]/g, 'i')
+            .replace(/[óòöô]/g, 'o')
+            .replace(/[úùüû]/g, 'u')
+            .replace(/[ñ]/g, 'n')
+            .replace(/[ÁÀÄÂ]/g, 'A')
+            .replace(/[ÉÈËÊ]/g, 'E')
+            .replace(/[ÍÌÏÎ]/g, 'I')
+            .replace(/[ÓÒÖÔ]/g, 'O')
+            .replace(/[ÚÙÜÛ]/g, 'U')
+            .replace(/[Ñ]/g, 'N')
+            .toUpperCase();
+          
+          const provinciaNormalizada = provincia
+            .replace(/[áàäâ]/g, 'a')
+            .replace(/[éèëê]/g, 'e')
+            .replace(/[íìïî]/g, 'i')
+            .replace(/[óòöô]/g, 'o')
+            .replace(/[úùüû]/g, 'u')
+            .replace(/[ñ]/g, 'n')
+            .replace(/[ÁÀÄÂ]/g, 'A')
+            .replace(/[ÉÈËÊ]/g, 'E')
+            .replace(/[ÍÌÏÎ]/g, 'I')
+            .replace(/[ÓÒÖÔ]/g, 'O')
+            .replace(/[ÚÙÜÛ]/g, 'U')
+            .replace(/[Ñ]/g, 'N')
+            .toUpperCase();
+          
+          const ciudadNormalizada = ciudad
+            .replace(/[áàäâ]/g, 'a')
+            .replace(/[éèëê]/g, 'e')
+            .replace(/[íìïî]/g, 'i')
+            .replace(/[óòöô]/g, 'o')
+            .replace(/[úùüû]/g, 'u')
+            .replace(/[ñ]/g, 'n')
+            .replace(/[ÁÀÄÂ]/g, 'A')
+            .replace(/[ÉÈËÊ]/g, 'E')
+            .replace(/[ÍÌÏÎ]/g, 'I')
+            .replace(/[ÓÒÖÔ]/g, 'O')
+            .replace(/[ÚÙÜÛ]/g, 'U')
+            .replace(/[Ñ]/g, 'N')
+            .toUpperCase();
+          
+          const patronBusqueda = `${provinciaNormalizada} / ${ciudadNormalizada}`;
+          
+          if (formatoNormalizado.includes(patronBusqueda)) {
+            formatoProvinciaLocalidadCP = formato;
+            encontradoPorProvinciaLocalidad = true;
+            console.log(`✅ Encontrado por PROVINCIA / LOCALIDAD: ${formato}`);
+            break;
+          }
+        }
+        
+        if (!encontradoPorProvinciaLocalidad) {
+          console.log(`❌ No encontrado por PROVINCIA / LOCALIDAD tampoco`);
+          
+          // Buscar códigos similares para debug
+          const codigosSimilares = Array.from(codigosPostales.keys()).filter(cp => 
+            cp.includes(codigoPostal) || codigoPostal.includes(cp)
+          );
+          console.log('🔍 Códigos similares encontrados:', codigosSimilares.slice(0, 3));
+          
+          // Mostrar algunos ejemplos del mapeo para debug
+          console.log('📋 Primeros 5 códigos en mapeo:', Array.from(codigosPostales.keys()).slice(0, 5));
+          console.log('📋 Últimos 5 códigos en mapeo:', Array.from(codigosPostales.keys()).slice(-5));
+        }
       }
 
       domicilios.push({
