@@ -471,63 +471,84 @@ const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
   }
 };
 
-// Función para cargar el mapeo de códigos postales desde Domicilios - Hoja 1.csv
+// Función para cargar el mapeo de códigos postales desde el archivo de configuración
 const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
   try {
-    console.log('Iniciando carga de códigos postales...');
-    const response = await fetch('/provincia/localidad-enviosadomicilio.txt');
+    console.log('Iniciando carga de códigos postales desde archivo de configuración...');
+    const response = await fetch('/EnvioMasivoAndreani.xlsm - Configuracion.csv');
     console.log('Respuesta del servidor para códigos postales:', response.status, response.statusText);
     
     if (!response.ok) {
-      throw new Error(`No se pudo cargar provincia/localidad-enviosadomicilio.txt: ${response.statusText}`);
+      throw new Error(`No se pudo cargar EnvioMasivoAndreani.xlsm - Configuracion.csv: ${response.statusText}`);
     }
     
     // Asegurar que la respuesta se lea como UTF-8
     const arrayBuffer = await response.arrayBuffer();
     const decoder = new TextDecoder('utf-8');
     let csvText = decoder.decode(arrayBuffer);
-    console.log('Tamaño del archivo de códigos postales:', csvText.length, 'caracteres');
+    console.log('Tamaño del archivo de configuración:', csvText.length, 'caracteres');
     console.log('Primeras 200 caracteres:', csvText.substring(0, 200));
     
     // Corregir problemas de codificación (versión suave)
     csvText = fixEncodingSoft(csvText);
     
-    // Parsear las líneas del archivo
+    // Parsear el CSV
     const lines = csvText.split('\n').filter(line => line.trim());
-    console.log('Número de líneas en códigos postales:', lines.length);
+    console.log('Número de líneas en archivo de configuración:', lines.length);
     console.log('Primera línea:', lines[0]);
     
     const codigosPostales = new Map<string, string>();
     
-    // Procesar todas las líneas del archivo
-    for (let i = 0; i < lines.length; i++) {
+    // Procesar todas las líneas del archivo (saltando el header)
+    for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (line) {
-        // El formato es: PROVINCIA / LOCALIDAD / CP	TAB	PROVINCIA / LOCALIDAD / CP
-        // Usar solo la primera parte (antes del tab)
-        const parts = line.split('\t');
-        const provinciaLocalidadCP = parts[0].trim();
+        // El formato es: Sucursal,,ItemNoGenerico,,ProvinciaLocalidaCodigosPostales,ProvinciaLocalidaCodigosPostalesLlegaHoy
+        const columns = line.split(',');
         
-        // Extraer el código postal (últimos 4 dígitos después del último /)
-        const cpMatch = provinciaLocalidadCP.match(/\/(\d{4})$/);
-        if (cpMatch) {
-          const codigoPostal = cpMatch[1];
-          // Solo agregar si es un código postal válido de 4 dígitos
-          if (/^\d{4}$/.test(codigoPostal)) {
-            // Normalizar el formato para que sea consistente
-            const formatoNormalizado = provinciaLocalidadCP
-              .replace(/CORDOBA/g, 'CÓRDOBA')
-              .replace(/ENTRE RIOS/g, 'ENTRE RÍOS')
-              .replace(/CHUBUT/g, 'CHUBUT')
-              .replace(/SANTA FE/g, 'SANTA FE')
-              .replace(/TUCUMAN/g, 'TUCUMÁN')
-              .replace(/MENDOZA/g, 'MENDOZA');
-            
-            codigosPostales.set(codigoPostal, formatoNormalizado);
-            
-            // Debug: mostrar algunos ejemplos
-            if (i < 5 || codigoPostal === '5000' || codigoPostal === '3265' || codigoPostal === '9000') {
-              console.log(`Mapeo agregado: ${codigoPostal} -> ${formatoNormalizado}`);
+        // La columna ProvinciaLocalidaCodigosPostales está en la posición 4 (índice 4)
+        if (columns.length > 4 && columns[4]) {
+          let provinciaLocalidadCP = columns[4].trim();
+          
+          // Corregir problemas de encoding específicos
+          provinciaLocalidadCP = provinciaLocalidadCP
+            .replace(/CORDOBA/g, 'CÓRDOBA')
+            .replace(/ENTRE RIOS/g, 'ENTRE RÍOS')
+            .replace(/TUCUMAN/g, 'TUCUMÁN')
+            .replace(/SANTA FE/g, 'SANTA FE')
+            .replace(/CHUBUT/g, 'CHUBUT')
+            .replace(/MENDOZA/g, 'MENDOZA')
+            .replace(/BUENOS AIRES/g, 'BUENOS AIRES')
+            .replace(/CAPITAL FEDERAL/g, 'CAPITAL FEDERAL')
+            .replace(/RIO NEGRO/g, 'RÍO NEGRO')
+            .replace(/NEUQUEN/g, 'NEUQUÉN')
+            .replace(/SANTIAGO DEL ESTERO/g, 'SANTIAGO DEL ESTERO')
+            .replace(/SAN JUAN/g, 'SAN JUAN')
+            .replace(/SAN LUIS/g, 'SAN LUIS')
+            .replace(/LA PAMPA/g, 'LA PAMPA')
+            .replace(/SANTA CRUZ/g, 'SANTA CRUZ')
+            .replace(/TIERRA DEL FUEGO/g, 'TIERRA DEL FUEGO')
+            .replace(/FORMOSA/g, 'FORMOSA')
+            .replace(/CHACO/g, 'CHACO')
+            .replace(/CORRIENTES/g, 'CORRIENTES')
+            .replace(/MISIONES/g, 'MISIONES')
+            .replace(/SALTA/g, 'SALTA')
+            .replace(/JUJUY/g, 'JUJUY')
+            .replace(/LA RIOJA/g, 'LA RIOJA')
+            .replace(/CATAMARCA/g, 'CATAMARCA');
+          
+          // Extraer el código postal (últimos 4 dígitos después del último /)
+          const cpMatch = provinciaLocalidadCP.match(/\/(\d{4})$/);
+          if (cpMatch) {
+            const codigoPostal = cpMatch[1];
+            // Solo agregar si es un código postal válido de 4 dígitos
+            if (/^\d{4}$/.test(codigoPostal)) {
+              codigosPostales.set(codigoPostal, provinciaLocalidadCP);
+              
+              // Debug: mostrar algunos ejemplos
+              if (i <= 5 || codigoPostal === '5000' || codigoPostal === '3265' || codigoPostal === '9000') {
+                console.log(`Mapeo agregado: ${codigoPostal} -> ${provinciaLocalidadCP}`);
+              }
             }
           }
         }
@@ -539,8 +560,8 @@ const fetchCodigosPostales = async (): Promise<Map<string, string>> => {
     
     return codigosPostales;
   } catch (error) {
-    console.error("Failed to fetch or parse provincia/localidad-enviosadomicilio.txt:", error);
-    throw new Error("No se pudo cargar el archivo de códigos postales. Asegúrese que 'provincia/localidad-enviosadomicilio.txt' exista.");
+    console.error("Failed to fetch or parse EnvioMasivoAndreani.xlsm - Configuracion.csv:", error);
+    throw new Error("No se pudo cargar el archivo de configuración. Asegúrese que 'EnvioMasivoAndreani.xlsm - Configuracion.csv' exista en la carpeta public.");
   }
 };
 

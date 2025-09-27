@@ -12,58 +12,96 @@ import { ProPlanPage } from './components/ProPlanPage';
 import { useAuth } from './hooks/useAuth';
 
 // Función para normalizar caracteres problemáticos en el CSV final
+// PERO PRESERVAR el campo "Provincia / Localidad / CP" que debe mantener acentos
 const normalizarCSVFinal = (content: string): string => {
-  return content
-    // Normalizar acentos comunes
-    .replace(/[áàäâ]/g, 'a')
-    .replace(/[éèëê]/g, 'e')
-    .replace(/[íìïî]/g, 'i')
-    .replace(/[óòöô]/g, 'o')
-    .replace(/[úùüû]/g, 'u')
-    .replace(/[ñ]/g, 'n')
-    .replace(/[ÁÀÄÂ]/g, 'A')
-    .replace(/[ÉÈËÊ]/g, 'E')
-    .replace(/[ÍÌÏÎ]/g, 'I')
-    .replace(/[ÓÒÖÔ]/g, 'O')
-    .replace(/[ÚÙÜÛ]/g, 'U')
-    .replace(/[Ñ]/g, 'N')
-    // Otros caracteres especiales
-    .replace(/[ç]/g, 'c')
-    .replace(/[Ç]/g, 'C')
-    // Manejar apóstrofes y caracteres especiales comunes
-    .replace(/['']/g, '') // Remover apóstrofes curvos y rectos
-    .replace(/[""]/g, '"') // Normalizar comillas
-    .replace(/[–—]/g, '-') // Normalizar guiones
-    .replace(/[…]/g, '...') // Normalizar puntos suspensivos
-    // Remover caracteres de reemplazo inválidos
-    .replace(/[]/g, '')
-    .replace(/[^\x00-\x7F]/g, (char) => {
-      const charCode = char.charCodeAt(0);
-      switch (charCode) {
-        case 225: return 'a'; // á
-        case 233: return 'e'; // é
-        case 237: return 'i'; // í
-        case 243: return 'o'; // ó
-        case 250: return 'u'; // ú
-        case 241: return 'n'; // ñ
-        case 193: return 'A'; // Á
-        case 201: return 'E'; // É
-        case 205: return 'I'; // Í
-        case 211: return 'O'; // Ó
-        case 218: return 'U'; // Ú
-        case 209: return 'N'; // Ñ
-        case 8217: return ''; // ' (apóstrofe curvo derecho)
-        case 8216: return ''; // ' (apóstrofe curvo izquierdo)
-        case 8218: return ''; // ‚ (comilla simple baja)
-        case 8219: return ''; // ' (comilla simple alta)
-        case 8220: return '"'; // " (comilla doble izquierda)
-        case 8221: return '"'; // " (comilla doble derecha)
-        case 8211: return '-'; // – (guión en)
-        case 8212: return '-'; // — (guión em)
-        case 8230: return '...'; // … (puntos suspensivos)
-        default: return ''; // Remover otros caracteres no ASCII
+  // Dividir el contenido en líneas
+  const lines = content.split('\n');
+  const processedLines = lines.map(line => {
+    // Si la línea contiene el campo "Provincia / Localidad / CP", preservarlo
+    if (line.includes('Provincia / Localidad / CP') || line.includes('BUENOS AIRES /') || line.includes('CÓRDOBA /') || line.includes('ENTRE RÍOS /') || line.includes('CHUBUT /') || line.includes('TUCUMÁN /')) {
+      // Para líneas de datos (no headers), preservar el campo de provincia/localidad/CP
+      const fields = line.split(';');
+      if (fields.length >= 19) { // Línea de datos
+        // Normalizar todos los campos excepto el de provincia/localidad/CP (índice 18)
+        const normalizedFields = fields.map((field, index) => {
+          if (index === 18) { // Campo "Provincia / Localidad / CP"
+            return field; // Preservar tal como está
+          } else {
+            // Normalizar otros campos
+            return field
+              .replace(/[áàäâ]/g, 'a')
+              .replace(/[éèëê]/g, 'e')
+              .replace(/[íìïî]/g, 'i')
+              .replace(/[óòöô]/g, 'o')
+              .replace(/[úùüû]/g, 'u')
+              .replace(/[ñ]/g, 'n')
+              .replace(/[ÁÀÄÂ]/g, 'A')
+              .replace(/[ÉÈËÊ]/g, 'E')
+              .replace(/[ÍÌÏÎ]/g, 'I')
+              .replace(/[ÓÒÖÔ]/g, 'O')
+              .replace(/[ÚÙÜÛ]/g, 'U')
+              .replace(/[Ñ]/g, 'N')
+              .replace(/[ç]/g, 'c')
+              .replace(/[Ç]/g, 'C')
+              .replace(/['']/g, '')
+              .replace(/[""]/g, '"')
+              .replace(/[–—]/g, '-')
+              .replace(/[…]/g, '...')
+              .replace(/[]/g, '')
+              .replace(/[^\x00-\x7F]/g, (char) => {
+                const charCode = char.charCodeAt(0);
+                switch (charCode) {
+                  case 225: return 'a'; case 233: return 'e'; case 237: return 'i'; case 243: return 'o'; case 250: return 'u'; case 241: return 'n';
+                  case 193: return 'A'; case 201: return 'E'; case 205: return 'I'; case 211: return 'O'; case 218: return 'U'; case 209: return 'N';
+                  case 8217: case 8216: case 8218: case 8219: return '';
+                  case 8220: case 8221: return '"';
+                  case 8211: case 8212: return '-';
+                  case 8230: return '...';
+                  default: return '';
+                }
+              });
+          }
+        });
+        return normalizedFields.join(';');
       }
-    });
+    }
+    
+    // Para otras líneas, aplicar normalización completa
+    return line
+      .replace(/[áàäâ]/g, 'a')
+      .replace(/[éèëê]/g, 'e')
+      .replace(/[íìïî]/g, 'i')
+      .replace(/[óòöô]/g, 'o')
+      .replace(/[úùüû]/g, 'u')
+      .replace(/[ñ]/g, 'n')
+      .replace(/[ÁÀÄÂ]/g, 'A')
+      .replace(/[ÉÈËÊ]/g, 'E')
+      .replace(/[ÍÌÏÎ]/g, 'I')
+      .replace(/[ÓÒÖÔ]/g, 'O')
+      .replace(/[ÚÙÜÛ]/g, 'U')
+      .replace(/[Ñ]/g, 'N')
+      .replace(/[ç]/g, 'c')
+      .replace(/[Ç]/g, 'C')
+      .replace(/['']/g, '')
+      .replace(/[""]/g, '"')
+      .replace(/[–—]/g, '-')
+      .replace(/[…]/g, '...')
+      .replace(/[]/g, '')
+      .replace(/[^\x00-\x7F]/g, (char) => {
+        const charCode = char.charCodeAt(0);
+        switch (charCode) {
+          case 225: return 'a'; case 233: return 'e'; case 237: return 'i'; case 243: return 'o'; case 250: return 'u'; case 241: return 'n';
+          case 193: return 'A'; case 201: return 'E'; case 205: return 'I'; case 211: return 'O'; case 218: return 'U'; case 209: return 'N';
+          case 8217: case 8216: case 8218: case 8219: return '';
+          case 8220: case 8221: return '"';
+          case 8211: case 8212: return '-';
+          case 8230: return '...';
+          default: return '';
+        }
+      });
+  });
+  
+  return processedLines.join('\n');
 };
 
 // Función para limpiar problemas de separación de filas en el CSV
