@@ -29795,8 +29795,8 @@ export const getDomiciliosMapping = (): Map<string, string> => {
   const mapping = new Map<string, string>();
   
   for (const domicilio of DOMICILIOS_DATA) {
-    // Extraer código postal (últimos 4 o 5 dígitos después del último /)
-    const cpMatch = domicilio.match(/\/(\d{4,5})$/);
+    // Extraer código postal (últimos 4 o 5 dígitos al final de la línea)
+    const cpMatch = domicilio.match(/(\d{4,5})$/);
     if (cpMatch) {
       const codigoPostal = cpMatch[1];
       if (/^\d{4,5}$/.test(codigoPostal)) {
