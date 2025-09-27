@@ -1781,9 +1781,10 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
     const shippingMethod = firstLine['Shipping Method'] || '';
     console.log(`Procesando orden ${orderNumber}, método de envío: ${shippingMethod}`);
 
-    // Extraer DNI del campo Shipping Company
-    const dni = firstLine['Shipping Company'] || firstLine['Billing Company'] || '';
-    console.log(`[DEBUG ${orderNumber}] DNI extraído de Shipping Company: "${dni}"`);
+    // Extraer DNI del campo Shipping Company y limpiarlo (solo números)
+    const dniRaw = firstLine['Shipping Company'] || firstLine['Billing Company'] || '';
+    const dni = dniRaw.replace(/[^0-9]/g, ''); // Solo números
+    console.log(`[DEBUG ${orderNumber}] DNI extraído de Shipping Company: "${dniRaw}" -> Limpiado: "${dni}"`);
 
     // Datos base para ambos tipos
     const baseData = {
