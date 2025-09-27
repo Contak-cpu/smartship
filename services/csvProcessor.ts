@@ -1865,7 +1865,7 @@ export const processShopifyOrders = async (shopifyCsvText: string): Promise<{
     
     // Si no se encontró en la segunda parte, buscar en toda la dirección
     if (!numero) {
-      const numeroMatch = direccion.match(/\d+/);
+      const numeroMatch = direccionCompleta.match(/\d+/);
       if (numeroMatch) {
         numero = numeroMatch[0];
         console.log(`[DEBUG ${orderNumber}] Número encontrado en dirección completa: "${numero}"`);
