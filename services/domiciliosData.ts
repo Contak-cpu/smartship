@@ -29789,7 +29789,7 @@ export const DOMICILIOS_DATA = [
   "TUCUMAN / TRES POZOS / 4178",
   "TUCUMAN / TRES SARGENTOS / 4101",
   "BUENOS AIRES / PINEYRO / 1870",
-  "SANTA FE / VILLA CANAS / 2607"
+  "SANTA FE / VILLA CAÑAS / 2607"
 ];
 
 // Función para obtener el mapeo de códigos postales
