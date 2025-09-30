@@ -1195,7 +1195,7 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       'Ancho (cm)': 1,
       'Profundidad (cm)': 1,
       'Valor declarado ($ C/IVA) *': 4500,
-      'Numero Interno': getColumnValue(order, 0), // Número de orden
+      'Numero Interno': `#${getColumnValue(order, 0)}`, // Número de orden con #
       'Nombre *': nombreNormalizado || '',
       'Apellido *': apellidoNormalizado || '',
       'DNI *': getColumnValue(order, 12), // DNI / CUIT
@@ -1444,7 +1444,7 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       'Ancho (cm)\nEj: ': '1',
       'Profundidad (cm)\nEj: ': '1',
       'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado,
-      'Numero Interno\nEj: ': numeroOrden,
+      'Numero Interno\nEj: ': `#${numeroOrden}`,
       'Nombre *\nEj: ': nombreCompleto,
       'Apellido *\nEj: ': apellidoComprador,
       'DNI *\nEj: ': dni,
