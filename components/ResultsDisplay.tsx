@@ -140,91 +140,50 @@ const restoreOriginalHeaders = (sheet: any, type: 'domicilio' | 'sucursal') => {
 };
 
 // Función para crear hoja con estructura de Andreani (encabezados + ejemplo + datos)
-const createAndreaniSheet = (data: any[], sheetName: string, type: 'domicilio' | 'sucursal') => {
-  const workbook = XLSX.utils.book_new();
+const createAndreaniSheet = (data: any[], type: 'domicilio' | 'sucursal') => {
   const worksheet = XLSX.utils.aoa_to_sheet([]);
   
   // Definir encabezados según el tipo
   let headers: string[];
-  let exampleRow: any[];
   
   if (type === 'domicilio') {
     headers = [
-      'Paquete Guardado Ej: Mistery',
-      'Peso (grs) Ej: ',
-      'Alto (cm) Ej: ',
-      'Ancho (cm) Ej: ',
-      'Profundidad (cm) Ej: ',
-      'Valor declarado ($ C/IVA) * Ej: ',
-      'Numero Interno Ej: ',
-      'Nombre * Ej: ',
-      'Apellido * Ej: ',
-      'DNI * Ej: ',
-      'Email * Ej: ',
-      'Celular código * Ej: ',
-      'Celular número * Ej: ',
-      'Calle * Ej: ',
-      'Número * Ej: ',
-      'Piso Ej: ',
-      'Departamento Ej: ',
-      'Provincia / Localidad / CP * Ej: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657',
-      'Observaciones Ej: '
-    ];
-    
-    exampleRow = [
-      'Mistery', // Paquete Guardado
-      '', // Peso (grs)
-      '', // Alto (cm)
-      '', // Ancho (cm)
-      '', // Profundidad (cm)
-      '', // Valor declarado ($ C/IVA) *
-      '', // Numero Interno
-      '', // Nombre *
-      '', // Apellido *
-      '', // DNI *
-      '', // Email *
-      '', // Celular código *
-      '', // Celular número *
-      '', // Calle *
-      '', // Número *
-      '', // Piso
-      '', // Departamento
-      'BUENOS AIRES / 11 DE SEPTIEMBRE / 1657', // Provincia / Localidad / CP *
-      ''  // Observaciones
+      'Paquete Guardado',
+      'Peso (grs)',
+      'Alto (cm)',
+      'Ancho (cm)',
+      'Profundidad (cm)',
+      'Valor declarado ($ C/IVA) *',
+      'Numero Interno',
+      'Nombre *',
+      'Apellido *',
+      'DNI *',
+      'Email *',
+      'Celular código *',
+      'Celular número *',
+      'Calle *',
+      'Número *',
+      'Piso',
+      'Departamento',
+      'Provincia / Localidad / CP *',
+      'Observaciones'
     ];
   } else {
     headers = [
-      'Paquete Guardado Ej: Mistery',
-      'Peso (grs) Ej: ',
-      'Alto (cm) Ej: ',
-      'Ancho (cm) Ej: ',
-      'Profundidad (cm) Ej: ',
-      'Valor declarado ($ C/IVA) * Ej: ',
-      'Numero Interno Ej: ',
-      'Nombre * Ej: ',
-      'Apellido * Ej: ',
-      'DNI * Ej: ',
-      'Email * Ej: ',
-      'Celular código * Ej: ',
-      'Celular número * Ej: ',
-      'Sucursal * Ej: 9 DE JULIO'
-    ];
-    
-    exampleRow = [
-      'Mistery', // Paquete Guardado
-      '', // Peso (grs)
-      '', // Alto (cm)
-      '', // Ancho (cm)
-      '', // Profundidad (cm)
-      '', // Valor declarado ($ C/IVA) *
-      '', // Numero Interno
-      '', // Nombre *
-      '', // Apellido *
-      '', // DNI *
-      '', // Email *
-      '', // Celular código *
-      '', // Celular número *
-      '9 DE JULIO'  // Sucursal *
+      'Paquete Guardado',
+      'Peso (grs)',
+      'Alto (cm)',
+      'Ancho (cm)',
+      'Profundidad (cm)',
+      'Valor declarado ($ C/IVA) *',
+      'Numero Interno',
+      'Nombre *',
+      'Apellido *',
+      'DNI *',
+      'Email *',
+      'Celular código *',
+      'Celular número *',
+      'Sucursal *'
     ];
   }
   
@@ -242,14 +201,13 @@ const createAndreaniSheet = (data: any[], sheetName: string, type: 'domicilio' |
   XLSX.utils.sheet_add_aoa(worksheet, [combinedHeadersRow], { origin: 'A1' });
   
   // Agregar encabezados detallados en la fila 2
-  const originalHeaders = headers.map(header => header.split(' Ej:')[0]);
-  XLSX.utils.sheet_add_aoa(worksheet, [originalHeaders], { origin: 'A2' });
+  XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: 'A2' });
   
   // Agregar datos reales a partir de la fila 3
   if (data.length > 0) {
     const dataRows = data.map(row => {
       const values: any[] = [];
-      originalHeaders.forEach(header => {
+      headers.forEach(header => {
         // Buscar el valor correspondiente en el objeto de datos
         const key = Object.keys(row).find(k => 
           header.includes(k.split(' ')[0]) || 
@@ -281,8 +239,7 @@ const createAndreaniSheet = (data: any[], sheetName: string, type: 'domicilio' |
     // La celda N1 no se combina (solo una celda para "Destino")
   }
   
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-  return workbook;
+  return worksheet;
 };
 
 // Función para exportar a Excel desde datos ya convertidos
@@ -292,15 +249,13 @@ const exportToExcelFromData = (domicilioData: any[], sucursalData: any[]) => {
     
     // Crear hoja de domicilios si existe contenido
     if (domicilioData.length > 0) {
-      const domicilioWorkbook = createAndreaniSheet(domicilioData, 'A domicilio', 'domicilio');
-      const domicilioSheet = domicilioWorkbook.Sheets['A domicilio'];
+      const domicilioSheet = createAndreaniSheet(domicilioData, 'domicilio');
       XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'A domicilio');
     }
     
     // Crear hoja de sucursales si existe contenido
     if (sucursalData.length > 0) {
-      const sucursalWorkbook = createAndreaniSheet(sucursalData, 'A sucursal', 'sucursal');
-      const sucursalSheet = sucursalWorkbook.Sheets['A sucursal'];
+      const sucursalSheet = createAndreaniSheet(sucursalData, 'sucursal');
       XLSX.utils.book_append_sheet(workbook, sucursalSheet, 'A sucursal');
     }
     
