@@ -148,11 +148,11 @@ const createAndreaniSheet = (data: any[], type: 'domicilio' | 'sucursal') => {
   
   if (type === 'domicilio') {
     headers = [
-      'Paquete Guardado\nEj: Mistery',
-      'Peso (grs)\nEj: ',
-      'Alto (cm)\nEj: ',
-      'Ancho (cm)\nEj: ',
-      'Profundidad (cm)\nEj: ',
+      'Paquete Guardado \nEj: Mistery',
+      'Peso (grs) \nEj: ',
+      'Alto (cm) \nEj: ',
+      'Ancho (cm) \nEj: ',
+      'Profundidad (cm) \nEj: ',
       'Valor declarado ($ C/IVA) *\nEj: ',
       'Numero Interno\nEj: ',
       'Nombre *\nEj: ',
@@ -170,11 +170,11 @@ const createAndreaniSheet = (data: any[], type: 'domicilio' | 'sucursal') => {
     ];
   } else {
     headers = [
-      'Paquete Guardado\nEj: Mistery',
-      'Peso (grs)\nEj: ',
-      'Alto (cm)\nEj: ',
-      'Ancho (cm)\nEj: ',
-      'Profundidad (cm)\nEj: ',
+      'Paquete Guardado \nEj: Mistery',
+      'Peso (grs) \nEj: ',
+      'Alto (cm) \nEj: ',
+      'Ancho (cm) \nEj: ',
+      'Profundidad (cm) \nEj: ',
       'Valor declarado ($ C/IVA) *\nEj: ',
       'Numero Interno\nEj: ',
       'Nombre *\nEj: ',
@@ -404,11 +404,11 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
     
     if (type === 'domicilio') {
       headers = [
-        'Paquete Guardado\nEj: Mistery',
-        'Peso (grs)\nEj: ',
-        'Alto (cm)\nEj: ',
-        'Ancho (cm)\nEj: ',
-        'Profundidad (cm)\nEj: ',
+        'Paquete Guardado \nEj: Mistery',
+        'Peso (grs) \nEj: ',
+        'Alto (cm) \nEj: ',
+        'Ancho (cm) \nEj: ',
+        'Profundidad (cm) \nEj: ',
         'Valor declarado ($ C/IVA) *\nEj: ',
         'Numero Interno\nEj: ',
         'Nombre *\nEj: ',
@@ -430,11 +430,11 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
       ];
     } else {
       headers = [
-        'Paquete Guardado\nEj: Mistery',
-        'Peso (grs)\nEj: ',
-        'Alto (cm)\nEj: ',
-        'Ancho (cm)\nEj: ',
-        'Profundidad (cm)\nEj: ',
+        'Paquete Guardado \nEj: Mistery',
+        'Peso (grs) \nEj: ',
+        'Alto (cm) \nEj: ',
+        'Ancho (cm) \nEj: ',
+        'Profundidad (cm) \nEj: ',
         'Valor declarado ($ C/IVA) *\nEj: ',
         'Numero Interno\nEj: ',
         'Nombre *\nEj: ',
