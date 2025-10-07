@@ -148,42 +148,42 @@ const createAndreaniSheet = (data: any[], type: 'domicilio' | 'sucursal') => {
   
   if (type === 'domicilio') {
     headers = [
-      'Paquete Guardado',
-      'Peso (grs)',
-      'Alto (cm)',
-      'Ancho (cm)',
-      'Profundidad (cm)',
-      'Valor declarado ($ C/IVA) *',
-      'Numero Interno',
-      'Nombre *',
-      'Apellido *',
-      'DNI *',
-      'Email *',
-      'Celular código *',
-      'Celular número *',
-      'Calle *',
-      'Número *',
-      'Piso',
-      'Departamento',
-      'Provincia / Localidad / CP *',
-      'Observaciones'
+      'Paquete Guardado\nEj: Mistery',
+      'Peso (grs)\nEj: ',
+      'Alto (cm)\nEj: ',
+      'Ancho (cm)\nEj: ',
+      'Profundidad (cm)\nEj: ',
+      'Valor declarado ($ C/IVA) *\nEj: ',
+      'Numero Interno\nEj: ',
+      'Nombre *\nEj: ',
+      'Apellido *\nEj: ',
+      'DNI *\nEj: ',
+      'Email *\nEj: ',
+      'Celular código *\nEj: ',
+      'Celular número *\nEj: ',
+      'Calle *\nEj: ',
+      'Número *\nEj: ',
+      'Piso\nEj: ',
+      'Departamento\nEj: ',
+      'Provincia / Localidad / CP *\nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657',
+      'Observaciones\nEj: '
     ];
   } else {
     headers = [
-      'Paquete Guardado',
-      'Peso (grs)',
-      'Alto (cm)',
-      'Ancho (cm)',
-      'Profundidad (cm)',
-      'Valor declarado ($ C/IVA) *',
-      'Numero Interno',
-      'Nombre *',
-      'Apellido *',
-      'DNI *',
-      'Email *',
-      'Celular código *',
-      'Celular número *',
-      'Sucursal *'
+      'Paquete Guardado\nEj: Mistery',
+      'Peso (grs)\nEj: ',
+      'Alto (cm)\nEj: ',
+      'Ancho (cm)\nEj: ',
+      'Profundidad (cm)\nEj: ',
+      'Valor declarado ($ C/IVA) *\nEj: ',
+      'Numero Interno\nEj: ',
+      'Nombre *\nEj: ',
+      'Apellido *\nEj: ',
+      'DNI *\nEj: ',
+      'Email *\nEj: ',
+      'Celular código *\nEj: ',
+      'Celular número *\nEj: ',
+      'Sucursal *\nEj: 9 DE JULIO'
     ];
   }
   
@@ -205,9 +205,12 @@ const createAndreaniSheet = (data: any[], type: 'domicilio' | 'sucursal') => {
   
   // Agregar datos reales a partir de la fila 3
   if (data.length > 0) {
+    // Crear encabezados sin "Ej:" para el mapeo
+    const cleanHeaders = headers.map(header => header.split('\n')[0]);
+    
     const dataRows = data.map(row => {
       const values: any[] = [];
-      headers.forEach(header => {
+      cleanHeaders.forEach(header => {
         // Buscar el valor correspondiente en el objeto de datos
         const key = Object.keys(row).find(k => 
           header.includes(k.split(' ')[0]) || 
@@ -401,25 +404,25 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
     
     if (type === 'domicilio') {
       headers = [
-        'Paquete Guardado Ej: Mistery',
-        'Peso (grs) Ej: ',
-        'Alto (cm) Ej: ',
-        'Ancho (cm) Ej: ',
-        'Profundidad (cm) Ej: ',
-        'Valor declarado ($ C/IVA) * Ej: ',
-        'Numero Interno Ej: ',
-        'Nombre * Ej: ',
-        'Apellido * Ej: ',
-        'DNI * Ej: ',
-        'Email * Ej: ',
-        'Celular código * Ej: ',
-        'Celular número * Ej: ',
-        'Calle * Ej: ',
-        'Número * Ej: ',
-        'Piso Ej: ',
-        'Departamento Ej: ',
-        'Provincia / Localidad / CP * Ej: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657',
-        'Observaciones Ej: '
+        'Paquete Guardado\nEj: Mistery',
+        'Peso (grs)\nEj: ',
+        'Alto (cm)\nEj: ',
+        'Ancho (cm)\nEj: ',
+        'Profundidad (cm)\nEj: ',
+        'Valor declarado ($ C/IVA) *\nEj: ',
+        'Numero Interno\nEj: ',
+        'Nombre *\nEj: ',
+        'Apellido *\nEj: ',
+        'DNI *\nEj: ',
+        'Email *\nEj: ',
+        'Celular código *\nEj: ',
+        'Celular número *\nEj: ',
+        'Calle *\nEj: ',
+        'Número *\nEj: ',
+        'Piso\nEj: ',
+        'Departamento\nEj: ',
+        'Provincia / Localidad / CP *\nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657',
+        'Observaciones\nEj: '
       ];
       
       exampleRow = [
@@ -427,20 +430,20 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
       ];
     } else {
       headers = [
-        'Paquete Guardado Ej: Mistery',
-        'Peso (grs) Ej: ',
-        'Alto (cm) Ej: ',
-        'Ancho (cm) Ej: ',
-        'Profundidad (cm) Ej: ',
-        'Valor declarado ($ C/IVA) * Ej: ',
-        'Numero Interno Ej: ',
-        'Nombre * Ej: ',
-        'Apellido * Ej: ',
-        'DNI * Ej: ',
-        'Email * Ej: ',
-        'Celular código * Ej: ',
-        'Celular número * Ej: ',
-        'Sucursal * Ej: 9 DE JULIO'
+        'Paquete Guardado\nEj: Mistery',
+        'Peso (grs)\nEj: ',
+        'Alto (cm)\nEj: ',
+        'Ancho (cm)\nEj: ',
+        'Profundidad (cm)\nEj: ',
+        'Valor declarado ($ C/IVA) *\nEj: ',
+        'Numero Interno\nEj: ',
+        'Nombre *\nEj: ',
+        'Apellido *\nEj: ',
+        'DNI *\nEj: ',
+        'Email *\nEj: ',
+        'Celular código *\nEj: ',
+        'Celular número *\nEj: ',
+        'Sucursal *\nEj: 9 DE JULIO'
       ];
       
       exampleRow = [
@@ -458,11 +461,11 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
       combinedHeadersRow = ['Datos de envío', '', '', '', '', '', '', 'Destinatario', '', '', '', '', '', 'Destino'];
     }
     
-    const originalHeaders = headers.map(header => header.split(' Ej:')[0]);
+    const originalHeaders = headers.map(header => header.split('\n')[0]);
     
     const csvLines = [
       combinedHeadersRow.join(';'), // Fila 1: Encabezados combinados
-      originalHeaders.join(';') // Fila 2: Encabezados detallados
+      headers.join(';') // Fila 2: Encabezados detallados con "Ej:"
     ];
     
     // Agregar datos reales a partir de la fila 3
