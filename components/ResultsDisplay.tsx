@@ -172,24 +172,24 @@ const createAndreaniSheet = (data: any[], sheetName: string, type: 'domicilio' |
     ];
     
     exampleRow = [
-      '', // Paquete Guardado
-      '', // Peso
-      '', // Alto
-      '', // Ancho
-      '', // Profundidad
-      '', // Valor declarado
+      'Mistery', // Paquete Guardado
+      '', // Peso (grs)
+      '', // Alto (cm)
+      '', // Ancho (cm)
+      '', // Profundidad (cm)
+      '', // Valor declarado ($ C/IVA) *
       '', // Numero Interno
-      '', // Nombre
-      '', // Apellido
-      '', // DNI
-      '', // Email
-      '', // Celular código
-      '', // Celular número
-      '', // Calle
-      '', // Número
+      '', // Nombre *
+      '', // Apellido *
+      '', // DNI *
+      '', // Email *
+      '', // Celular código *
+      '', // Celular número *
+      '', // Calle *
+      '', // Número *
       '', // Piso
       '', // Departamento
-      '', // Provincia / Localidad / CP
+      'BUENOS AIRES / 11 DE SEPTIEMBRE / 1657', // Provincia / Localidad / CP *
       ''  // Observaciones
     ];
   } else {
@@ -211,20 +211,20 @@ const createAndreaniSheet = (data: any[], sheetName: string, type: 'domicilio' |
     ];
     
     exampleRow = [
-      '', // Paquete Guardado
-      '', // Peso
-      '', // Alto
-      '', // Ancho
-      '', // Profundidad
-      '', // Valor declarado
+      'Mistery', // Paquete Guardado
+      '', // Peso (grs)
+      '', // Alto (cm)
+      '', // Ancho (cm)
+      '', // Profundidad (cm)
+      '', // Valor declarado ($ C/IVA) *
       '', // Numero Interno
-      '', // Nombre
-      '', // Apellido
-      '', // DNI
-      '', // Email
-      '', // Celular código
-      '', // Celular número
-      ''  // Sucursal
+      '', // Nombre *
+      '', // Apellido *
+      '', // DNI *
+      '', // Email *
+      '', // Celular código *
+      '', // Celular número *
+      '9 DE JULIO'  // Sucursal *
     ];
   }
   
@@ -266,16 +266,16 @@ const exportToExcelFromData = (domicilioData: any[], sucursalData: any[]) => {
     
     // Crear hoja de domicilios si existe contenido
     if (domicilioData.length > 0) {
-      const domicilioWorkbook = createAndreaniSheet(domicilioData, 'Domicilios', 'domicilio');
-      const domicilioSheet = domicilioWorkbook.Sheets['Domicilios'];
-      XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'Domicilios');
+      const domicilioWorkbook = createAndreaniSheet(domicilioData, 'A domicilio', 'domicilio');
+      const domicilioSheet = domicilioWorkbook.Sheets['A domicilio'];
+      XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'A domicilio');
     }
     
     // Crear hoja de sucursales si existe contenido
     if (sucursalData.length > 0) {
-      const sucursalWorkbook = createAndreaniSheet(sucursalData, 'Sucursales', 'sucursal');
-      const sucursalSheet = sucursalWorkbook.Sheets['Sucursales'];
-      XLSX.utils.book_append_sheet(workbook, sucursalSheet, 'Sucursales');
+      const sucursalWorkbook = createAndreaniSheet(sucursalData, 'A sucursal', 'sucursal');
+      const sucursalSheet = sucursalWorkbook.Sheets['A sucursal'];
+      XLSX.utils.book_append_sheet(workbook, sucursalSheet, 'A sucursal');
     }
     
     // Verificar que al menos una hoja fue creada
@@ -442,7 +442,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
       ];
       
       exampleRow = [
-        '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+        'Mistery', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'BUENOS AIRES / 11 DE SEPTIEMBRE / 1657', ''
       ];
     } else {
       headers = [
@@ -463,7 +463,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
       ];
       
       exampleRow = [
-        '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+        'Mistery', '', '', '', '', '', '', '', '', '', '', '', '', '9 DE JULIO'
       ];
     }
     
