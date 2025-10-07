@@ -139,6 +139,126 @@ const restoreOriginalHeaders = (sheet: any, type: 'domicilio' | 'sucursal') => {
     }
 };
 
+// Función para crear hoja con estructura de Andreani (encabezados + ejemplo + datos)
+const createAndreaniSheet = (data: any[], sheetName: string, type: 'domicilio' | 'sucursal') => {
+  const workbook = XLSX.utils.book_new();
+  const worksheet = XLSX.utils.aoa_to_sheet([]);
+  
+  // Definir encabezados según el tipo
+  let headers: string[];
+  let exampleRow: any[];
+  
+  if (type === 'domicilio') {
+    headers = [
+      'Paquete Guardado Ej: Mistery',
+      'Peso (grs) Ej: ',
+      'Alto (cm) Ej: ',
+      'Ancho (cm) Ej: ',
+      'Profundidad (cm) Ej: ',
+      'Valor declarado ($ C/IVA) * Ej: ',
+      'Numero Interno Ej: ',
+      'Nombre * Ej: ',
+      'Apellido * Ej: ',
+      'DNI * Ej: ',
+      'Email * Ej: ',
+      'Celular código * Ej: ',
+      'Celular número * Ej: ',
+      'Calle * Ej: ',
+      'Número * Ej: ',
+      'Piso Ej: ',
+      'Departamento Ej: ',
+      'Provincia / Localidad / CP * Ej: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657',
+      'Observaciones Ej: '
+    ];
+    
+    exampleRow = [
+      '', // Paquete Guardado
+      '', // Peso
+      '', // Alto
+      '', // Ancho
+      '', // Profundidad
+      '', // Valor declarado
+      '', // Numero Interno
+      '', // Nombre
+      '', // Apellido
+      '', // DNI
+      '', // Email
+      '', // Celular código
+      '', // Celular número
+      '', // Calle
+      '', // Número
+      '', // Piso
+      '', // Departamento
+      '', // Provincia / Localidad / CP
+      ''  // Observaciones
+    ];
+  } else {
+    headers = [
+      'Paquete Guardado Ej: Mistery',
+      'Peso (grs) Ej: ',
+      'Alto (cm) Ej: ',
+      'Ancho (cm) Ej: ',
+      'Profundidad (cm) Ej: ',
+      'Valor declarado ($ C/IVA) * Ej: ',
+      'Numero Interno Ej: ',
+      'Nombre * Ej: ',
+      'Apellido * Ej: ',
+      'DNI * Ej: ',
+      'Email * Ej: ',
+      'Celular código * Ej: ',
+      'Celular número * Ej: ',
+      'Sucursal * Ej: 9 DE JULIO'
+    ];
+    
+    exampleRow = [
+      '', // Paquete Guardado
+      '', // Peso
+      '', // Alto
+      '', // Ancho
+      '', // Profundidad
+      '', // Valor declarado
+      '', // Numero Interno
+      '', // Nombre
+      '', // Apellido
+      '', // DNI
+      '', // Email
+      '', // Celular código
+      '', // Celular número
+      ''  // Sucursal
+    ];
+  }
+  
+  // Agregar encabezados en la fila 1
+  XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: 'A1' });
+  
+  // Agregar fila de ejemplo en la fila 2
+  XLSX.utils.sheet_add_aoa(worksheet, [exampleRow], { origin: 'A2' });
+  
+  // Agregar datos reales a partir de la fila 3
+  if (data.length > 0) {
+    const dataRows = data.map(row => {
+      const values: any[] = [];
+      headers.forEach(header => {
+        // Buscar el valor correspondiente en el objeto de datos
+        const key = Object.keys(row).find(k => 
+          header.includes(k.split(' ')[0]) || 
+          k.includes(header.split(' ')[0])
+        );
+        values.push(key ? row[key] : '');
+      });
+      return values;
+    });
+    
+    XLSX.utils.sheet_add_aoa(worksheet, dataRows, { origin: 'A3' });
+  }
+  
+  // Agregar encabezados combinados
+  addCombinedHeadersSimple(worksheet, type);
+  
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  return workbook;
+};
+
 // Función para exportar a Excel desde datos ya convertidos
 const exportToExcelFromData = (domicilioData: any[], sucursalData: any[]) => {
   try {
@@ -146,21 +266,15 @@ const exportToExcelFromData = (domicilioData: any[], sucursalData: any[]) => {
     
     // Crear hoja de domicilios si existe contenido
     if (domicilioData.length > 0) {
-      const domicilioSheet = XLSX.utils.json_to_sheet(domicilioData);
-      
-      // Agregar encabezados combinados para domicilios (sin mover datos)
-      addCombinedHeadersSimple(domicilioSheet, 'domicilio');
-      
+      const domicilioWorkbook = createAndreaniSheet(domicilioData, 'Domicilios', 'domicilio');
+      const domicilioSheet = domicilioWorkbook.Sheets['Domicilios'];
       XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'Domicilios');
     }
     
     // Crear hoja de sucursales si existe contenido
     if (sucursalData.length > 0) {
-      const sucursalSheet = XLSX.utils.json_to_sheet(sucursalData);
-      
-      // Agregar encabezados combinados para sucursales (sin mover datos)
-      addCombinedHeadersSimple(sucursalSheet, 'sucursal');
-      
+      const sucursalWorkbook = createAndreaniSheet(sucursalData, 'Sucursales', 'sucursal');
+      const sucursalSheet = sucursalWorkbook.Sheets['Sucursales'];
       XLSX.utils.book_append_sheet(workbook, sucursalSheet, 'Sucursales');
     }
     
@@ -296,15 +410,78 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
   const domicilioData = csvToJsonForExcel(domicilioCSV);
   const sucursalData = csvToJsonForExcel(sucursalCSV);
 
-  // Función para convertir datos de vuelta a CSV
-  const dataToCSV = (data: any[]): string => {
+  // Función para convertir datos de vuelta a CSV con estructura Andreani
+  const dataToCSV = (data: any[], type: 'domicilio' | 'sucursal'): string => {
     if (data.length === 0) return '';
     
-    const headers = Object.keys(data[0]);
-    const csvLines = [headers.join(';')];
+    // Definir encabezados según el tipo
+    let headers: string[];
+    let exampleRow: string[];
     
+    if (type === 'domicilio') {
+      headers = [
+        'Paquete Guardado Ej: Mistery',
+        'Peso (grs) Ej: ',
+        'Alto (cm) Ej: ',
+        'Ancho (cm) Ej: ',
+        'Profundidad (cm) Ej: ',
+        'Valor declarado ($ C/IVA) * Ej: ',
+        'Numero Interno Ej: ',
+        'Nombre * Ej: ',
+        'Apellido * Ej: ',
+        'DNI * Ej: ',
+        'Email * Ej: ',
+        'Celular código * Ej: ',
+        'Celular número * Ej: ',
+        'Calle * Ej: ',
+        'Número * Ej: ',
+        'Piso Ej: ',
+        'Departamento Ej: ',
+        'Provincia / Localidad / CP * Ej: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657',
+        'Observaciones Ej: '
+      ];
+      
+      exampleRow = [
+        '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+      ];
+    } else {
+      headers = [
+        'Paquete Guardado Ej: Mistery',
+        'Peso (grs) Ej: ',
+        'Alto (cm) Ej: ',
+        'Ancho (cm) Ej: ',
+        'Profundidad (cm) Ej: ',
+        'Valor declarado ($ C/IVA) * Ej: ',
+        'Numero Interno Ej: ',
+        'Nombre * Ej: ',
+        'Apellido * Ej: ',
+        'DNI * Ej: ',
+        'Email * Ej: ',
+        'Celular código * Ej: ',
+        'Celular número * Ej: ',
+        'Sucursal * Ej: 9 DE JULIO'
+      ];
+      
+      exampleRow = [
+        '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+      ];
+    }
+    
+    const csvLines = [
+      headers.join(';'), // Fila 1: Encabezados
+      exampleRow.join(';') // Fila 2: Ejemplo vacío
+    ];
+    
+    // Agregar datos reales a partir de la fila 3
     data.forEach(row => {
-      const values = headers.map(header => row[header] || '');
+      const values = headers.map(header => {
+        // Buscar el valor correspondiente en el objeto de datos
+        const key = Object.keys(row).find(k => 
+          header.includes(k.split(' ')[0]) || 
+          k.includes(header.split(' ')[0])
+        );
+        return key ? (row[key] || '') : '';
+      });
       csvLines.push(values.join(';'));
     });
     
@@ -312,8 +489,8 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
   };
 
   // Generar CSV desde los datos transformados
-  const domicilioCSVFromData = dataToCSV(domicilioData);
-  const sucursalCSVFromData = dataToCSV(sucursalData);
+  const domicilioCSVFromData = dataToCSV(domicilioData, 'domicilio');
+  const sucursalCSVFromData = dataToCSV(sucursalData, 'sucursal');
   
   return (
     <>
