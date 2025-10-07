@@ -1266,7 +1266,7 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{
     const { codigo: celularCodigo, numero: celularNumero } = getCodigoArea(provincia, cleanPhone);
     
     const baseData = {
-      'Paquete Guardado Ej:': '', // Siempre vacío
+      'Paquete Guardado': '', // Siempre vacío
       'Peso (grs)': 1,
       'Alto (cm)': 1,
       'Ancho (cm)': 1,
@@ -1516,19 +1516,19 @@ export const processVentasOrders = async (csvContent: string): Promise<{
 
     // Datos base para ambos tipos
     const baseData = {
-      'Paquete Guardado \nEj: 1': '',
-      'Peso (grs)\nEj: ': '1',
-      'Alto (cm)\nEj: ': '1',
-      'Ancho (cm)\nEj: ': '1',
-      'Profundidad (cm)\nEj: ': '1',
-      'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado,
-      'Numero Interno\nEj: ': `#${numeroOrden}`,
-      'Nombre *\nEj: ': nombreCompleto,
-      'Apellido *\nEj: ': apellidoComprador,
-      'DNI *\nEj: ': dni,
-      'Email *\nEj: ': email,
-      'Celular código *\nEj: ': codigoArea,
-      'Celular número *\nEj: ': numeroTelefono,
+      'Paquete Guardado': '',
+      'Peso (grs)': '1',
+      'Alto (cm)': '1',
+      'Ancho (cm)': '1',
+      'Profundidad (cm)': '1',
+      'Valor declarado ($ C/IVA) *': valorDeclarado,
+      'Numero Interno': `#${numeroOrden}`,
+      'Nombre *': nombreCompleto,
+      'Apellido *': apellidoComprador,
+      'DNI *': dni,
+      'Email *': email,
+      'Celular código *': codigoArea,
+      'Celular número *': numeroTelefono,
     };
 
     // Determinar si es envío a domicilio o sucursal
@@ -1642,12 +1642,12 @@ export const processVentasOrders = async (csvContent: string): Promise<{
 
       domicilios.push({
         ...baseData,
-        'Calle *\nEj: ': calleNormalizada,
-        'Número *\nEj: ': numero,
-        'Piso\nEj: ': pisoNormalizado,
-        'Departamento\nEj: ': pisoNormalizado,
-        'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657': formatoProvinciaLocalidadCP,
-        'Observaciones\nEj: ': '',
+        'Calle *': calleNormalizada,
+        'Número *': numero,
+        'Piso': pisoNormalizado,
+        'Departamento': pisoNormalizado,
+        'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
+        'Observaciones': '',
       });
 
     } else if (medioEnvio.includes('Punto de retiro') || medioEnvio.includes('sucursal')) {
@@ -1659,7 +1659,7 @@ export const processVentasOrders = async (csvContent: string): Promise<{
 
       sucursalesOutput.push({
         ...baseData,
-        'Sucursal * \nEj: 9 DE JULIO': nombreSucursal,
+        'Sucursal *': nombreSucursal,
       });
     } else {
       contadorNoProcesados++;
