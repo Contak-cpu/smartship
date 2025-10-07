@@ -1,4 +1,5 @@
 import * as ExcelJS from 'exceljs';
+import * as XLSX from 'xlsx';
 
 export interface TemplateData {
   workbook: ExcelJS.Workbook;
@@ -348,24 +349,148 @@ async generateExcelWithInternalTemplate(domicilioData: any[], sucursalData: any[
     console.log('Datos domicilio:', domicilioData.length, 'registros');
     console.log('Datos sucursal:', sucursalData.length, 'registros');
     
-    // Cargar la plantilla template.xlsx
-    const templateData = await this.loadTemplate();
-    console.log('Template.xlsx cargada:', templateData);
-    
-    // Generar Excel con los datos
-    const processedData: ProcessedData = {
-      domicilioData,
-      sucursalData
-    };
-    
-    console.log('Generando Excel con template.xlsx...');
-    const result = await this.generateExcelWithTemplate(processedData, templateData);
-    console.log('Excel generado exitosamente con template.xlsx, tamaño:', result.byteLength, 'bytes');
-    
-    return result;
+    // Intentar primero con XLSX (más simple y confiable)
+    try {
+      console.log('Intentando con XLSX...');
+      return await this.generateExcelWithXLSX(domicilioData, sucursalData);
+    } catch (xlsxError) {
+      console.warn('Error con XLSX, intentando con ExcelJS:', xlsxError);
+      
+      // Fallback con ExcelJS
+      const templateData = await this.loadTemplate();
+      console.log('Template.xlsx cargada:', templateData);
+      
+      const processedData: ProcessedData = {
+        domicilioData,
+        sucursalData
+      };
+      
+      console.log('Generando Excel con template.xlsx...');
+      const result = await this.generateExcelWithTemplate(processedData, templateData);
+      console.log('Excel generado exitosamente con template.xlsx, tamaño:', result.byteLength, 'bytes');
+      
+      return result;
+    }
   } catch (error) {
     console.error('Error generando Excel con template.xlsx:', error);
     throw new Error(`Error generando Excel: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+  }
+}
+
+// Método alternativo usando solo XLSX
+private async generateExcelWithXLSX(domicilioData: any[], sucursalData: any[]): Promise<ArrayBuffer> {
+  try {
+    console.log('=== GENERANDO EXCEL CON XLSX ===');
+    
+    // Cargar el template usando XLSX
+    const templateResponse = await fetch('/templates/template.xlsx');
+    if (!templateResponse.ok) {
+      throw new Error(`Error cargando template: ${templateResponse.status}`);
+    }
+    
+    const templateBuffer = await templateResponse.arrayBuffer();
+    console.log('Template cargado con XLSX, tamaño:', templateBuffer.byteLength, 'bytes');
+    
+    // Leer el template
+    const templateWorkbook = XLSX.read(templateBuffer, { type: 'array' });
+    console.log('Hojas en template:', templateWorkbook.SheetNames);
+    
+    // Buscar las hojas de domicilio y sucursal
+    const domicilioSheetName = templateWorkbook.SheetNames.find(name => 
+      name.toLowerCase().includes('domicilio') || name.toLowerCase().includes('a domicilio')
+    );
+    const sucursalSheetName = templateWorkbook.SheetNames.find(name => 
+      name.toLowerCase().includes('sucursal') || name.toLowerCase().includes('a sucursal')
+    );
+    
+    console.log('Hoja domicilio encontrada:', domicilioSheetName || 'NO ENCONTRADA');
+    console.log('Hoja sucursal encontrada:', sucursalSheetName || 'NO ENCONTRADA');
+    
+    // Insertar datos en domicilios
+    if (domicilioSheetName && domicilioData.length > 0) {
+      const domicilioSheet = templateWorkbook.Sheets[domicilioSheetName];
+      console.log('Insertando datos de domicilio...');
+      await this.insertDataIntoXLSXSheet(domicilioSheet, domicilioData);
+    }
+    
+    // Insertar datos en sucursales
+    if (sucursalSheetName && sucursalData.length > 0) {
+      const sucursalSheet = templateWorkbook.Sheets[sucursalSheetName];
+      console.log('Insertando datos de sucursal...');
+      await this.insertDataIntoXLSXSheet(sucursalSheet, sucursalData);
+    }
+    
+    // Convertir a buffer
+    const outputBuffer = XLSX.write(templateWorkbook, { 
+      bookType: 'xlsx', 
+      type: 'array',
+      compression: true 
+    });
+    
+    console.log('Excel generado con XLSX exitosamente, tamaño:', outputBuffer.byteLength, 'bytes');
+    return new Uint8Array(outputBuffer).buffer;
+    
+  } catch (error) {
+    console.error('Error generando Excel con XLSX:', error);
+    throw error;
+  }
+}
+
+// Método para insertar datos en una hoja XLSX
+private async insertDataIntoXLSXSheet(sheet: XLSX.WorkSheet, data: any[]): Promise<void> {
+  try {
+    console.log(`Insertando ${data.length} registros en hoja XLSX`);
+    
+    // Encontrar la primera fila vacía
+    const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+    console.log('Rango de la hoja:', sheet['!ref']);
+    console.log('Última fila:', range.e.r);
+    
+    // Buscar la primera fila vacía
+    let startRow = range.e.r + 1; // Empezar después de la última fila
+    
+    // Verificar si hay filas vacías en el medio
+    for (let row = 1; row <= range.e.r; row++) {
+      let isEmpty = true;
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
+        if (sheet[cellRef] && sheet[cellRef].v) {
+          isEmpty = false;
+          break;
+        }
+      }
+      if (isEmpty) {
+        startRow = row;
+        console.log(`Fila vacía encontrada en posición ${row}`);
+        break;
+      }
+    }
+    
+    console.log(`Insertando datos desde fila ${startRow}`);
+    
+    // Insertar los datos
+    data.forEach((rowData, index) => {
+      const targetRow = startRow + index;
+      const values = Object.values(rowData);
+      
+      values.forEach((value, colIndex) => {
+        const cellRef = XLSX.utils.encode_cell({ r: targetRow, c: colIndex });
+        sheet[cellRef] = { v: value };
+      });
+      
+      console.log(`Fila ${targetRow} insertada:`, values.slice(0, 3)); // Mostrar solo los primeros 3 valores
+    });
+    
+    // Actualizar el rango de la hoja
+    const newRange = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+    newRange.e.r = Math.max(newRange.e.r, startRow + data.length - 1);
+    sheet['!ref'] = XLSX.utils.encode_range(newRange);
+    
+    console.log(`Datos insertados exitosamente. Nuevo rango: ${sheet['!ref']}`);
+    
+  } catch (error) {
+    console.error('Error insertando datos en hoja XLSX:', error);
+    throw error;
   }
 }
 }
