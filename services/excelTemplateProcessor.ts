@@ -42,8 +42,8 @@ export class ExcelTemplateProcessor {
 
   private async loadInternalTemplate(): Promise<ArrayBuffer> {
     try {
-      console.log('Cargando plantilla interna...');
-      const response = await fetch('/templates/EnvioMasivoExcelPaquetes (10).xlsx');
+      console.log('Cargando plantilla template.xlsx...');
+      const response = await fetch('/templates/template.xlsx');
       
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
@@ -53,11 +53,11 @@ export class ExcelTemplateProcessor {
       }
       
       const arrayBuffer = await response.arrayBuffer();
-      console.log('Plantilla interna cargada exitosamente, tamaño:', arrayBuffer.byteLength, 'bytes');
+      console.log('Plantilla template.xlsx cargada exitosamente, tamaño:', arrayBuffer.byteLength, 'bytes');
       return arrayBuffer;
     } catch (error) {
-      console.error('Error cargando plantilla interna:', error);
-      throw new Error(`No se pudo cargar la plantilla interna de Andreani: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      console.error('Error cargando plantilla template.xlsx:', error);
+      throw new Error(`No se pudo cargar la plantilla template.xlsx: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
 
@@ -65,26 +65,31 @@ export class ExcelTemplateProcessor {
     processedData: ProcessedData,
     templateData: TemplateData
   ): Promise<ArrayBuffer> {
-    const { workbook, domicilioSheet, sucursalSheet } = templateData;
+    const { workbook } = templateData;
     
-    // Crear una copia del workbook para no modificar la plantilla original
-    const newWorkbook = new ExcelJS.Workbook();
+    // Usar directamente el workbook de la plantilla para mantener toda la estructura
+    const templateWorkbook = workbook;
     
-    // Copiar estilos y estructura de la plantilla
-    if (domicilioSheet) {
-      const newDomicilioSheet = newWorkbook.addWorksheet('A domicilio');
-      await this.copySheetStructure(domicilioSheet, newDomicilioSheet);
-      await this.populateData(newDomicilioSheet, processedData.domicilioData);
+    // Buscar las hojas en la plantilla
+    const domicilioSheet = templateWorkbook.getWorksheet('A domicilio') || 
+                          templateWorkbook.getWorksheet('domicilio') || 
+                          templateWorkbook.getWorksheet(0);
+    
+    const sucursalSheet = templateWorkbook.getWorksheet('A sucursal') || 
+                         templateWorkbook.getWorksheet('sucursal') || 
+                         templateWorkbook.getWorksheet(1);
+    
+    // Agregar datos a las hojas existentes
+    if (domicilioSheet && processedData.domicilioData.length > 0) {
+      await this.populateDataInExistingSheet(domicilioSheet, processedData.domicilioData);
     }
     
-    if (sucursalSheet) {
-      const newSucursalSheet = newWorkbook.addWorksheet('A sucursal');
-      await this.copySheetStructure(sucursalSheet, newSucursalSheet);
-      await this.populateData(newSucursalSheet, processedData.sucursalData);
+    if (sucursalSheet && processedData.sucursalData.length > 0) {
+      await this.populateDataInExistingSheet(sucursalSheet, processedData.sucursalData);
     }
 
     // Generar el buffer del archivo
-    const buffer = await newWorkbook.xlsx.writeBuffer();
+    const buffer = await templateWorkbook.xlsx.writeBuffer();
     return buffer as ArrayBuffer;
   }
 
@@ -140,6 +145,57 @@ export class ExcelTemplateProcessor {
     });
   }
 
+  private async populateDataInExistingSheet(sheet: ExcelJS.Worksheet, data: any[]) {
+    console.log(`Poblando datos en hoja existente: ${sheet.name}`);
+    console.log(`Datos a insertar: ${data.length} registros`);
+    
+    // Buscar la primera fila vacía después de los encabezados
+    let startRow = 1;
+    let foundEmptyRow = false;
+    
+    // Buscar desde la fila 1 hacia abajo para encontrar la primera fila vacía
+    for (let row = 1; row <= 100; row++) {
+      const currentRow = sheet.getRow(row);
+      let isEmpty = true;
+      
+      // Verificar si la fila está vacía
+      currentRow.eachCell((cell) => {
+        if (cell.value !== null && cell.value !== undefined && cell.value.toString().trim() !== '') {
+          isEmpty = false;
+        }
+      });
+      
+      if (isEmpty) {
+        startRow = row;
+        foundEmptyRow = true;
+        console.log(`Primera fila vacía encontrada: ${row}`);
+        break;
+      }
+    }
+    
+    if (!foundEmptyRow) {
+      // Si no encontramos fila vacía, usar la última fila + 1
+      startRow = sheet.rowCount + 1;
+      console.log(`No se encontró fila vacía, usando fila: ${startRow}`);
+    }
+    
+    // Insertar los datos
+    data.forEach((rowData, index) => {
+      const targetRow = startRow + index;
+      const row = sheet.getRow(targetRow);
+      
+      console.log(`Insertando datos en fila ${targetRow}:`, rowData);
+      
+      // Mapear los datos a las columnas
+      Object.values(rowData).forEach((value, colIndex) => {
+        const cell = row.getCell(colIndex + 1);
+        cell.value = value;
+      });
+    });
+    
+    console.log(`Datos insertados exitosamente desde fila ${startRow}`);
+  }
+
   // Método para detectar automáticamente las columnas en la plantilla
   detectColumns(sheet: ExcelJS.Worksheet): string[] {
     const columns: string[] = [];
@@ -173,13 +229,13 @@ export class ExcelTemplateProcessor {
 // Método simplificado para generar Excel con plantilla interna
 async generateExcelWithInternalTemplate(domicilioData: any[], sucursalData: any[]): Promise<ArrayBuffer> {
   try {
-    console.log('Iniciando generación de Excel con plantilla interna...');
+    console.log('Iniciando generación de Excel con template.xlsx...');
     console.log('Datos domicilio:', domicilioData.length, 'registros');
     console.log('Datos sucursal:', sucursalData.length, 'registros');
     
-    // Cargar la plantilla interna
+    // Cargar la plantilla template.xlsx
     const templateData = await this.loadTemplate();
-    console.log('Plantilla cargada:', templateData);
+    console.log('Template.xlsx cargada:', templateData);
     
     // Generar Excel con los datos
     const processedData: ProcessedData = {
@@ -187,13 +243,13 @@ async generateExcelWithInternalTemplate(domicilioData: any[], sucursalData: any[
       sucursalData
     };
     
-    console.log('Generando Excel con template...');
+    console.log('Generando Excel con template.xlsx...');
     const result = await this.generateExcelWithTemplate(processedData, templateData);
-    console.log('Excel generado exitosamente, tamaño:', result.byteLength, 'bytes');
+    console.log('Excel generado exitosamente con template.xlsx, tamaño:', result.byteLength, 'bytes');
     
     return result;
   } catch (error) {
-    console.error('Error generando Excel con plantilla interna:', error);
+    console.error('Error generando Excel con template.xlsx:', error);
     throw new Error(`Error generando Excel: ${error instanceof Error ? error.message : 'Error desconocido'}`);
   }
 }

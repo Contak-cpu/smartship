@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
+import { excelTemplateProcessor } from '../services/excelTemplateProcessor';
 
 interface ResultsDisplayProps {
   domicilioCSV: string;
@@ -138,12 +139,12 @@ const restoreOriginalHeaders = (sheet: any, type: 'domicilio' | 'sucursal') => {
     }
 };
 
-// Función independiente para exportar a Excel
-const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
+// Función independiente para exportar a Excel usando template.xlsx
+const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
     try {
-        const workbook = XLSX.utils.book_new();
+        console.log('Iniciando exportación a Excel con template.xlsx...');
         
-        // Función interna para convertir CSV a JSON (solo para Excel)
+        // Función interna para convertir CSV a JSON
         const csvToJsonForExcel = (csvText: string): any[] => {
             const lines = csvText.split('\n').filter(line => line.trim());
             if (lines.length === 0) return [];
@@ -166,53 +167,52 @@ const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
             return data;
         };
         
-        // Crear hoja de domicilios si existe contenido
-        if (domicilioCSV && domicilioCSV.trim()) {
-            const domicilioData = csvToJsonForExcel(domicilioCSV);
-            if (domicilioData.length > 0) {
-                // Crear hoja directamente sin modificar encabezados
-                const domicilioSheet = XLSX.utils.json_to_sheet(domicilioData);
-                
-                // Agregar encabezados combinados para domicilios (sin mover datos)
-                addCombinedHeadersSimple(domicilioSheet, 'domicilio');
-                
-                XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'Domicilios');
-            }
-        }
+        // Convertir CSV a datos para el template
+        const domicilioData = domicilioCSV && domicilioCSV.trim() ? csvToJsonForExcel(domicilioCSV) : [];
+        const sucursalData = sucursalCSV && sucursalCSV.trim() ? csvToJsonForExcel(sucursalCSV) : [];
         
-        // Crear hoja de sucursales si existe contenido
-        if (sucursalCSV && sucursalCSV.trim()) {
-            const sucursalData = csvToJsonForExcel(sucursalCSV);
-            if (sucursalData.length > 0) {
-                // Crear hoja directamente sin modificar encabezados
-                const sucursalSheet = XLSX.utils.json_to_sheet(sucursalData);
-                
-                // Agregar encabezados combinados para sucursales (sin mover datos)
-                addCombinedHeadersSimple(sucursalSheet, 'sucursal');
-                
-                XLSX.utils.book_append_sheet(workbook, sucursalSheet, 'Sucursales');
-            }
-        }
+        console.log('Datos procesados:', {
+            domicilios: domicilioData.length,
+            sucursales: sucursalData.length
+        });
         
-        // Verificar que al menos una hoja fue creada
-        if (workbook.SheetNames.length === 0) {
+        // Verificar que hay datos para exportar
+        if (domicilioData.length === 0 && sucursalData.length === 0) {
             alert('No hay datos para exportar a Excel');
             return;
         }
         
+        // Generar Excel usando el template.xlsx
+        const excelBuffer = await excelTemplateProcessor.generateExcelWithInternalTemplate(
+            domicilioData,
+            sucursalData
+        );
+        
+        // Crear blob y descargar
+        const blob = new Blob([excelBuffer], { 
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        
         // Generar nombre de archivo con fecha
         const today = new Date();
         const dateString = today.toISOString().split('T')[0];
-        const fileName = `Pedidos_Andreani_${dateString}.xlsx`;
+        const fileName = `Pedidos_Andreani_Template_${dateString}.xlsx`;
         
-        // Descargar el archivo Excel
-        XLSX.writeFile(workbook, fileName);
+        // Crear enlace de descarga
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
         
-        console.log('Archivo Excel exportado exitosamente:', fileName);
+        console.log('Archivo Excel exportado exitosamente con template.xlsx:', fileName);
         
     } catch (error) {
-        console.error('Error al exportar a Excel:', error);
-        alert('Error al exportar el archivo Excel. Por favor, inténtalo de nuevo.');
+        console.error('Error al exportar a Excel con template:', error);
+        alert('Error al exportar el archivo Excel con template. Por favor, inténtalo de nuevo.');
     }
 };
 
@@ -290,7 +290,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
                     className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 disabled:hover:scale-100 text-sm sm:text-base"
                 >
                     <ExcelIcon />
-                    <span className="ml-2">Excel.xlsx</span>
+                    <span className="ml-2">Template.xlsx</span>
                 </button>
             </div>
         </div>
