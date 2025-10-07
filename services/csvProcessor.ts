@@ -7,6 +7,7 @@ import {
 } from '../types';
 import { getDomiciliosMapping } from './domiciliosData';
 import { getSucursalesData } from './sucursalesData';
+import { excelTemplateProcessor } from './excelTemplateProcessor';
 
 // PapaParse is loaded from a CDN and available as a global variable.
 declare const Papa: any;
@@ -926,7 +927,83 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
   return mejorCoincidencia;
 };
 
-export const processOrders = async (tiendanubeCsvText: string): Promise<{ domicilioCSV: string; sucursalCSV: string; }> => {
+// Nueva función para procesar CSV con XLSX personalizado
+export const processOrdersWithXlsx = async (
+  tiendanubeCsvText: string, 
+  xlsxFile?: File
+): Promise<{ 
+  domicilioCSV: string; 
+  sucursalCSV: string; 
+  excelBuffer?: ArrayBuffer;
+  processingInfo: any;
+}> => {
+  // Procesar el CSV normalmente
+  const csvResult = await processOrders(tiendanubeCsvText);
+  
+  // Si se proporciona un archivo XLSX, generar Excel con los datos
+  let excelBuffer: ArrayBuffer | undefined;
+  
+  if (xlsxFile) {
+    try {
+      console.log('Generando Excel con plantilla personalizada...');
+      
+      // Convertir los CSV procesados de vuelta a arrays de objetos
+      const domicilioData = parseCsvToObjects(csvResult.domicilioCSV);
+      const sucursalData = parseCsvToObjects(csvResult.sucursalCSV);
+      
+      // Cargar la plantilla XLSX personalizada
+      const templateBuffer = await xlsxFile.arrayBuffer();
+      const templateData = await excelTemplateProcessor.loadTemplate(templateBuffer);
+      
+      // Generar Excel con la plantilla personalizada
+      excelBuffer = await excelTemplateProcessor.generateExcelWithTemplate(
+        { domicilioData, sucursalData },
+        templateData
+      );
+      
+      console.log('Excel generado exitosamente con plantilla personalizada');
+    } catch (error) {
+      console.error('Error generando Excel con plantilla personalizada:', error);
+      // Continuar sin Excel si hay error
+    }
+  }
+  
+  return {
+    ...csvResult,
+    excelBuffer,
+    processingInfo: csvResult.processingInfo
+  };
+};
+
+// Función auxiliar para convertir CSV string a array de objetos
+const parseCsvToObjects = (csvContent: string): any[] => {
+  if (!csvContent.trim()) return [];
+  
+  const lines = csvContent.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return [];
+  
+  const headers = lines[0].split(';');
+  const data = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(';');
+    const row: any = {};
+    
+    headers.forEach((header, index) => {
+      row[header] = values[index] || '';
+    });
+    
+    data.push(row);
+  }
+  
+  return data;
+};
+
+export const processOrders = async (tiendanubeCsvText: string): Promise<{ 
+  domicilioCSV: string; 
+  sucursalCSV: string; 
+  processingInfo: any;
+}> => {
   const [sucursales, codigosPostales, tiendanubeOrders] = await Promise.all([
     fetchSucursales(),
     fetchCodigosPostales(),
@@ -1377,6 +1454,7 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
 export const processVentasOrders = async (csvContent: string): Promise<{
   domicilioCSV: string;
   sucursalCSV: string;
+  processingInfo: any;
 }> => {
   console.log('Procesando archivo de ventas...');
   

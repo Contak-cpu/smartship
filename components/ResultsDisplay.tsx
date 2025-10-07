@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
+import { DataPreview } from './DataPreview';
 
 interface ResultsDisplayProps {
   domicilioCSV: string;
@@ -218,6 +219,7 @@ const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
 
 
 export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, sucursalCSV, onDownload, onDownloadCombined, onDownloadExcel }) => {
+  const [showPreview, setShowPreview] = useState(false);
   
   // Función para convertir CSV a JSON para Excel
   const csvToJsonForExcel = (csvContent: string): any[] => {
@@ -242,10 +244,27 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
     
     return data;
   };
+
+  // Convertir CSV a arrays de objetos para la vista previa
+  const domicilioData = csvToJsonForExcel(domicilioCSV);
+  const sucursalData = csvToJsonForExcel(sucursalCSV);
   
   return (
-    <div className="bg-gray-900/50 p-4 sm:p-6 rounded-lg animate-fade-in border border-gray-700/50 shadow-xl">
-        <h3 className="text-lg sm:text-xl font-bold text-center text-white mb-4 sm:mb-6">📥 Descargar Archivos Procesados</h3>
+    <>
+      <div className="bg-gray-900/50 p-4 sm:p-6 rounded-lg animate-fade-in border border-gray-700/50 shadow-xl">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-bold text-white">📥 Descargar Archivos Procesados</h3>
+          <button
+            onClick={() => setShowPreview(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Vista Previa
+          </button>
+        </div>
         
         {/* Primera fila - Archivos individuales */}
         <div className="mb-4">
@@ -304,6 +323,16 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
                 animation: fade-in 0.5s ease-out forwards;
             }
         `}</style>
-    </div>
+      </div>
+
+      {/* Modal de Vista Previa */}
+      {showPreview && (
+        <DataPreview
+          domicilioData={domicilioData}
+          sucursalData={sucursalData}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
+    </>
   );
 };

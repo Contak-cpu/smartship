@@ -1,8 +1,9 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { ProcessStatus, ProcessingInfo } from './types';
-import { processOrders, processVentasOrders, fixEncoding, combineCSVs } from './services/csvProcessor';
+import { processOrders, processVentasOrders, processOrdersWithXlsx, fixEncoding, combineCSVs } from './services/csvProcessor';
 import { FileUploader } from './components/FileUploader';
+import { DualFileUploader } from './components/DualFileUploader';
 import { StatusDisplay } from './components/StatusDisplay';
 import { ResultsDisplay } from './components/ResultsDisplay';
 import { Login } from './components/Login';
@@ -152,9 +153,17 @@ const limpiarSeparacionFilas = (content: string): string => {
 const App: React.FC = () => {
   const { isAuthenticated, username, login, logout } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
+  const [selectedXlsxFile, setSelectedXlsxFile] = useState<File | null>(null);
+  const [useDualUploader, setUseDualUploader] = useState(false);
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<{ domicilioCSV: string; sucursalCSV: string; processingInfo: ProcessingInfo } | null>(null);
+  const [results, setResults] = useState<{ 
+    domicilioCSV: string; 
+    sucursalCSV: string; 
+    excelBuffer?: ArrayBuffer;
+    processingInfo: ProcessingInfo 
+  } | null>(null);
   const [showPricing, setShowPricing] = useState(true);
   const [showBasicPlan, setShowBasicPlan] = useState(false);
   const [showProPlan, setShowProPlan] = useState(false);
@@ -175,8 +184,23 @@ const App: React.FC = () => {
     setError(null);
   };
 
+  const handleCsvChange = (file: File | null) => {
+    setSelectedCsvFile(file);
+    setStatus(ProcessStatus.IDLE);
+    setResults(null);
+    setError(null);
+  };
+
+  const handleXlsxChange = (file: File | null) => {
+    setSelectedXlsxFile(file);
+    setStatus(ProcessStatus.IDLE);
+    setResults(null);
+    setError(null);
+  };
+
   const handleProcessClick = useCallback(async () => {
-    if (!selectedFile) return;
+    const fileToProcess = useDualUploader ? selectedCsvFile : selectedFile;
+    if (!fileToProcess) return;
 
     setStatus(ProcessStatus.PROCESSING);
     setError(null);
@@ -198,6 +222,9 @@ const App: React.FC = () => {
         if (isVentasFile) {
           console.log('Detectado archivo de ventas, usando processVentasOrders...');
           processedData = await processVentasOrders(csvText);
+        } else if (useDualUploader && selectedXlsxFile) {
+          console.log('Procesando con XLSX personalizado...');
+          processedData = await processOrdersWithXlsx(csvText, selectedXlsxFile);
         } else {
           console.log('Detectado archivo de pedidos Andreani, usando processOrders...');
           processedData = await processOrders(csvText);
@@ -217,8 +244,8 @@ const App: React.FC = () => {
       setError('Error al leer el archivo.');
       setStatus(ProcessStatus.ERROR);
     };
-    reader.readAsText(selectedFile, 'UTF-8');
-  }, [selectedFile]);
+    reader.readAsText(fileToProcess, 'UTF-8');
+  }, [selectedFile, selectedCsvFile, selectedXlsxFile, useDualUploader]);
   
   const downloadCSV = (csvContent: string, fileName: string) => {
     // Asegurar que el contenido esté limpio de caracteres mal codificados
@@ -257,6 +284,20 @@ const App: React.FC = () => {
     
     // Crear el blob con BOM UTF-8 para Excel
     const blob = new Blob([`\uFEFF${cleanContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadExcel = (excelBuffer: ArrayBuffer, fileName: string) => {
+    const blob = new Blob([excelBuffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -326,11 +367,46 @@ const App: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <FileUploader onFileSelect={handleFileChange} disabled={status === ProcessStatus.PROCESSING} />
+          {/* Toggle para cambiar entre uploader simple y dual */}
+          <div className="flex justify-center mb-4">
+            <div className="bg-gray-700 rounded-lg p-1 flex">
+              <button
+                onClick={() => setUseDualUploader(false)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  !useDualUploader
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Solo CSV
+              </button>
+              <button
+                onClick={() => setUseDualUploader(true)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  useDualUploader
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                CSV + XLSX
+              </button>
+            </div>
+          </div>
+
+          {/* Uploader según el modo seleccionado */}
+          {useDualUploader ? (
+            <DualFileUploader
+              onCsvSelect={handleCsvChange}
+              onXlsxSelect={handleXlsxChange}
+              disabled={status === ProcessStatus.PROCESSING}
+            />
+          ) : (
+            <FileUploader onFileSelect={handleFileChange} disabled={status === ProcessStatus.PROCESSING} />
+          )}
           
           <button
             onClick={handleProcessClick}
-            disabled={!selectedFile || status === ProcessStatus.PROCESSING}
+            disabled={(!selectedFile && !selectedCsvFile) || status === ProcessStatus.PROCESSING}
             className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
           >
             {status === ProcessStatus.PROCESSING ? 'Procesando...' : 'Procesar Archivo'}
@@ -345,6 +421,7 @@ const App: React.FC = () => {
             sucursalCSV={results.sucursalCSV}
             onDownload={downloadCSV}
             onDownloadCombined={downloadCombinedCSV}
+            onDownloadExcel={results.excelBuffer ? () => downloadExcel(results.excelBuffer!, 'Pedidos_Andreani.xlsx') : undefined}
           />
         )}
       </div>

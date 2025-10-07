@@ -22,7 +22,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, disabl
   const handleDrop = useCallback((event: React.DragEvent<HTMLLabelElement>) => {
     event.preventDefault();
     const file = event.dataTransfer.files?.[0] || null;
-    if (file && file.type === 'text/csv') {
+    if (file && (file.type === 'text/csv' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
       setFileName(file.name);
       onFileSelect(file);
     }
