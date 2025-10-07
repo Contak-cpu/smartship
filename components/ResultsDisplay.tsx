@@ -139,6 +139,53 @@ const restoreOriginalHeaders = (sheet: any, type: 'domicilio' | 'sucursal') => {
     }
 };
 
+// Función para exportar a Excel desde datos ya convertidos
+const exportToExcelFromData = (domicilioData: any[], sucursalData: any[]) => {
+  try {
+    const workbook = XLSX.utils.book_new();
+    
+    // Crear hoja de domicilios si existe contenido
+    if (domicilioData.length > 0) {
+      const domicilioSheet = XLSX.utils.json_to_sheet(domicilioData);
+      
+      // Agregar encabezados combinados para domicilios (sin mover datos)
+      addCombinedHeadersSimple(domicilioSheet, 'domicilio');
+      
+      XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'Domicilios');
+    }
+    
+    // Crear hoja de sucursales si existe contenido
+    if (sucursalData.length > 0) {
+      const sucursalSheet = XLSX.utils.json_to_sheet(sucursalData);
+      
+      // Agregar encabezados combinados para sucursales (sin mover datos)
+      addCombinedHeadersSimple(sucursalSheet, 'sucursal');
+      
+      XLSX.utils.book_append_sheet(workbook, sucursalSheet, 'Sucursales');
+    }
+    
+    // Verificar que al menos una hoja fue creada
+    if (workbook.SheetNames.length === 0) {
+      alert('No hay datos para exportar a Excel');
+      return;
+    }
+    
+    // Generar nombre de archivo con fecha
+    const today = new Date();
+    const dateString = today.toISOString().split('T')[0];
+    const fileName = `Pedidos_Andreani_${dateString}.xlsx`;
+    
+    // Descargar el archivo Excel
+    XLSX.writeFile(workbook, fileName);
+    
+    console.log('Archivo Excel exportado exitosamente:', fileName);
+    
+  } catch (error) {
+    console.error('Error al exportar a Excel:', error);
+    alert('Error al exportar el archivo Excel. Por favor, inténtalo de nuevo.');
+  }
+};
+
 // Función independiente para exportar a Excel
 const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
     try {
@@ -248,6 +295,25 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
   // Convertir CSV a arrays de objetos para la vista previa
   const domicilioData = csvToJsonForExcel(domicilioCSV);
   const sucursalData = csvToJsonForExcel(sucursalCSV);
+
+  // Función para convertir datos de vuelta a CSV
+  const dataToCSV = (data: any[]): string => {
+    if (data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csvLines = [headers.join(';')];
+    
+    data.forEach(row => {
+      const values = headers.map(header => row[header] || '');
+      csvLines.push(values.join(';'));
+    });
+    
+    return csvLines.join('\n');
+  };
+
+  // Generar CSV desde los datos transformados
+  const domicilioCSVFromData = dataToCSV(domicilioData);
+  const sucursalCSVFromData = dataToCSV(sucursalData);
   
   return (
     <>
@@ -271,16 +337,16 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
             <h4 className="text-xs sm:text-sm font-medium text-gray-300 mb-3 text-center">Archivos Individuales</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
-                    onClick={() => onDownload(domicilioCSV, 'Domicilios.csv')}
-                    disabled={!domicilioCSV}
+                    onClick={() => onDownload(domicilioCSVFromData, 'Domicilios.csv')}
+                    disabled={!domicilioData.length}
                     className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 disabled:hover:scale-100 text-sm sm:text-base"
                 >
                    <DownloadIcon />
                    <span className="ml-2">Domicilios.csv</span>
                 </button>
                 <button
-                    onClick={() => onDownload(sucursalCSV, 'Sucursales.csv')}
-                    disabled={!sucursalCSV}
+                    onClick={() => onDownload(sucursalCSVFromData, 'Sucursales.csv')}
+                    disabled={!sucursalData.length}
                     className="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-teal-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 disabled:hover:scale-100 text-sm sm:text-base"
                 >
                     <DownloadIcon />
@@ -295,8 +361,8 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {onDownloadCombined && (
                     <button
-                        onClick={() => onDownloadCombined(domicilioCSV, sucursalCSV, 'Domicilios_y_Sucursales_Combinado.csv')}
-                        disabled={!domicilioCSV && !sucursalCSV}
+                        onClick={() => onDownloadCombined(domicilioCSVFromData, sucursalCSVFromData, 'Domicilios_y_Sucursales_Combinado.csv')}
+                        disabled={!domicilioData.length && !sucursalData.length}
                         className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 disabled:hover:scale-100 text-sm sm:text-base"
                     >
                         <DownloadIcon />
@@ -304,8 +370,8 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
                     </button>
                 )}
                 <button
-                    onClick={() => exportToExcel(domicilioCSV, sucursalCSV)}
-                    disabled={!domicilioCSV && !sucursalCSV}
+                    onClick={() => exportToExcelFromData(domicilioData, sucursalData)}
+                    disabled={!domicilioData.length && !sucursalData.length}
                     className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 disabled:hover:scale-100 text-sm sm:text-base"
                 >
                     <ExcelIcon />
