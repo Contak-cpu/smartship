@@ -1207,7 +1207,30 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     const medioEnvio = getColumnValue(order, 24); // Medio de envío
     console.log('Processing order:', baseData['Numero Interno'], 'Medio de envío:', medioEnvio);
     
-    if (medioEnvio && medioEnvio.includes("Andreani Estandar") && medioEnvio.includes("domicilio")) {
+    // Función auxiliar para normalizar texto y comparar
+    const normalizeText = (text: string) => {
+      return text
+        .replace(/"/g, '') // Quitar comillas dobles
+        .replace(/'/g, '') // Quitar comillas simples
+        .replace(/\uFFFD/g, 'i') // Reemplazar caracteres de reemplazo Unicode () con 'i'
+        .replace(/\u00ed/g, 'i') // Corregir caracteres mal codificados y quitar tildes
+        .replace(/\u00f3/g, 'o')
+        .replace(/\u00e1/g, 'a')
+        .replace(/\u00e9/g, 'e')
+        .replace(/\u00fa/g, 'u')
+        .replace(/\u00f1/g, 'n')
+        .replace(/\u00fc/g, 'u')
+        .replace(/\u00e7/g, 'c')
+        .trim()
+        .toLowerCase();
+    };
+    
+    const medioEnvioNormalizado = medioEnvio ? normalizeText(medioEnvio) : '';
+    
+    if (medioEnvioNormalizado && (
+      (medioEnvioNormalizado.includes("andreani estandar") && medioEnvioNormalizado.includes("domicilio")) ||
+      medioEnvioNormalizado.includes("envio a domicilio - andreani")
+    )) {
       contadorDomicilios++;
       console.log(`[DOMICILIO ${contadorDomicilios}] Agregando pedido:`, baseData['Numero Interno']);
       
