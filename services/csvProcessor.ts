@@ -381,6 +381,111 @@ const parseCSV = <T,>(csvText: string): Promise<T[]> => {
   });
 };
 
+// Función para generar el encabezado de domicilios con el formato correcto
+const generateDomicilioHeader = (): string => {
+  return `Características,,,,,,,Destinatario,,,,,,Domicilio destino,,,,,
+"Paquete Guardado 
+Ej: Mistery","Peso (grs)
+Ej: ","Alto (cm)
+Ej: ","Ancho (cm)
+Ej: ","Profundidad (cm)
+Ej: ","Valor declarado ($ C/IVA) *
+Ej: ","Numero Interno
+Ej: ","Nombre *
+Ej: ","Apellido *
+Ej: ","DNI *
+Ej: ","Email *
+Ej: ","Celular código *
+Ej: ","Celular número *
+Ej: ","Calle *
+Ej: ","Número *
+Ej: ","Piso
+Ej: ","Departamento
+Ej: ","Provincia / Localidad / CP * 
+Ej: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657","Observaciones
+Ej: "`;
+};
+
+// Función para generar el encabezado de sucursales con el formato correcto
+const generateSucursalHeader = (): string => {
+  return `Datos de envío,,,,,,,Destinatario,,,,,,Destino
+"Paquete Guardado 
+Ej: Mistery","Peso (grs)
+Ej: ","Alto (cm)
+Ej: ","Ancho (cm)
+Ej: ","Profundidad (cm)
+Ej: ","Valor declarado ($ C/IVA) *
+Ej: ","Numero Interno
+Ej: ","Nombre *
+Ej: ","Apellido *
+Ej: ","DNI *
+Ej: ","Email *
+Ej: ","Celular código *
+Ej: ","Celular número *
+Ej: ","Sucursal * 
+Ej: 9 DE JULIO"`;
+};
+
+// Función para generar CSV de domicilios con encabezado correcto
+const unparseDomicilioCSV = (data: AndreaniDomicilioOutput[]): string => {
+  if (data.length === 0) return generateDomicilioHeader();
+  
+  // Crear encabezados limpios sin "Ej:" y otros textos innecesarios
+  const headers = Object.keys(data[0]).map(header => {
+    return header
+      .replace(/ Ej:.*$/, '') // Quitar "Ej: ..."
+      .replace(/\n.*$/, '') // Quitar saltos de línea y texto después
+      .trim();
+  });
+  
+  // Generar el encabezado completo
+  const headerLines = generateDomicilioHeader();
+  const csvLines = [headerLines];
+  
+  // Agregar los datos
+  data.forEach(row => {
+    const values = headers.map(header => {
+      const originalKey = Object.keys(row).find(key => 
+        key.replace(/ Ej:.*$/, '').replace(/\n.*$/, '').trim() === header
+      );
+      return row[originalKey as keyof typeof row] || '';
+    });
+    csvLines.push(values.join(';'));
+  });
+  
+  return csvLines.join('\n');
+};
+
+// Función para generar CSV de sucursales con encabezado correcto
+const unparseSucursalCSV = (data: AndreaniSucursalOutput[]): string => {
+  if (data.length === 0) return generateSucursalHeader();
+  
+  // Crear encabezados limpios sin "Ej:" y otros textos innecesarios
+  const headers = Object.keys(data[0]).map(header => {
+    return header
+      .replace(/ Ej:.*$/, '') // Quitar "Ej: ..."
+      .replace(/\n.*$/, '') // Quitar saltos de línea y texto después
+      .trim();
+  });
+  
+  // Generar el encabezado completo
+  const headerLines = generateSucursalHeader();
+  const csvLines = [headerLines];
+  
+  // Agregar los datos
+  data.forEach(row => {
+    const values = headers.map(header => {
+      const originalKey = Object.keys(row).find(key => 
+        key.replace(/ Ej:.*$/, '').replace(/\n.*$/, '').trim() === header
+      );
+      return row[originalKey as keyof typeof row] || '';
+    });
+    csvLines.push(values.join(';'));
+  });
+  
+  return csvLines.join('\n');
+};
+
 const unparseCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]): string => {
   if (data.length === 0) return "";
   
@@ -1361,8 +1466,8 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
 
   return {
-    domicilioCSV: unparseCSV(domicilios),
-    sucursalCSV: unparseCSV(sucursalesOutput),
+    domicilioCSV: unparseDomicilioCSV(domicilios),
+    sucursalCSV: unparseSucursalCSV(sucursalesOutput),
     processingInfo: {
       totalOrders: tiendanubeOrders.length,
       domiciliosProcessed: contadorDomicilios,
@@ -1605,8 +1710,8 @@ export const processVentasOrders = async (csvContent: string): Promise<{
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
 
   return {
-    domicilioCSV: unparseCSV(domicilios),
-    sucursalCSV: unparseCSV(sucursalesOutput),
+    domicilioCSV: unparseDomicilioCSV(domicilios),
+    sucursalCSV: unparseSucursalCSV(sucursalesOutput),
     processingInfo: {
       totalOrders: lines.length - 1,
       domiciliosProcessed: contadorDomicilios,

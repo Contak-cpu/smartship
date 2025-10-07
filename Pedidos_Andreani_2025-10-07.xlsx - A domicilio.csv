@@ -1,0 +1,73 @@
+Características,,,,,,,Destinatario,,,,,,Domicilio destino,,,,,
+"Paquete Guardado 
+Ej: Mistery","Peso (grs)
+Ej: ","Alto (cm)
+Ej: ","Ancho (cm)
+Ej: ","Profundidad (cm)
+Ej: ","Valor declarado ($ C/IVA) *
+Ej: ","Numero Interno
+Ej: ","Nombre *
+Ej: ","Apellido *
+Ej: ","DNI *
+Ej: ","Email *
+Ej: ","Celular código *
+Ej: ","Celular número *
+Ej: ","Calle *
+Ej: ","Número *
+Ej: ","Piso
+Ej: ","Departamento
+Ej: ","Provincia / Localidad / CP * 
+Ej: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657","Observaciones
+Ej: "
+,1,1,1,1,4500,#4645,Federico,Beltramo,37396742,federicobeltramo6@gmail.com,3491,444516,Mara Elena Walsh,162,Castellano,Castellano,SANTA FE / CABAÑA EL CISNE / 2322,
+,1,1,1,1,4500,#4644,Lucas,Visconti,34424805,lucasvisconti_9@hotmail.com,9346,4688775,1 De Mayo,921,,,SANTA FE / BIGAND / 2177,
+,1,1,1,1,4500,#4640,Jordan,Manfras,39835024,beatrizolivieri15@gmail.com,2324,680504,46 11 Y 13,512,,,BUENOS AIRES / AGOTE / 6600,
+,1,1,1,1,4500,#4639,Martin,Balza,23111677,balzamartingustavo@gmail.com,9115,6254537,Av ferrocarril provincial,5557,,,BUENOS AIRES / SAN FRANCISCO SOLANO / 1881,
+,1,1,1,1,4500,#4637,Marina,Serruya,27351279767,marumarina1990@gmail.com,3424,733420,Av. Corrientes,2928,3 H,3 H,BUENOS AIRES / C.A.B.A. / 1193,
+,1,1,1,1,4500,#4636,Juan,Cacciaguerra,33281115,yojuanfra_4@hotmail.com,341,2522020,Centenario,520,,,SANTA FE / PEYRANO / 2113,
+,1,1,1,1,4500,#4635,Julian,Vidal,30557312,vidaljulian@hotmail.com,2944,677514,Ernesto De La Crcova,351,,,RIO NEGRO / BARILOCHE / 8400,
+,1,1,1,1,4500,#4634,Juan,cruz Riart,37403721,juanriart30@gmail.com,9346,5521107,Balcarce,1220,,,SANTA FE / FIRMAT / 2630,
+,1,1,1,1,4500,#4633,Matias,Roberto,43407705,shadowdarkteso@gmail.com,11,69397324,Avenida Directorio 625,9,B,B,BUENOS AIRES / C.A.B.A. / 1424,
+,1,1,1,1,4500,#4632,Victor,Adolfo Navarta,28703251,victor_navarta@hotmail.com,2975,935542,Avenida gobernador gregores,1533,Edificio,Edificio,SANTA CRUZ / ALMA GRANDE / 9015,
+,1,1,1,1,4500,#4631,Jose,Gerardo Mendoza Vivas,95640877,studio64producciones.ar@gmail.com,11,33941144,Sarmiento,5561,Galpn gris,Galpn gris,BUENOS AIRES / VILLA LYNCH / 1672,
+,1,1,1,1,4500,#4630,Daniel,Caputo,30703469120,danielitocaputo@gmail.com,11,53011935,Gaona,4316,,,BUENOS AIRES / CIUDADELA / 1702,
+,1,1,1,1,4500,#4629,Brahian,Ezequiel Gering,43702161,geringbrahian9@gmail.com,3755,284056,Hiplito Yrigoyen,0,,,MISIONES / 1 DE MAYO / 3364,
+,1,1,1,1,4500,#4628,Juan,Garro,34958770,el-colo90@hotmail.com,2920,302592,Itaparica,176,,,BUENOS AIRES / C. DE PATAGONES / 8504,
+,1,1,1,1,4500,#4627,Leonardo,Forconesi,33461851,leoforconesi@gmail.com,261,5603385,Felix Suarez,765,,,MENDOZA / GUAYMALLEN / 5521,
+,1,1,1,1,4500,#4625,Ezequiel,Rodriguez,35461429,rodriguezaltieri.e@gmail.com,11,37678389,Ushuaia,311,,,BUENOS AIRES / AVELLANEDA / 1870,
+,1,1,1,1,4500,#4624,Agustin,Fraschina,26960859,agustin.fraschina@gmail.com,2346,602883,Gral. Frias,438,,,BUENOS AIRES / CAQADA RICA / 6620,
+,1,1,1,1,4500,#4623,Gianluca,Frascino,45578422,gian427yt@gmail.com,11,60118594,Intendente Rodrguez,190,,,BUENOS AIRES / ENRIQUE FYNN / 1741,
+,1,1,1,1,4500,#4622,Fabian,Arturo Graumann,25315420,fabiangraumann@hotmail.com,3751,559984,Jos Hernndez,255,,,MISIONES / 9 DE JULIO / 3380,
+,1,1,1,1,4500,#4621,Nicols,Garrone,30951248,nicolasgarrone@live.com.ar,3576,521437,De Mayo 847,0,,,CORDOBA / ARBOL CHATO / 2432,
+,1,1,1,1,4500,#4619,Roco,Vernica OConnor,23763367,oconnor.vero@gmail.com,3513,908850,La posta,2989,,,CORDOBA / CORDOBA - A CENTENO / 5009,
+,1,1,1,1,4500,#4618,Mauricio,Eduardo vazquez,30710874227,mauriciov.sandinos@gmail.com,387,4067797,Espaa,802,General Guemes,General Guemes,SALTA / AGUAS CALIENTES / 4430,
+,1,1,1,1,4500,#4617,Sergio,Toledo,33274611,astwifi1@gmail.com,261,3433900,Santiago apostol,2026,,,MENDOZA / ARENALES / 5539,
+,1,1,1,1,4500,#4616,Wilson,Caminos,33162541,caminoswilsonenri@gmail.com,3512,205586,Gabriela Mistral,4071,,,CORDOBA / CORDOBA - ALBERDI / 5000,
+,1,1,1,1,4500,#4615,Maximiliano,An Loza,24302052,maximiliano_loza@hotmail.es,297,4000888,Contraalmirante Guerrico,855,Escalante,Escalante,CHUBUT / CAÑADON FERRAIS / 9001,
+,1,1,1,1,4500,#4613,Marina,Romero,14361012,marinasoriaromero60@gmail.com,362,4569602,Avenida de los inmigrantes,752,,,CHACO / COLONIA FLORENCIA / 3500,
+,1,1,1,1,4500,#4611,Enzo,Pirola,43114019,enzopirola13@gmail.com,3435,319504,Los sauces,243,,,ENTRE RIOS / ALDEA CHALECO / 3100,
+,1,1,1,1,4500,#4610,Francisco,Orlando,37631515,francescoorlando9@outlook.com,3513,738647,Belisario Roldn,504,,,CORDOBA / EL CARRIZAL / 5133,
+,1,1,1,1,4500,#4609,Joaquin,Nicolau,20342006001,joaquin_nicolau@hotmail.com,223,4512467,Avellaneda,721,,,BUENOS AIRES / MAR DEL PLATA / 7602,
+,1,1,1,1,4500,#4608,Agustin,Aiassa,38134007,agus_aiassa@hotmail.com,3406,434211,Hugo novatti,1650,,,SANTA FE / B BELGRANO ORTIZ / 2440,
+,1,1,1,1,4500,#4606,Claudio,Saucedo,30666948,gonzy02@hotmail.com,11,66793508,Canale,4249,,,BUENOS AIRES / ADROGUE / 1846,
+,1,1,1,1,4500,#4605,Carlos,Eichemberger,30788444,eche_19@hotmail.com,3482,661028,27 De Abril,2767,,,SANTA FE / C EL VEINTICINCO / 3560,
+,1,1,1,1,4500,#4604,Paz,Succi,30651423,paquisucci@gmail.com,11,65049030,Jacinto diaz,2222,F,F,BUENOS AIRES / SAN ISIDRO / 1642,
+,1,1,1,1,4500,#4603,Santiago,Cardini,42619033,santicardini@hotmail.com,2392,617755,Senz Pea,1826,,,BUENOS AIRES / B INDIO TROMPA / 6400,
+,1,1,1,1,4500,#4602,Juan,jose Leiva,35700597,juanjoseleivaa@gmail.com,3446,520922,Bulevard martinez,1350,,,ENTRE RIOS / COLONIA EL POTRERO / 2820,
+,1,1,1,1,4500,#4601,Alejandro,Rayson,13638293,aerayson@hotmail.com,9113,3968296,Las Palmas,6533,,,BUENOS AIRES / 11 DE SEPTIEMBRE / 1657,
+,1,1,1,1,4500,#4599,Santiago,Martn Carballo Landa,32727198,cr.scarballo@gmail.com,264,5012344,Barrio MUDAP 2 manzana F,7,Rivadavia,Rivadavia,SAN JUAN / DESAMPARADOS / 5400,
+,1,1,1,1,4500,#4598,Jonathan,Carnero,35118169,jonathancarnero@yahoo.com,11,66763588,Arricau,4464,,,BUENOS AIRES / MUÑIZ / 1663,
+,1,1,1,1,4500,#4597,Juan,Appiolaza,20308895557,juaneappiolaza13@gmail.com,261,5913430,El aconcagua,3288,,,MENDOZA / MAIPU / 5515,
+,1,1,1,1,4500,#4596,Fabricio,Peron,37397623,faabriicaabperon_18@hotmail.com,2954,445861,Goyeneche,1289,,,LA PAMPA / B COLORADAS / 6300,
+,1,1,1,1,4500,#4594,Analia,Valdi,31321708,analiavaldi1984@gmail.com,11,61920776,Paso de los libres,1923,,,BUENOS AIRES / FLORENCIO VARELA / 1888,
+,1,1,1,1,4500,#4591,DiegoFernando,Carranza,24406726,fernandocarranza54@gmail.com,11,35218686,Martin Peschel,2229,Fondo,Fondo,BUENOS AIRES / 11 DE SEPTIEMBRE / 1657,
+,1,1,1,1,4500,#4590,Luciano,Astudillo,31472922,astudillo_luciano@hotmail.com,2994,237861,Ceferino Namuncura,1760,,,NEUQUEN / LAS PERLAS / 8300,
+,1,1,1,1,4500,#4589,Juluo,Di liscia,28165760,diluss@hotmail.com,9116,7420731,Mariscal antonio jos de sucre,2935,3B,3B,BUENOS AIRES / C.A.B.A. / 1428,
+,1,1,1,1,4500,#4588,Kevin,Coronel,39875603,kevincoronel221@gmail.com,9234,5513724,14 301 Y 302,3147,Casa al fondo dos pisos,Casa al fondo dos pisos,BUENOS AIRES / 25 DE MAYO / 6660,
+,1,1,1,1,4500,#4587,Monica,Maetinez,13998237,monimarma2016@gmail.com,261,4186796,Cerro San Isidro 3605,3605,,,MENDOZA / C D LS POTRERILLOS / 5500,
+,1,1,1,1,4500,#4586,Eduardo,Violino,31826970,eduardoviolino@gmail.com,291,4260484,Rivadavia,884,,,BUENOS AIRES / ADOLFO ALSINA / 6430,
+,1,1,1,1,4500,#4585,Roberto,Tapia,33159525,robftapia@gmail.com,11,11493576,Jose ingenieros,3096,17,17,BUENOS AIRES / SAN ISIDRO / 1642,
+,1,1,1,1,4500,#4583,Lucas,Streva,29792552,lucas.streva@gmail.com,9341,6179983,Cordoba,1095,Sucursal on city,Sucursal on city,SANTA FE / LA CERAMICA Y CUYO / 2000,
+,1,1,1,1,4500,#4581,Aldo,Villalba,46533484,aldovillalba8324@gmail.com,387,6027874,25 de Mayo,44,,,SALTA / ABLOME / 4421,
+,1,1,1,1,4500,#4580,Virginia,Godoy,27116596,virsolgodoy@gmail.com,2281,534174,Moreno,1499,,,BUENOS AIRES / AZUL / 7300,
+,1,1,1,1,4500,#4579,David,Antonio Carrillo Correa,96314108,davidacarrilloc@gmail.com,11,62244058,Chile,1283,7H,7H,BUENOS AIRES / C.A.B.A. / 1098,
