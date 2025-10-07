@@ -43,20 +43,30 @@ export class ExcelTemplateProcessor {
   private async loadInternalTemplate(): Promise<ArrayBuffer> {
     try {
       console.log('Cargando plantilla template.xlsx...');
+      
+      // Verificar que el archivo existe
       const response = await fetch('/templates/template.xlsx');
       
       console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
+        console.error('Error en la respuesta:', response.status, response.statusText);
         throw new Error(`Error al cargar plantilla: ${response.status} ${response.statusText}`);
       }
       
       const arrayBuffer = await response.arrayBuffer();
       console.log('Plantilla template.xlsx cargada exitosamente, tamaño:', arrayBuffer.byteLength, 'bytes');
+      
+      // Verificar que el buffer no esté vacío
+      if (arrayBuffer.byteLength === 0) {
+        throw new Error('El archivo template.xlsx está vacío');
+      }
+      
       return arrayBuffer;
     } catch (error) {
       console.error('Error cargando plantilla template.xlsx:', error);
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace available');
       throw new Error(`No se pudo cargar la plantilla template.xlsx: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
@@ -146,54 +156,75 @@ export class ExcelTemplateProcessor {
   }
 
   private async populateDataInExistingSheet(sheet: ExcelJS.Worksheet, data: any[]) {
-    console.log(`Poblando datos en hoja existente: ${sheet.name}`);
-    console.log(`Datos a insertar: ${data.length} registros`);
-    
-    // Buscar la primera fila vacía después de los encabezados
-    let startRow = 1;
-    let foundEmptyRow = false;
-    
-    // Buscar desde la fila 1 hacia abajo para encontrar la primera fila vacía
-    for (let row = 1; row <= 100; row++) {
-      const currentRow = sheet.getRow(row);
-      let isEmpty = true;
+    try {
+      console.log(`Poblando datos en hoja existente: ${sheet.name}`);
+      console.log(`Datos a insertar: ${data.length} registros`);
+      console.log(`Total de filas en la hoja: ${sheet.rowCount}`);
+      console.log(`Total de columnas en la hoja: ${sheet.columnCount}`);
       
-      // Verificar si la fila está vacía
-      currentRow.eachCell((cell) => {
-        if (cell.value !== null && cell.value !== undefined && cell.value.toString().trim() !== '') {
-          isEmpty = false;
+      if (!data || data.length === 0) {
+        console.log('No hay datos para insertar');
+        return;
+      }
+      
+      // Buscar la primera fila vacía después de los encabezados
+      let startRow = 1;
+      let foundEmptyRow = false;
+      
+      // Buscar desde la fila 1 hacia abajo para encontrar la primera fila vacía
+      for (let row = 1; row <= Math.min(100, sheet.rowCount + 10); row++) {
+        const currentRow = sheet.getRow(row);
+        let isEmpty = true;
+        
+        // Verificar si la fila está vacía
+        currentRow.eachCell({ includeEmpty: true }, (cell) => {
+          if (cell.value !== null && cell.value !== undefined && cell.value.toString().trim() !== '') {
+            isEmpty = false;
+          }
+        });
+        
+        if (isEmpty) {
+          startRow = row;
+          foundEmptyRow = true;
+          console.log(`Primera fila vacía encontrada: ${row}`);
+          break;
+        }
+      }
+      
+      if (!foundEmptyRow) {
+        // Si no encontramos fila vacía, usar la última fila + 1
+        startRow = Math.max(sheet.rowCount + 1, 1);
+        console.log(`No se encontró fila vacía, usando fila: ${startRow}`);
+      }
+      
+      // Insertar los datos
+      data.forEach((rowData, index) => {
+        try {
+          const targetRow = startRow + index;
+          const row = sheet.getRow(targetRow);
+          
+          console.log(`Insertando datos en fila ${targetRow}:`, rowData);
+          
+          // Mapear los datos a las columnas
+          const values = Object.values(rowData);
+          values.forEach((value, colIndex) => {
+            try {
+              const cell = row.getCell(colIndex + 1);
+              cell.value = value;
+            } catch (cellError) {
+              console.error(`Error insertando en celda ${targetRow}, ${colIndex + 1}:`, cellError);
+            }
+          });
+        } catch (rowError) {
+          console.error(`Error insertando fila ${startRow + index}:`, rowError);
         }
       });
       
-      if (isEmpty) {
-        startRow = row;
-        foundEmptyRow = true;
-        console.log(`Primera fila vacía encontrada: ${row}`);
-        break;
-      }
+      console.log(`Datos insertados exitosamente desde fila ${startRow}`);
+    } catch (error) {
+      console.error('Error en populateDataInExistingSheet:', error);
+      throw error;
     }
-    
-    if (!foundEmptyRow) {
-      // Si no encontramos fila vacía, usar la última fila + 1
-      startRow = sheet.rowCount + 1;
-      console.log(`No se encontró fila vacía, usando fila: ${startRow}`);
-    }
-    
-    // Insertar los datos
-    data.forEach((rowData, index) => {
-      const targetRow = startRow + index;
-      const row = sheet.getRow(targetRow);
-      
-      console.log(`Insertando datos en fila ${targetRow}:`, rowData);
-      
-      // Mapear los datos a las columnas
-      Object.values(rowData).forEach((value, colIndex) => {
-        const cell = row.getCell(colIndex + 1);
-        cell.value = value;
-      });
-    });
-    
-    console.log(`Datos insertados exitosamente desde fila ${startRow}`);
   }
 
   // Método para detectar automáticamente las columnas en la plantilla

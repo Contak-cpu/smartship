@@ -182,11 +182,22 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
             return;
         }
         
-        // Generar Excel usando el template.xlsx
-        const excelBuffer = await excelTemplateProcessor.generateExcelWithInternalTemplate(
-            domicilioData,
-            sucursalData
-        );
+        let excelBuffer: ArrayBuffer;
+        
+        try {
+            // Intentar generar Excel usando el template.xlsx
+            excelBuffer = await excelTemplateProcessor.generateExcelWithInternalTemplate(
+                domicilioData,
+                sucursalData
+            );
+            console.log('Excel generado exitosamente con template.xlsx');
+        } catch (templateError) {
+            console.warn('Error con template.xlsx, usando método de respaldo:', templateError);
+            
+            // Fallback: generar Excel básico sin template
+            excelBuffer = await generateBasicExcel(domicilioData, sucursalData);
+            console.log('Excel generado con método de respaldo');
+        }
         
         // Crear blob y descargar
         const blob = new Blob([excelBuffer], { 
@@ -196,7 +207,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         // Generar nombre de archivo con fecha
         const today = new Date();
         const dateString = today.toISOString().split('T')[0];
-        const fileName = `Pedidos_Andreani_Template_${dateString}.xlsx`;
+        const fileName = `Pedidos_Andreani_${dateString}.xlsx`;
         
         // Crear enlace de descarga
         const url = window.URL.createObjectURL(blob);
@@ -208,12 +219,35 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
         
-        console.log('Archivo Excel exportado exitosamente con template.xlsx:', fileName);
+        console.log('Archivo Excel exportado exitosamente:', fileName);
         
     } catch (error) {
-        console.error('Error al exportar a Excel con template:', error);
-        alert('Error al exportar el archivo Excel con template. Por favor, inténtalo de nuevo.');
+        console.error('Error al exportar a Excel:', error);
+        alert(`Error al exportar el archivo Excel: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
+};
+
+// Función de respaldo para generar Excel básico
+const generateBasicExcel = async (domicilioData: any[], sucursalData: any[]): Promise<ArrayBuffer> => {
+    const workbook = XLSX.utils.book_new();
+    
+    // Crear hoja de domicilios si existe contenido
+    if (domicilioData.length > 0) {
+        const domicilioSheet = XLSX.utils.json_to_sheet(domicilioData);
+        addCombinedHeadersSimple(domicilioSheet, 'domicilio');
+        XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'Domicilios');
+    }
+    
+    // Crear hoja de sucursales si existe contenido
+    if (sucursalData.length > 0) {
+        const sucursalSheet = XLSX.utils.json_to_sheet(sucursalData);
+        addCombinedHeadersSimple(sucursalSheet, 'sucursal');
+        XLSX.utils.book_append_sheet(workbook, sucursalSheet, 'Sucursales');
+    }
+    
+    // Convertir a buffer
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    return new Uint8Array(wbout).buffer;
 };
 
 
