@@ -228,17 +228,28 @@ const createAndreaniSheet = (data: any[], sheetName: string, type: 'domicilio' |
     ];
   }
   
-  // Agregar encabezados en la fila 1
-  XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: 'A1' });
+  // Crear encabezados combinados para la fila 1
+  const combinedHeadersRow = [];
+  if (type === 'domicilio') {
+    // A-G: Características, H-M: Destinatario, N-S: Domicilio Destino
+    combinedHeadersRow.push('Características', '', '', '', '', '', '', 'Destinatario', '', '', '', '', '', 'Domicilio Destino', '', '', '', '', '');
+  } else {
+    // A-G: Datos de envío, H-M: Destinatario, N: Destino
+    combinedHeadersRow.push('Datos de envío', '', '', '', '', '', '', 'Destinatario', '', '', '', '', '', 'Destino');
+  }
   
-  // Agregar fila de ejemplo en la fila 2
-  XLSX.utils.sheet_add_aoa(worksheet, [exampleRow], { origin: 'A2' });
+  // Agregar encabezados combinados en la fila 1
+  XLSX.utils.sheet_add_aoa(worksheet, [combinedHeadersRow], { origin: 'A1' });
+  
+  // Agregar encabezados detallados en la fila 2
+  const originalHeaders = headers.map(header => header.split(' Ej:')[0]);
+  XLSX.utils.sheet_add_aoa(worksheet, [originalHeaders], { origin: 'A2' });
   
   // Agregar datos reales a partir de la fila 3
   if (data.length > 0) {
     const dataRows = data.map(row => {
       const values: any[] = [];
-      headers.forEach(header => {
+      originalHeaders.forEach(header => {
         // Buscar el valor correspondiente en el objeto de datos
         const key = Object.keys(row).find(k => 
           header.includes(k.split(' ')[0]) || 
@@ -252,8 +263,23 @@ const createAndreaniSheet = (data: any[], sheetName: string, type: 'domicilio' |
     XLSX.utils.sheet_add_aoa(worksheet, dataRows, { origin: 'A3' });
   }
   
-  // Agregar encabezados combinados
-  addCombinedHeadersSimple(worksheet, type);
+  // Aplicar formato de celdas combinadas
+  if (!worksheet['!merges']) worksheet['!merges'] = [];
+  
+  if (type === 'domicilio') {
+    // Combinar A1:G1 para "Características"
+    worksheet['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
+    // Combinar H1:M1 para "Destinatario"
+    worksheet['!merges'].push({ s: { r: 0, c: 7 }, e: { r: 0, c: 12 } });
+    // Combinar N1:S1 para "Domicilio Destino"
+    worksheet['!merges'].push({ s: { r: 0, c: 13 }, e: { r: 0, c: 18 } });
+  } else {
+    // Combinar A1:G1 para "Datos de envío"
+    worksheet['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
+    // Combinar H1:M1 para "Destinatario"
+    worksheet['!merges'].push({ s: { r: 0, c: 7 }, e: { r: 0, c: 12 } });
+    // La celda N1 no se combina (solo una celda para "Destino")
+  }
   
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
   return workbook;
@@ -467,14 +493,26 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
       ];
     }
     
+    // Crear encabezados combinados para la fila 1
+    let combinedHeadersRow: string[];
+    if (type === 'domicilio') {
+      // A-G: Características, H-M: Destinatario, N-S: Domicilio Destino
+      combinedHeadersRow = ['Características', '', '', '', '', '', '', 'Destinatario', '', '', '', '', '', 'Domicilio Destino', '', '', '', '', ''];
+    } else {
+      // A-G: Datos de envío, H-M: Destinatario, N: Destino
+      combinedHeadersRow = ['Datos de envío', '', '', '', '', '', '', 'Destinatario', '', '', '', '', '', 'Destino'];
+    }
+    
+    const originalHeaders = headers.map(header => header.split(' Ej:')[0]);
+    
     const csvLines = [
-      headers.join(';'), // Fila 1: Encabezados
-      exampleRow.join(';') // Fila 2: Ejemplo vacío
+      combinedHeadersRow.join(';'), // Fila 1: Encabezados combinados
+      originalHeaders.join(';') // Fila 2: Encabezados detallados
     ];
     
     // Agregar datos reales a partir de la fila 3
     data.forEach(row => {
-      const values = headers.map(header => {
+      const values = originalHeaders.map(header => {
         // Buscar el valor correspondiente en el objeto de datos
         const key = Object.keys(row).find(k => 
           header.includes(k.split(' ')[0]) || 
