@@ -242,6 +242,23 @@ const createAndreaniSheet = (data: any[], type: 'domicilio' | 'sucursal') => {
     // La celda N1 no se combina (solo una celda para "Destino")
   }
   
+  // Aplicar centrado a las celdas de la fila 1
+  if (!worksheet['!rows']) worksheet['!rows'] = [];
+  
+  // Centrar la fila 1
+  worksheet['!rows'][0] = { hpt: 20, hpx: 20 };
+  
+  // Aplicar centrado horizontal a las celdas combinadas de la fila 1
+  const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+  for (let col = 0; col <= range.e.c; col++) {
+    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+    if (!worksheet[cellAddress]) worksheet[cellAddress] = { v: '', t: 's' };
+    worksheet[cellAddress].s = {
+      ...worksheet[cellAddress].s,
+      alignment: { horizontal: 'center', vertical: 'center' }
+    };
+  }
+  
   return worksheet;
 };
 
