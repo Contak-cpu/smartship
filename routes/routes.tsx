@@ -7,6 +7,7 @@ import PDFGeneratorPage from '../pages/PDFGeneratorPage';
 import LandingPage from '../pages/LandingPage';
 import DashboardPage from '../pages/DashboardPage';
 import RentabilidadPage from '../pages/RentabilidadPage';
+import ProximamentePage from '../pages/ProximamentePage';
 
 // Configuración centralizada de rutas
 // Para agregar nuevas rutas, simplemente añade un nuevo objeto a este array
@@ -48,6 +49,14 @@ export const routes: RouteObject[] = [
     element: (
       <LevelProtectedRoute requiredLevel={1} sectionName="Calculadora de Rentabilidad">
         <RentabilidadPage />
+      </LevelProtectedRoute>
+    ),
+  },
+  {
+    path: '/proximamente',
+    element: (
+      <LevelProtectedRoute requiredLevel={3} sectionName="Próximamente - Funciones Exclusivas">
+        <ProximamentePage />
       </LevelProtectedRoute>
     ),
   },

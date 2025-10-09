@@ -20,7 +20,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
   // Nivel 2: Acceso a SmartShip, PDF Generator y Rentabilidad
   // Nivel 1: Solo acceso a Rentabilidad
   const validUsers: Record<string, UserData> = {
-    'Yael': { password: '123', level: 3 },
+    'Yael': { password: '123', level: 2 },
     'Erick': { password: '123', level: 3 },
     'Pedro': { password: '123', level: 1 }
   };
