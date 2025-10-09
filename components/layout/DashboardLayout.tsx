@@ -135,23 +135,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               }}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-              <div className="text-green-500 w-10 h-10 flex-shrink-0">
-                <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                  <g clipPath="url(#clip0_6_535)">
-                    <path
-                      clipRule="evenodd"
-                      d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z"
-                      fill="currentColor"
-                      fillRule="evenodd"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_6_535">
-                      <rect fill="white" height="48" width="48" />
-                    </clipPath>
-                  </defs>
-                </svg>
-              </div>
+              <img 
+                src="/ko.png" 
+                alt="Kore Ops Logo" 
+                className="w-10 h-10 flex-shrink-0 object-contain"
+              />
               <div className="text-left">
                 <h2 className="text-xl font-bold text-white">Kore Ops</h2>
                 <p className="text-xs text-gray-400">Panel de Control</p>
@@ -168,23 +156,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               className="hover:opacity-80 transition-opacity"
               title="Ir al inicio"
             >
-              <div className="text-green-500 w-10 h-10">
-                <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                  <g clipPath="url(#clip0_6_535)">
-                    <path
-                      clipRule="evenodd"
-                      d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z"
-                      fill="currentColor"
-                      fillRule="evenodd"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_6_535">
-                      <rect fill="white" height="48" width="48" />
-                    </clipPath>
-                  </defs>
-                </svg>
-              </div>
+              <img 
+                src="/ko.png" 
+                alt="Kore Ops Logo" 
+                className="w-10 h-10 object-contain"
+              />
             </button>
           )}
           <button
