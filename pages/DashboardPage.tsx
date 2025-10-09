@@ -52,6 +52,24 @@ const DashboardPage: React.FC = () => {
         </svg>
       ),
     },
+    {
+      id: 'rentabilidad',
+      title: 'Calculadora de Rentabilidad',
+      description: 'Analiza la rentabilidad diaria de tu ecommerce. Calcula márgenes, gastos y porcentajes de rentabilidad en tiempo real con soporte para múltiples monedas.',
+      path: '/rentabilidad',
+      color: 'green',
+      stats: 'Análisis Financiero',
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      ),
+    },
   ];
 
   const getColorClasses = (color: string) => {
@@ -126,7 +144,7 @@ const DashboardPage: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">2</p>
+                    <p className="text-2xl font-bold text-white">3</p>
                     <p className="text-xs text-gray-400">Herramientas Activas</p>
                   </div>
                 </div>
