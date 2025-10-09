@@ -17,32 +17,25 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header simplificado */}
-      <header className="border-b border-gray-200 dark:border-gray-800">
+      <header className="border-b border-gray-700" style={{ backgroundColor: '#202020' }}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <button 
               onClick={() => window.location.reload()}
               className="flex items-center gap-2 sm:gap-4 hover:opacity-80 transition-opacity"
             >
-              <div className="text-blue-500 size-6 sm:size-8">
-                <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                  <g clipPath="url(#clip0_6_535)">
-                    <path clipRule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fillRule="evenodd"></path>
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_6_535">
-                      <rect fill="white" height="48" width="48"></rect>
-                    </clipPath>
-                  </defs>
-                </svg>
-              </div>
-              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">ShipSmart</h2>
+              <img 
+                src="/ko.png" 
+                alt="Kore Ops Logo" 
+                className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+              />
+              <h2 className="text-base sm:text-lg font-bold text-white">Kore Ops</h2>
             </button>
             
             {/* Botón Ya tengo un plan */}
             <button
               onClick={onGoToLogin}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300"
+              className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300"
             >
               <span className="hidden sm:inline">Ya tengo un plan</span>
               <span className="sm:hidden">Login</span>
