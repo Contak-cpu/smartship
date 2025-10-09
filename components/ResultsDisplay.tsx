@@ -25,45 +25,45 @@ const ExcelIcon = () => (
 
 // Función para crear Excel sin template (método original)
 const createExcelWithoutTemplate = (domicilioCSV: string, sucursalCSV: string) => {
-    const workbook = XLSX.utils.book_new();
-    
-    // Función interna para convertir CSV a JSON (solo para Excel)
-    const csvToJsonForExcel = (csvText: string): any[] => {
-        const lines = csvText.split('\n').filter(line => line.trim());
-        if (lines.length === 0) return [];
+        const workbook = XLSX.utils.book_new();
         
-        const headers = lines[0].split(';');
-        const data = [];
+        // Función interna para convertir CSV a JSON (solo para Excel)
+        const csvToJsonForExcel = (csvText: string): any[] => {
+            const lines = csvText.split('\n').filter(line => line.trim());
+            if (lines.length === 0) return [];
+            
+            const headers = lines[0].split(';');
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(';');
+                const row: any = {};
+                headers.forEach((header, index) => {
+                    // Eliminar comillas dobles de encabezados y datos
+                    const cleanHeader = header.replace(/"/g, '');
+                    const cleanValue = (values[index] || '').replace(/"/g, '');
+                    row[cleanHeader] = cleanValue;
+                });
+                data.push(row);
+            }
+            
+            return data;
+        };
         
-        for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(';');
-            const row: any = {};
-            headers.forEach((header, index) => {
-                // Eliminar comillas dobles de encabezados y datos
-                const cleanHeader = header.replace(/"/g, '');
-                const cleanValue = (values[index] || '').replace(/"/g, '');
-                row[cleanHeader] = cleanValue;
-            });
-            data.push(row);
+        // Crear hoja de domicilios si existe contenido
+        if (domicilioCSV && domicilioCSV.trim()) {
+            const domicilioData = csvToJsonForExcel(domicilioCSV);
+            if (domicilioData.length > 0) {
+                const domicilioSheet = XLSX.utils.json_to_sheet(domicilioData);
+                XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'Domicilios');
+            }
         }
         
-        return data;
-    };
-    
-    // Crear hoja de domicilios si existe contenido
-    if (domicilioCSV && domicilioCSV.trim()) {
-        const domicilioData = csvToJsonForExcel(domicilioCSV);
-        if (domicilioData.length > 0) {
-            const domicilioSheet = XLSX.utils.json_to_sheet(domicilioData);
-            XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'Domicilios');
-        }
-    }
-    
-    // Crear hoja de sucursales si existe contenido
-    if (sucursalCSV && sucursalCSV.trim()) {
-        const sucursalData = csvToJsonForExcel(sucursalCSV);
-        if (sucursalData.length > 0) {
-            const sucursalSheet = XLSX.utils.json_to_sheet(sucursalData);
+        // Crear hoja de sucursales si existe contenido
+        if (sucursalCSV && sucursalCSV.trim()) {
+            const sucursalData = csvToJsonForExcel(sucursalCSV);
+            if (sucursalData.length > 0) {
+                const sucursalSheet = XLSX.utils.json_to_sheet(sucursalData);
             XLSX.utils.book_append_sheet(workbook, sucursalSheet, 'Sucursales');
         }
     }
@@ -74,137 +74,91 @@ const createExcelWithoutTemplate = (domicilioCSV: string, sucursalCSV: string) =
 // Función independiente para exportar a Excel usando template
 const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
     try {
-        console.log('Iniciando exportación a Excel...');
+        // Cargar el template desde public/templates/template.xlsx
+        const templateResponse = await fetch('/templates/template.xlsx');
+        if (!templateResponse.ok) {
+            throw new Error(`No se pudo cargar el template: ${templateResponse.status}`);
+        }
+        const templateBuffer = await templateResponse.arrayBuffer();
+        const workbook = XLSX.read(templateBuffer, { type: 'array' });
         
-        // Intentar cargar el template usando la lógica que funciona
-        let workbook;
-        let useTemplate = false;
-        
-        try {
-            console.log('Cargando template desde /templates/template.xlsx...');
-            const templateResponse = await fetch('/templates/template.xlsx');
+        // Función interna para convertir CSV a JSON (solo para Excel)
+        const csvToJsonForExcel = (csvText: string): any[] => {
+            const lines = csvText.split('\n').filter(line => line.trim());
+            if (lines.length === 0) return [];
             
-            if (!templateResponse.ok) {
-                throw new Error(`Template no encontrado: ${templateResponse.status}`);
+            const headers = lines[0].split(';');
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(';');
+                const row: any = {};
+                headers.forEach((header, index) => {
+                    // Eliminar comillas dobles de encabezados y datos
+                    const cleanHeader = header.replace(/"/g, '');
+                    const cleanValue = (values[index] || '').replace(/"/g, '');
+                    row[cleanHeader] = cleanValue;
+                });
+                data.push(row);
             }
             
-            const templateBuffer = await templateResponse.arrayBuffer();
-            console.log('Template cargado, tamaño:', templateBuffer.byteLength, 'bytes');
+            return data;
+        };
+        
+        // Procesar domicilios si existe contenido
+        if (domicilioCSV && domicilioCSV.trim()) {
+            const domicilioData = csvToJsonForExcel(domicilioCSV);
             
-            // Intentar leer el template con diferentes opciones para evitar el error "HTML could not find <table>"
-            try {
-                workbook = XLSX.read(templateBuffer, { type: 'array', cellDates: false });
-                console.log('Template leído exitosamente, hojas disponibles:', workbook.SheetNames);
-                useTemplate = true;
-            } catch (xlsxError) {
-                console.error('Error al leer template con XLSX:', xlsxError);
-                // Intentar con diferentes opciones
-                try {
-                    workbook = XLSX.read(templateBuffer, { type: 'array', cellDates: false, cellNF: false, cellStyles: false });
-                    console.log('Template leído con opciones alternativas, hojas disponibles:', workbook.SheetNames);
-                    useTemplate = true;
-                } catch (xlsxError2) {
-                    console.error('Error persistente al leer template:', xlsxError2);
-                    throw new Error(`El archivo template.xlsx no es un archivo Excel válido: ${xlsxError2.message}`);
+            if (domicilioData.length > 0 && workbook.SheetNames.length > 0) {
+                // Seleccionar la primera hoja del template (Domicilios)
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                
+                // Convertir datos CSV a formato de hoja
+                const newData = XLSX.utils.json_to_sheet(domicilioData);
+                const range = XLSX.utils.decode_range(newData['!ref'] || 'A1:A1');
+                
+                // Copiar los datos nuevos al template existente
+                // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
+                // los encabezados del template
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const targetRow = R + 2; // +2 para saltar las 2 filas de encabezado
+                        const cellAddress = XLSX.utils.encode_cell({ r: targetRow, c: C });
+                        const sourceCellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        if (newData[sourceCellAddress]) {
+                            worksheet[cellAddress] = newData[sourceCellAddress];
+                        }
+                    }
                 }
             }
-        } catch (templateError) {
-            console.error('Error al cargar template:', templateError);
-            throw templateError;
         }
         
-        // Solo procesar datos en el template si se está usando template
-        if (useTemplate) {
-            console.log('Procesando datos en template...');
+        // Procesar sucursales si existe contenido y hay segunda hoja
+        if (sucursalCSV && sucursalCSV.trim() && workbook.SheetNames.length > 1) {
+            const sucursalData = csvToJsonForExcel(sucursalCSV);
             
-            // Función interna para convertir CSV a JSON (solo para Excel)
-            const csvToJsonForExcel = (csvText: string): any[] => {
-                const lines = csvText.split('\n').filter(line => line.trim());
-                if (lines.length === 0) return [];
+            if (sucursalData.length > 0) {
+                // Seleccionar la segunda hoja del template (Sucursales)
+                const sheetName = workbook.SheetNames[1];
+                const worksheet = workbook.Sheets[sheetName];
                 
-                const headers = lines[0].split(';');
-                const data = [];
+                // Convertir datos CSV a formato de hoja
+                const newData = XLSX.utils.json_to_sheet(sucursalData);
+                const range = XLSX.utils.decode_range(newData['!ref'] || 'A1:A1');
                 
-                for (let i = 1; i < lines.length; i++) {
-                    const values = lines[i].split(';');
-                    const row: any = {};
-                    headers.forEach((header, index) => {
-                        // Eliminar comillas dobles de encabezados y datos
-                        const cleanHeader = header.replace(/"/g, '');
-                        const cleanValue = (values[index] || '').replace(/"/g, '');
-                        row[cleanHeader] = cleanValue;
-                    });
-                    data.push(row);
-                }
-                
-                return data;
-            };
-            
-            // Procesar domicilios si existe contenido
-            if (domicilioCSV && domicilioCSV.trim()) {
-                console.log('Procesando datos de domicilios en template...');
-                const domicilioData = csvToJsonForExcel(domicilioCSV);
-                console.log('Datos de domicilios convertidos:', domicilioData.length, 'registros');
-                
-                if (domicilioData.length > 0 && workbook.SheetNames.length > 0) {
-                    // Seleccionar la primera hoja del template (Domicilios)
-                    const sheetName = workbook.SheetNames[0]; // Primera hoja = Domicilios
-                    console.log('Usando hoja para domicilios:', sheetName);
-                    const worksheet = workbook.Sheets[sheetName];
-                    
-                    // Convertir datos CSV a formato de hoja
-                    const newData = XLSX.utils.json_to_sheet(domicilioData);
-                    const range = XLSX.utils.decode_range(newData['!ref'] || 'A1:A1');
-                    console.log('Rango de datos nuevos:', range);
-                    
-                    // Copiar los datos nuevos al template existente
-                    // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
-                    // los encabezados del template
-                    for (let R = range.s.r; R <= range.e.r; ++R) {
-                        for (let C = range.s.c; C <= range.e.c; ++C) {
-                            const targetRow = R + 2; // +2 para saltar las 2 filas de encabezado
-                            const cellAddress = XLSX.utils.encode_cell({ r: targetRow, c: C });
-                            const sourceCellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-                            if (newData[sourceCellAddress]) {
-                                worksheet[cellAddress] = newData[sourceCellAddress];
-                            }
+                // Copiar los datos nuevos al template existente
+                // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
+                // los encabezados del template
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const targetRow = R + 2; // +2 para saltar las 2 filas de encabezado
+                        const cellAddress = XLSX.utils.encode_cell({ r: targetRow, c: C });
+                        const sourceCellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        if (newData[sourceCellAddress]) {
+                            worksheet[cellAddress] = newData[sourceCellAddress];
                         }
                     }
-                    console.log('Datos de domicilios insertados en template');
-                }
-            }
-            
-            // Procesar sucursales si existe contenido y hay segunda hoja
-            if (sucursalCSV && sucursalCSV.trim() && workbook.SheetNames.length > 1) {
-                console.log('Procesando datos de sucursales en template...');
-                const sucursalData = csvToJsonForExcel(sucursalCSV);
-                console.log('Datos de sucursales convertidos:', sucursalData.length, 'registros');
-                
-                if (sucursalData.length > 0) {
-                    // Seleccionar la segunda hoja del template (Sucursales)
-                    const sheetName = workbook.SheetNames[1]; // Segunda hoja = Sucursales
-                    console.log('Usando hoja para sucursales:', sheetName);
-                    const worksheet = workbook.Sheets[sheetName];
-                    
-                    // Convertir datos CSV a formato de hoja
-                    const newData = XLSX.utils.json_to_sheet(sucursalData);
-                    const range = XLSX.utils.decode_range(newData['!ref'] || 'A1:A1');
-                    console.log('Rango de datos sucursales:', range);
-                    
-                    // Copiar los datos nuevos al template existente
-                    // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
-                    // los encabezados del template
-                    for (let R = range.s.r; R <= range.e.r; ++R) {
-                        for (let C = range.s.c; C <= range.e.c; ++C) {
-                            const targetRow = R + 2; // +2 para saltar las 2 filas de encabezado
-                            const cellAddress = XLSX.utils.encode_cell({ r: targetRow, c: C });
-                            const sourceCellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-                            if (newData[sourceCellAddress]) {
-                                worksheet[cellAddress] = newData[sourceCellAddress];
-                            }
-                        }
-                    }
-                    console.log('Datos de sucursales insertados en template');
                 }
             }
         }
@@ -213,18 +167,12 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         const today = new Date();
         const dateString = today.toISOString().split('T')[0];
         const fileName = `Pedidos_Andreani_${dateString}.xlsx`;
-        console.log('Generando archivo:', fileName);
         
         // Genera el archivo Excel final con el template + tus datos
-        console.log('Escribiendo workbook...');
         const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
-        console.log('Buffer generado, tamaño:', excelBuffer.byteLength, 'bytes');
-        
         const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        console.log('Blob creado');
         
         // Descargar el archivo Excel
-        console.log('Iniciando descarga...');
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -233,8 +181,6 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
-        console.log('Archivo Excel exportado exitosamente usando template:', fileName);
         
     } catch (error) {
         console.error('Error al exportar a Excel:', error);
