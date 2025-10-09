@@ -2,7 +2,6 @@ import { useState } from 'react';
 import Papa from 'papaparse';
 import { PDFDocument, rgb } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
-import Navigation from '../layout/Navigation';
 
 const PDFGenerator = () => {
   const [csvData, setCsvData] = useState<string[][]>([]);
@@ -14,12 +13,15 @@ const PDFGenerator = () => {
   const [selectedColumn, setSelectedColumn] = useState<number>(0);
   const [selectedOrderColumn, setSelectedOrderColumn] = useState<number>(0);
   const [selectedQuantityColumn, setSelectedQuantityColumn] = useState<number>(0);
-  const [posX, setPosX] = useState<number>(100);
-  const [posY, setPosY] = useState<number>(700);
-  const [fontSize, setFontSize] = useState<number>(12);
+  const [posX, setPosX] = useState<number>(20);
+  const [posY, setPosY] = useState<number>(706);
+  const [fontSize, setFontSize] = useState<number>(9);
   const [pdfPagesData, setPdfPagesData] = useState<Array<{pageNumber: number, orderNumber: string | null}>>([]);
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error' | 'info', text: string} | null>(null);
+  const [showPdfPages, setShowPdfPages] = useState(false);
+  const [showPositionConfig, setShowPositionConfig] = useState(false);
+  const [isEditingPosition, setIsEditingPosition] = useState(false);
 
   const showMessage = (type: 'success' | 'error' | 'info', text: string) => {
     setMessage({ type, text });
@@ -202,29 +204,63 @@ const PDFGenerator = () => {
 
         if (matchingRows.length === 0) continue;
 
-        const skusWithQuantity = matchingRows
-          .map(row => {
-            const sku = row[selectedColumn] || '';
-            const quantity = row[selectedQuantityColumn] || '';
-            if (sku.trim() !== '') {
-              return quantity.trim() !== '' ? `${sku} (x${quantity})` : sku;
-            }
-            return '';
-          })
-          .filter(item => item.trim() !== '')
-          .join(', ');
+        // Procesar cada fila y separar productos que vengan unidos con " + "
+        const allProducts: string[] = [];
+        
+        matchingRows.forEach(row => {
+          const sku = row[selectedColumn] || '';
+          const quantity = row[selectedQuantityColumn] || '';
+          
+          if (sku.trim() !== '') {
+            // Separar SKUs que contengan " + " (productos múltiples en un solo SKU)
+            const skuParts = sku.split('+').map(part => part.trim());
+            
+            skuParts.forEach(skuPart => {
+              if (skuPart) {
+                // Agregar cantidad solo si existe y no está ya incluida en el SKU
+                const productText = quantity.trim() !== '' && !skuPart.includes('(x') 
+                  ? `${skuPart} (x${quantity})` 
+                  : skuPart;
+                allProducts.push(productText);
+              }
+            });
+          }
+        });
 
-        if (!skusWithQuantity.trim()) continue;
+        if (allProducts.length === 0) continue;
 
         const pageIndex = pageData.pageNumber - 1;
         if (pageIndex < finalPdfDoc.getPageCount()) {
           const page = finalPdfDoc.getPage(pageIndex);
           
-          page.drawText(skusWithQuantity, {
-            x: posX,
-            y: posY,
-            size: fontSize,
-            color: rgb(0, 0, 0),
+          // Agrupar productos de 2 en 2 y crear líneas
+          const lines: string[] = [];
+          for (let i = 0; i < allProducts.length; i += 2) {
+            const line = allProducts.slice(i, i + 2).join(', ');
+            lines.push(line);
+          }
+          
+          // Si hay más de 2 líneas, reducir el tamaño de fuente a 8
+          const dynamicFontSize = lines.length > 2 ? 8 : fontSize;
+          
+          console.log(`Orden ${orderNumber}: ${allProducts.length} productos en ${lines.length} líneas`);
+          console.log('Productos individuales:', allProducts);
+          console.log('Líneas agrupadas:', lines);
+          console.log(`Tamaño de fuente: ${dynamicFontSize}pt`);
+          
+          // Dibujar cada línea: la primera línea arriba (Y=714), las siguientes bajan
+          // Espaciado de 8px entre líneas para que línea 2 quede en Y=706
+          const lineSpacing = 8;
+          lines.forEach((line, lineIndex) => {
+            // La línea 1 está en la posición más alta, las siguientes bajan
+            const yPosition = posY + (lineSpacing * (lines.length - 1 - lineIndex));
+            console.log(`Dibujando línea ${lineIndex + 1} en Y=${yPosition}: "${line}"`);
+            page.drawText(line, {
+              x: posX,
+              y: yPosition,
+              size: dynamicFontSize,
+              color: rgb(0, 0, 0),
+            });
           });
         }
       }
@@ -253,28 +289,22 @@ const PDFGenerator = () => {
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-6xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
-        {/* Header with Navigation */}
-        <div className="flex flex-col lg:flex-row justify-between items-center mb-4 gap-4">
-          <header className="text-center lg:text-left flex-1">
-            <div className="flex items-center justify-center lg:justify-start gap-3 mb-2">
-              <div className="text-green-500 size-10">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white">
-                PDF Generator
-              </h1>
+        {/* Header */}
+        <header className="text-center mb-4">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <div className="text-green-500 size-10">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
-            <p className="text-indigo-400 font-medium text-sm sm:text-base">
-              Generador de PDFs desde CSV
-            </p>
-            <p className="text-gray-500 text-xs mt-2">by pictoN</p>
-          </header>
-          <div>
-            <Navigation />
+            <h1 className="text-3xl sm:text-4xl font-bold text-white">
+              PDF Generator
+            </h1>
           </div>
-        </div>
+          <p className="text-green-400 font-medium text-sm sm:text-base">
+            Generador de PDFs desde CSV
+          </p>
+        </header>
 
         {/* Mensaje de estado */}
         {message && (
@@ -448,67 +478,157 @@ const PDFGenerator = () => {
           </div>
         )}
 
-        {/* PDF Pages Info */}
+        {/* PDF Pages Info - Colapsable */}
         {pdfTemplate && pdfPagesData.length > 0 && (
-          <div className="bg-gray-700 p-6 rounded-lg">
-            <h3 className="text-xl font-bold mb-4 text-white">Páginas del PDF detectadas</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-              {pdfPagesData.map((page) => (
-                <div 
-                  key={page.pageNumber}
-                  className={`p-3 rounded-lg text-xs ${
-                    page.orderNumber ? 'bg-green-900/50 border border-green-500' : 'bg-gray-600 border border-gray-500'
-                  }`}>
-                  <div className="font-medium text-white">Página {page.pageNumber}</div>
-                  <div className={`text-xs ${page.orderNumber ? 'text-green-400' : 'text-gray-400'}`}>
-                    {page.orderNumber || 'Sin orden'}
-                  </div>
+          <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
+            <button
+              onClick={() => setShowPdfPages(!showPdfPages)}
+              className="w-full p-4 flex items-center justify-between hover:bg-gray-600 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <svg
+                  className={`w-5 h-5 text-gray-400 transition-transform ${showPdfPages ? 'rotate-90' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                <h3 className="text-lg font-bold text-white">Páginas del PDF detectadas</h3>
+              </div>
+              <span className="text-sm text-gray-400">
+                {pdfPagesData.filter(p => p.orderNumber).length} de {pdfPagesData.length} con número de orden
+              </span>
+            </button>
+            
+            {showPdfPages && (
+              <div className="p-6 pt-2 border-t border-gray-600">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {pdfPagesData.map((page) => (
+                    <div 
+                      key={page.pageNumber}
+                      className={`p-3 rounded-lg text-xs ${
+                        page.orderNumber ? 'bg-green-900/50 border border-green-500' : 'bg-gray-600 border border-gray-500'
+                      }`}>
+                      <div className="font-medium text-white">Página {page.pageNumber}</div>
+                      <div className={`text-xs ${page.orderNumber ? 'text-green-400' : 'text-gray-400'}`}>
+                        {page.orderNumber || 'Sin orden'}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Position Config */}
+        {/* Position Config - Colapsable con botón de edición */}
         {pdfTemplate && (
-          <div className="bg-gray-700 p-6 rounded-lg">
-            <h3 className="text-xl font-bold mb-4 text-white">Configuración de posición en el PDF</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Posición X (px)</label>
-                <input
-                  type="number"
-                  value={posX}
-                  onChange={(e) => setPosX(parseInt(e.target.value) || 0)}
-                  min={0}
-                  className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
-                />
+          <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
+            <div className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-bold text-white">Configuración de posición</h3>
+                <button
+                  onClick={() => {
+                    setIsEditingPosition(!isEditingPosition);
+                    if (!isEditingPosition) {
+                      setShowPositionConfig(true);
+                    }
+                  }}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isEditingPosition 
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                  }`}
+                  title={isEditingPosition ? 'Guardar cambios' : 'Editar posición'}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isEditingPosition ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    )}
+                  </svg>
+                </button>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Posición Y (px)</label>
-                <input
-                  type="number"
-                  value={posY}
-                  onChange={(e) => setPosY(parseInt(e.target.value) || 0)}
-                  min={0}
-                  className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Tamaño fuente</label>
-                <input
-                  type="number"
-                  value={fontSize}
-                  onChange={(e) => setFontSize(parseInt(e.target.value) || 12)}
-                  min={6}
-                  max={72}
-                  className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
-                />
-              </div>
+              
+              {!isEditingPosition && (
+                <div className="text-sm text-gray-400">
+                  X: {posX}px, Y: {posY}px, Tamaño: {fontSize}pt
+                </div>
+              )}
+              
+              <button
+                onClick={() => setShowPositionConfig(!showPositionConfig)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg
+                  className={`w-5 h-5 transition-transform ${showPositionConfig ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
             </div>
-            <p className="text-xs mt-3 text-gray-400">
-              💡 El punto (0,0) está en la esquina inferior izquierda del PDF
-            </p>
+            
+            {showPositionConfig && (
+              <div className="p-6 pt-2 border-t border-gray-600">
+                {isEditingPosition ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">Posición X (px)</label>
+                        <input
+                          type="number"
+                          value={posX}
+                          onChange={(e) => setPosX(parseInt(e.target.value) || 0)}
+                          min={0}
+                          className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">Posición Y (px)</label>
+                        <input
+                          type="number"
+                          value={posY}
+                          onChange={(e) => setPosY(parseInt(e.target.value) || 0)}
+                          min={0}
+                          className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">Tamaño fuente</label>
+                        <input
+                          type="number"
+                          value={fontSize}
+                          onChange={(e) => setFontSize(parseInt(e.target.value) || 6)}
+                          min={6}
+                          max={72}
+                          className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs mt-3 text-gray-400">
+                      💡 El punto (0,0) está en la esquina inferior izquierda del PDF
+                    </p>
+                  </>
+                ) : (
+                  <div className="bg-gray-600 p-4 rounded-lg">
+                    <p className="text-sm text-gray-300 mb-2">
+                      <strong>Posición configurada:</strong>
+                    </p>
+                    <ul className="text-sm text-gray-400 space-y-1">
+                      <li>• Coordenada X: <span className="text-white font-medium">{posX}px</span></li>
+                      <li>• Coordenada Y: <span className="text-white font-medium">{posY}px</span></li>
+                      <li>• Tamaño de fuente: <span className="text-white font-medium">{fontSize}pt</span></li>
+                      <li className="mt-2 text-xs">• Los productos se organizan en pares (2 por línea)</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -522,11 +642,12 @@ const PDFGenerator = () => {
             {processing ? 'Procesando...' : 'Generar PDF'}
           </button>
         )}
+        
+        <footer className="text-center mt-6 text-gray-500 text-xs sm:text-sm">
+          <p>Creado para automatizar la generación de PDFs desde CSV.</p>
+          <p className="mt-1 text-gray-600">by pictoN</p>
+        </footer>
       </div>
-      <footer className="text-center mt-6 sm:mt-8 text-gray-500 text-xs sm:text-sm">
-        <p>Creado para automatizar la generación de PDFs desde CSV.</p>
-        <p className="mt-1">by pictoN</p>
-      </footer>
     </div>
   );
 };

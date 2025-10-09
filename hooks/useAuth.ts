@@ -5,20 +5,48 @@ interface AuthState {
   username: string | null;
   login: (username: string) => void;
   logout: () => void;
+  isLoading: boolean;
 }
 
+// Función helper para obtener el estado inicial desde localStorage
+const getInitialAuthState = () => {
+  try {
+    const savedUsername = localStorage.getItem('smartship_username');
+    return {
+      isAuthenticated: !!savedUsername,
+      username: savedUsername,
+    };
+  } catch {
+    return {
+      isAuthenticated: false,
+      username: null,
+    };
+  }
+};
+
 export const useAuth = (): AuthState => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
+  // Inicializar directamente con el valor de localStorage para evitar parpadeo
+  const initialState = getInitialAuthState();
+  const [isAuthenticated, setIsAuthenticated] = useState(initialState.isAuthenticated);
+  const [username, setUsername] = useState<string | null>(initialState.username);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Verificar si hay una sesión guardada en localStorage
-    const savedUsername = localStorage.getItem('smartship_username');
-    if (savedUsername) {
-      setUsername(savedUsername);
-      setIsAuthenticated(true);
-    }
-  }, []);
+    // Este useEffect ahora solo sincroniza si hay cambios externos en localStorage
+    const handleStorageChange = () => {
+      const savedUsername = localStorage.getItem('smartship_username');
+      if (savedUsername && savedUsername !== username) {
+        setUsername(savedUsername);
+        setIsAuthenticated(true);
+      } else if (!savedUsername && isAuthenticated) {
+        setUsername(null);
+        setIsAuthenticated(false);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [username, isAuthenticated]);
 
   const login = (username: string) => {
     setUsername(username);
@@ -38,6 +66,7 @@ export const useAuth = (): AuthState => {
     isAuthenticated,
     username,
     login,
-    logout
+    logout,
+    isLoading,
   };
 };

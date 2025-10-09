@@ -1,0 +1,259 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import DashboardLayout from '../components/layout/DashboardLayout';
+
+interface FeatureCard {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  path: string;
+  color: string;
+  stats?: string;
+}
+
+const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const features: FeatureCard[] = [
+    {
+      id: 'smartship',
+      title: 'SmartShip',
+      description: 'Procesa y transforma archivos CSV de pedidos de Andreani automáticamente. Separa envíos a domicilio y sucursal con un solo clic.',
+      path: '/smartship',
+      color: 'green',
+      stats: 'Procesador de Pedidos',
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+          />
+        </svg>
+      ),
+    },
+    {
+      id: 'pdf-generator',
+      title: 'Generador de PDFs',
+      description: 'Crea múltiples documentos PDF de forma masiva a partir de plantillas personalizables. Ideal para etiquetas, facturas y documentos repetitivos.',
+      path: '/pdf-generator',
+      color: 'blue',
+      stats: 'Generación Masiva',
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      ),
+    },
+  ];
+
+  const getColorClasses = (color: string) => {
+    switch (color) {
+      case 'green':
+        return {
+          bg: 'bg-green-600',
+          hover: 'hover:bg-green-700',
+          text: 'text-green-500',
+          border: 'border-green-500',
+          shadow: 'hover:shadow-green-500/50',
+        };
+      case 'blue':
+        return {
+          bg: 'bg-blue-600',
+          hover: 'hover:bg-blue-700',
+          text: 'text-blue-500',
+          border: 'border-blue-500',
+          shadow: 'hover:shadow-blue-500/50',
+        };
+      default:
+        return {
+          bg: 'bg-gray-600',
+          hover: 'hover:bg-gray-700',
+          text: 'text-gray-500',
+          border: 'border-gray-500',
+          shadow: 'hover:shadow-gray-500/50',
+        };
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="min-h-screen bg-gray-900 p-4 sm:p-6 lg:p-8">
+        {/* Header */}
+        <div className="max-w-7xl mx-auto mb-8">
+          <div className="bg-gray-800 rounded-2xl p-6 sm:p-8 border border-gray-700">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="text-green-500 w-16 h-16">
+                <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                  <g clipPath="url(#clip0_6_535)">
+                    <path
+                      clipRule="evenodd"
+                      d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z"
+                      fill="currentColor"
+                      fillRule="evenodd"
+                    />
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_6_535">
+                      <rect fill="white" height="48" width="48" />
+                    </clipPath>
+                  </defs>
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+                  Bienvenido a tu Panel de Control
+                </h1>
+                <p className="text-gray-400 text-sm sm:text-base">
+                  Automatiza tu logística y documentación con nuestras herramientas
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              <div className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-600 rounded-lg p-2">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">2</p>
+                    <p className="text-xs text-gray-400">Herramientas Activas</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-600 rounded-lg p-2">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">100%</p>
+                    <p className="text-xs text-gray-400">Operativo</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                <div className="flex items-center gap-3">
+                  <div className="bg-purple-600 rounded-lg p-2">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">24/7</p>
+                    <p className="text-xs text-gray-400">Disponible</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-2xl font-bold text-white mb-6 px-2">Selecciona una herramienta</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {features.map((feature) => {
+              const colors = getColorClasses(feature.color);
+              return (
+                <div
+                  key={feature.id}
+                  className="bg-gray-800 rounded-2xl p-6 sm:p-8 border border-gray-700 hover:border-gray-600 transition-all duration-200"
+                >
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className={`${colors.text} flex-shrink-0`}>{feature.icon}</div>
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-white mb-2">{feature.title}</h3>
+                      {feature.stats && (
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${colors.bg} text-white mb-3`}>
+                          {feature.stats}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="text-gray-400 mb-6 leading-relaxed">{feature.description}</p>
+
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate(feature.path);
+                    }}
+                    className={`w-full ${colors.bg} ${colors.hover} text-white font-bold py-3 px-6 rounded-lg transition-colors duration-150 flex items-center justify-center gap-2 shadow-lg active:scale-95`}
+                  >
+                    Acceder
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 7l5 5m0 0l-5 5m5-5H6"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Info adicional */}
+          <div className="mt-8 bg-gray-800 rounded-2xl p-6 border border-gray-700">
+            <div className="flex items-start gap-4">
+              <div className="text-green-500 flex-shrink-0">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white mb-2">Información del Sistema</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  Este panel de control te permite acceder a todas las herramientas disponibles. 
+                  Utiliza el menú lateral para navegar entre las diferentes secciones. 
+                  El sistema es completamente modular y escalable, diseñado para crecer con tus necesidades.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="text-center mt-8 text-gray-500 text-xs sm:text-sm max-w-7xl mx-auto">
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <p>Sistema modular de automatización logística</p>
+            <p className="mt-1 text-gray-600">
+              by <span className="text-green-500 font-semibold">pictoN</span>
+            </p>
+          </div>
+        </footer>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default DashboardPage;
+

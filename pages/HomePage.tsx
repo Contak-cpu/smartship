@@ -4,7 +4,7 @@ import { processOrders, processVentasOrders, fixEncoding, combineCSVs } from '..
 import { FileUploader } from '../components/FileUploader';
 import { StatusDisplay } from '../components/StatusDisplay';
 import { ResultsDisplay } from '../components/ResultsDisplay';
-import Navigation from '../components/layout/Navigation';
+import DashboardLayout from '../components/layout/DashboardLayout';
 
 // Función para normalizar caracteres problemáticos en el CSV final
 const normalizarCSVFinal = (content: string): string => {
@@ -219,12 +219,12 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-          <div className="text-center flex-1">
+    <DashboardLayout>
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+          <div className="text-center mb-4">
             <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="text-blue-500 size-8 sm:size-10">
+              <div className="text-green-500 size-8 sm:size-10">
                 <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                   <g clipPath="url(#clip0_6_535)">
                     <path clipRule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fillRule="evenodd"></path>
@@ -238,10 +238,8 @@ const HomePage: React.FC = () => {
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-white">SmartShip</h1>
             </div>
-            <p className="text-indigo-400 font-medium text-sm sm:text-base">Transformador de Pedidos Andreani</p>
+            <p className="text-green-400 font-medium text-sm sm:text-base">Transformador de Pedidos Andreani</p>
           </div>
-          <Navigation />
-        </div>
 
         <div className="space-y-4">
           <FileUploader onFileSelect={handleFileChange} disabled={status === ProcessStatus.PROCESSING} />
@@ -265,12 +263,13 @@ const HomePage: React.FC = () => {
             onDownloadCombined={downloadCombinedCSV}
           />
         )}
+        </div>
+        <footer className="text-center mt-6 sm:mt-8 text-gray-500 text-xs sm:text-sm">
+          <p>Creado para automatizar la logística de envíos.</p>
+          <p className="mt-1 text-gray-600">by pictoN</p>
+        </footer>
       </div>
-      <footer className="text-center mt-6 sm:mt-8 text-gray-500 text-xs sm:text-sm">
-        <p>Creado para automatizar la logística de envíos.</p>
-        <p className="mt-1 text-gray-600">by pictoN</p>
-      </footer>
-    </div>
+    </DashboardLayout>
   );
 };
 

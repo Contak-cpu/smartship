@@ -4,6 +4,7 @@ import PublicRoute from '../components/routing/PublicRoute';
 import HomePage from '../pages/HomePage';
 import PDFGeneratorPage from '../pages/PDFGeneratorPage';
 import LandingPage from '../pages/LandingPage';
+import DashboardPage from '../pages/DashboardPage';
 
 // Configuración centralizada de rutas
 // Para agregar nuevas rutas, simplemente añade un nuevo objeto a este array
@@ -18,6 +19,14 @@ export const routes: RouteObject[] = [
   },
   {
     path: '/',
+    element: (
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/smartship',
     element: (
       <ProtectedRoute>
         <HomePage />
