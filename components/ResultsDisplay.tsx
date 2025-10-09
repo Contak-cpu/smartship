@@ -30,16 +30,38 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         
         // Cargar el template desde public/templates/template.xlsx
         console.log('Cargando template desde /templates/template.xlsx...');
-        const templateResponse = await fetch('/templates/template.xlsx');
+        
+        let templateResponse;
+        try {
+            templateResponse = await fetch('/templates/template.xlsx');
+        } catch (fetchError) {
+            console.error('Error en fetch del template:', fetchError);
+            throw new Error(`Error de red al cargar template: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
+        }
+        
         if (!templateResponse.ok) {
             console.error('Error al cargar template:', templateResponse.status, templateResponse.statusText);
             throw new Error(`No se pudo cargar el template: ${templateResponse.status} ${templateResponse.statusText}`);
         }
         
-        const templateBuffer = await templateResponse.arrayBuffer();
+        let templateBuffer;
+        try {
+            templateBuffer = await templateResponse.arrayBuffer();
+        } catch (bufferError) {
+            console.error('Error al convertir template a buffer:', bufferError);
+            throw new Error(`Error al procesar template: ${bufferError instanceof Error ? bufferError.message : String(bufferError)}`);
+        }
+        
         console.log('Template cargado, tamaño:', templateBuffer.byteLength, 'bytes');
         
-        const workbook = XLSX.read(templateBuffer, { type: 'array' });
+        let workbook;
+        try {
+            workbook = XLSX.read(templateBuffer, { type: 'array' });
+        } catch (xlsxError) {
+            console.error('Error al leer template con XLSX:', xlsxError);
+            throw new Error(`Error al leer archivo Excel: ${xlsxError instanceof Error ? xlsxError.message : String(xlsxError)}`);
+        }
+        
         console.log('Workbook creado, hojas disponibles:', workbook.SheetNames);
         
         // Función interna para convertir CSV a JSON (solo para Excel)
@@ -162,7 +184,9 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         
     } catch (error) {
         console.error('Error al exportar a Excel:', error);
-        alert('Error al exportar el archivo Excel. Por favor, inténtalo de nuevo.');
+        console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        alert(`Error al exportar el archivo Excel: ${errorMessage}\n\nPor favor, revisa la consola para más detalles.`);
     }
 };
 
