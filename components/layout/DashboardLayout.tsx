@@ -139,7 +139,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <img 
                 src="/ko.png" 
                 alt="Kore Ops Logo" 
-                className="w-10 h-10 flex-shrink-0 object-contain"
+                className="w-20 h-20 flex-shrink-0 object-contain"
               />
               <div className="text-left">
                 <h2 className="text-xl font-bold text-white">Kore Ops</h2>
@@ -160,7 +160,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <img 
                 src="/ko.png" 
                 alt="Kore Ops Logo" 
-                className="w-10 h-10 object-contain"
+                className="w-20 h-20 object-contain"
               />
             </button>
           )}
