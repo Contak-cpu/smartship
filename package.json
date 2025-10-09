@@ -14,13 +14,19 @@
   },
   "dependencies": {
     "exceljs": "^4.4.0",
+    "papaparse": "^5.5.3",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.4.296",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^7.9.4",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/exceljs": "^0.5.3",
     "@types/node": "^22.14.0",
+    "@types/papaparse": "^5.3.16",
+    "@types/react-router-dom": "^5.3.3",
     "@types/xlsx": "^0.0.35",
     "@vitejs/plugin-react": "^5.0.0",
     "terser": "^5.44.0",
