@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Login } from '../components/Login';
 import { PricingPage } from '../components/PricingPage';
 import { BasicPlanPage } from '../components/BasicPlanPage';
+import { IntermediatePlanPage } from '../components/IntermediatePlanPage';
 import { ProPlanPage } from '../components/ProPlanPage';
 import { useAuth } from '../hooks/useAuth';
 
@@ -11,6 +12,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const [showPricing, setShowPricing] = useState(true);
   const [showBasicPlan, setShowBasicPlan] = useState(false);
+  const [showIntermediatePlan, setShowIntermediatePlan] = useState(false);
   const [showProPlan, setShowProPlan] = useState(false);
 
   const handleLogin = (username: string, level: number) => {
@@ -23,6 +25,10 @@ const LandingPage = () => {
     return <ProPlanPage onGoBack={() => setShowProPlan(false)} />;
   }
 
+  if (showIntermediatePlan) {
+    return <IntermediatePlanPage onGoBack={() => setShowIntermediatePlan(false)} />;
+  }
+
   if (showBasicPlan) {
     return <BasicPlanPage onGoBack={() => setShowBasicPlan(false)} />;
   }
@@ -32,6 +38,7 @@ const LandingPage = () => {
       <PricingPage 
         onGoToLogin={() => setShowPricing(false)} 
         onShowBasicPlan={() => setShowBasicPlan(true)}
+        onShowIntermediatePlan={() => setShowIntermediatePlan(true)}
         onShowProPlan={() => setShowProPlan(true)}
       />
     );

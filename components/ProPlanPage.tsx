@@ -6,7 +6,7 @@ interface ProPlanPageProps {
 
 export const ProPlanPage: React.FC<ProPlanPageProps> = ({ onGoBack }) => {
   const handleWhatsAppContact = () => {
-    const message = `Hola! Me interesa contratar el Plan Pro de ShipSmart por $99/mes. ¿Podrías ayudarme con el proceso de contratación?`;
+    const message = `Hola! Me interesa contratar el Plan Pro de Kore Ops por $99/mes. ¿Podrías ayudarme con el proceso de contratación?`;
     const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -53,12 +53,12 @@ export const ProPlanPage: React.FC<ProPlanPageProps> = ({ onGoBack }) => {
           <div className="space-y-8 sm:space-y-12">
             {/* Header del plan */}
             <div className="text-center">
-              <p className="text-sm sm:text-base font-semibold text-blue-500 uppercase tracking-wider">Plan Pro</p>
+              <p className="text-sm sm:text-base font-semibold text-purple-500 uppercase tracking-wider">Plan Pro - Nivel 3</p>
               <h1 className="mt-2 text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                Todas las funciones que necesitas y más.
+                Acceso total y funciones exclusivas
               </h1>
               <p className="mt-4 sm:mt-5 max-w-2xl mx-auto text-base sm:text-xl text-gray-500 dark:text-gray-400">
-                Desbloquea potentes herramientas para optimizar tus envíos, ahorrar dinero y escalar tu negocio sin esfuerzo.
+                El plan definitivo con todas las herramientas, funciones administrativas y acceso anticipado a nuevas características.
               </p>
             </div>
 

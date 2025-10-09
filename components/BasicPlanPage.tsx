@@ -6,7 +6,7 @@ interface BasicPlanPageProps {
 
 export const BasicPlanPage: React.FC<BasicPlanPageProps> = ({ onGoBack }) => {
   const handleWhatsAppContact = () => {
-    const message = `Hola! Me interesa contratar el Plan Básico de ShipSmart por $29/mes. ¿Podrías ayudarme con el proceso de contratación?`;
+    const message = `Hola! Me interesa contratar el Plan Básico de Kore Ops por $1/mes. ¿Podrías ayudarme con el proceso de contratación?`;
     const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -54,13 +54,13 @@ export const BasicPlanPage: React.FC<BasicPlanPageProps> = ({ onGoBack }) => {
             {/* Breadcrumb */}
             <div>
               <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">
-                <span className="text-gray-800 dark:text-gray-200">Plan Básico</span>
+                <span className="text-gray-800 dark:text-gray-200">Plan Básico - Nivel 1</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                Plan Básico
+                Plan Básico - $1/mes
               </h1>
               <p className="mt-4 max-w-2xl text-base sm:text-lg text-gray-600 dark:text-gray-300">
-                Para particulares y pequeñas empresas que buscan optimizar sus procesos de envío y ahorrar en costes. Al menos un 10% de ahorro en todas las etiquetas.
+                Perfecto para emprendedores que necesitan controlar su rentabilidad diaria. Acceso exclusivo a la Calculadora de Rentabilidad.
               </p>
             </div>
 
@@ -74,48 +74,30 @@ export const BasicPlanPage: React.FC<BasicPlanPageProps> = ({ onGoBack }) => {
                   </h2>
                   <ul className="space-y-4">
                     <li className="flex items-start gap-4">
-                      <svg className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <div>
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Envíos Ilimitados</h3>
-                        <p className="text-gray-600 dark:text-gray-300">Procese tantos envíos como necesite sin ninguna restricción.</p>
+                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Calculadora de Rentabilidad</h3>
+                        <p className="text-gray-600 dark:text-gray-300">Analiza tu margen de ganancia diario con soporte para múltiples monedas (ARS/USDT).</p>
                       </div>
                     </li>
                     <li className="flex items-start gap-4">
-                      <svg className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <div>
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Generación Automatizada de Etiquetas</h3>
-                        <p className="text-gray-600 dark:text-gray-300">Genere automáticamente etiquetas de envío para las principales empresas de transporte.</p>
+                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Análisis Financiero</h3>
+                        <p className="text-gray-600 dark:text-gray-300">Controla tus gastos, ingresos y rentabilidad en tiempo real.</p>
                       </div>
                     </li>
                     <li className="flex items-start gap-4">
-                      <svg className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <div>
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Seguimiento en Tiempo Real</h3>
-                        <p className="text-gray-600 dark:text-gray-300">Realice un seguimiento de sus envíos en tiempo real desde el despacho hasta la entrega.</p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-4">
-                      <svg className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Análisis Básico</h3>
-                        <p className="text-gray-600 dark:text-gray-300">Acceda a análisis básicos para monitorear el rendimiento de sus envíos.</p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-4">
-                      <svg className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Soporte por Correo Electrónico</h3>
-                        <p className="text-gray-600 dark:text-gray-300">Obtenga soporte por correo electrónico para cualquier pregunta o problema.</p>
+                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Soporte por Email</h3>
+                        <p className="text-gray-600 dark:text-gray-300">Atención personalizada para resolver tus dudas.</p>
                       </div>
                     </li>
                   </ul>
@@ -163,7 +145,7 @@ export const BasicPlanPage: React.FC<BasicPlanPageProps> = ({ onGoBack }) => {
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Plan Actual</h3>
                   <p className="mt-4 text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-                    29 $<span className="text-sm sm:text-base font-medium text-gray-500 dark:text-gray-400">/mes</span>
+                    $1<span className="text-sm sm:text-base font-medium text-gray-500 dark:text-gray-400">/mes</span>
                   </p>
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Facturado mensualmente.</p>
                   <button 
@@ -188,13 +170,13 @@ export const BasicPlanPage: React.FC<BasicPlanPageProps> = ({ onGoBack }) => {
                   <div className="space-y-4">
                     <details className="group bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-800">
                       <summary className="flex cursor-pointer items-center justify-between font-semibold text-gray-800 dark:text-gray-200 list-none">
-                        ¿Qué incluye el plan Básico?
+                        ¿Qué incluye el plan Básico por $1/mes?
                         <svg className="w-5 h-5 transition-transform duration-300 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </summary>
                       <p className="mt-2 text-gray-600 dark:text-gray-300">
-                        El plan Básico incluye envíos ilimitados, generación automática de etiquetas, seguimiento en tiempo real, análisis básicos y soporte por correo electrónico. Está diseñado para que particulares y pequeñas empresas comiencen a ahorrar en envíos de inmediato.
+                        El plan Básico te da acceso exclusivo a la Calculadora de Rentabilidad, permitiéndote analizar tus márgenes de ganancia, gastos en publicidad (Meta, TikTok, Google ADS) y rentabilidad diaria en tiempo real con soporte para ARS y USDT.
                       </p>
                     </details>
                     <details className="group bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-800">

@@ -3,10 +3,11 @@ import React from 'react';
 interface PricingPageProps {
   onGoToLogin: () => void;
   onShowBasicPlan: () => void;
+  onShowIntermediatePlan: () => void;
   onShowProPlan: () => void;
 }
 
-export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBasicPlan, onShowProPlan }) => {
+export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBasicPlan, onShowIntermediatePlan, onShowProPlan }) => {
   const handlePlanSelection = (planName: string) => {
     const message = `Hola! Me interesa el plan ${planName} de ShipSmart. ¿Podrías darme más información?`;
     const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
@@ -63,61 +64,61 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
-            {/* Plan Básico */}
+            {/* Plan Básico - Nivel 1 */}
             <div className="flex flex-col bg-white dark:bg-gray-800/50 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 sm:p-8">
               <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Básico</h3>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">$29</span>
+                <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">$1</span>
                 <span className="text-sm sm:text-base font-medium text-gray-500 dark:text-gray-400">/mes</span>
               </div>
               <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                Para pequeñas empresas y startups que están despegando.
+                Ideal para emprendedores que necesitan controlar la rentabilidad.
               </p>
               <button 
                 onClick={onShowBasicPlan}
-                className="mt-6 sm:mt-8 w-full bg-blue-100 hover:bg-blue-200 text-blue-600 font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
+                className="mt-6 sm:mt-8 w-full bg-green-100 hover:bg-green-200 text-green-600 font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
               >
                 Ver Detalles
               </button>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Hasta 500 envíos/mes</span>
+                  <span className="text-gray-700 dark:text-gray-300">Calculadora de Rentabilidad</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Soporte por correo electrónico</span>
+                  <span className="text-gray-700 dark:text-gray-300">Análisis financiero diario</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Análisis básicos</span>
+                  <span className="text-gray-700 dark:text-gray-300">Soporte por email</span>
                 </li>
               </ul>
             </div>
 
-            {/* Plan Pro - Más Popular */}
+            {/* Plan Basic (Nivel 2) - Más Popular */}
             <div className="relative flex flex-col bg-white dark:bg-gray-800/50 rounded-xl shadow-lg border-2 border-blue-500 p-6 sm:p-8 md:col-span-2 lg:col-span-1">
               <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
                 <span className="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
                   Más Popular
                 </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Pro</h3>
+              <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Basic</h3>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">$99</span>
+                <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">$49</span>
                 <span className="text-sm sm:text-base font-medium text-gray-500 dark:text-gray-400">/mes</span>
               </div>
               <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                Para empresas en crecimiento que necesitan más potencia y automatización.
+                Para empresas en crecimiento que necesitan automatización completa.
               </p>
               <button 
-                onClick={onShowProPlan}
+                onClick={onShowIntermediatePlan}
                 className="mt-6 sm:mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
               >
                 Ver Detalles
@@ -127,74 +128,69 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Hasta 2,000 envíos/mes</span>
+                  <span className="text-gray-700 dark:text-gray-300">Todo del plan Básico</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Soporte prioritario por correo electrónico</span>
+                  <span className="text-gray-700 dark:text-gray-300">Transformador SmartShip</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Análisis avanzados</span>
+                  <span className="text-gray-700 dark:text-gray-300">Generador de PDFs Masivo</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Integraciones personalizadas</span>
+                  <span className="text-gray-700 dark:text-gray-300">Soporte prioritario</span>
                 </li>
               </ul>
             </div>
 
-            {/* Plan Empresarial */}
+            {/* Plan Pro (Nivel 3) */}
             <div className="flex flex-col bg-white dark:bg-gray-800/50 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 sm:p-8">
-              <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Empresarial</h3>
+              <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Pro</h3>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">Personalizado</span>
+                <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">$99</span>
+                <span className="text-sm sm:text-base font-medium text-gray-500 dark:text-gray-400">/mes</span>
               </div>
               <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                Para operaciones a gran escala con requisitos únicos.
+                Acceso completo para administradores y funciones exclusivas.
               </p>
               <button 
-                onClick={() => handlePlanSelection('Empresarial')}
-                className="mt-6 sm:mt-8 w-full bg-blue-100 hover:bg-blue-200 text-blue-600 font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
+                onClick={onShowProPlan}
+                className="mt-6 sm:mt-8 w-full bg-purple-100 hover:bg-purple-200 text-purple-600 font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
               >
-                Contactar a Ventas
+                Ver Detalles
               </button>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Envíos ilimitados</span>
+                  <span className="text-gray-700 dark:text-gray-300">Todo del plan Basic</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Soporte dedicado</span>
+                  <span className="text-gray-700 dark:text-gray-300">Funciones administrativas</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Análisis personalizados</span>
+                  <span className="text-gray-700 dark:text-gray-300">Acceso anticipado a nuevas funciones</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Acceso a API</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
-                  </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Marca blanca</span>
+                  <span className="text-gray-700 dark:text-gray-300">Soporte dedicado 24/7</span>
                 </li>
               </ul>
             </div>
