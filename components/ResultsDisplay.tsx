@@ -74,6 +74,7 @@ const createExcelWithoutTemplate = (domicilioCSV: string, sucursalCSV: string) =
 // Función independiente para exportar a Excel usando template
 const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
     try {
+        alert('INICIO: Exportando a Excel...');
         console.log('===== INICIANDO EXPORTACIÓN EXCEL =====');
         console.log('Domicilio CSV length:', domicilioCSV?.length);
         console.log('Sucursal CSV length:', sucursalCSV?.length);
@@ -114,6 +115,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         // Procesar domicilios si existe contenido
         if (domicilioCSV && domicilioCSV.trim()) {
             const domicilioData = csvToJsonForExcel(domicilioCSV);
+            alert(`Procesados ${domicilioData.length} registros de domicilios`);
             console.log('Domicilio data:', domicilioData.length, 'registros');
             console.log('Primer registro:', domicilioData[0]);
             
@@ -131,12 +133,15 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
                 console.log('Primera celda de datos:', newData['A1']);
                 
                 // Copiar los datos nuevos al template existente
-                // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
-                // los encabezados del template
+                // IMPORTANTE: El template tiene encabezados en las filas 0 y 1
+                // Los datos deben comenzar en la fila 2 (tercera fila)
+                // Saltamos la fila 0 de newData (que son los headers del CSV)
                 let cellsCopied = 0;
-                for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let R = range.s.r + 1; R <= range.e.r; ++R) { // +1 para saltear headers del CSV
                     for (let C = range.s.c; C <= range.e.c; ++C) {
-                        const targetRow = R + 2; // +2 para saltar las 2 filas de encabezado
+                        // targetRow = 2 + (R - 1) = R + 1
+                        // Fila 1 del CSV (primera fila de datos) va a fila 2 del template
+                        const targetRow = R + 1;
                         const cellAddress = XLSX.utils.encode_cell({ r: targetRow, c: C });
                         const sourceCellAddress = XLSX.utils.encode_cell({ r: R, c: C });
                         if (newData[sourceCellAddress]) {
@@ -146,6 +151,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
                     }
                 }
                 console.log('Celdas copiadas:', cellsCopied);
+                alert(`Se copiaron ${cellsCopied} celdas al template`);
             }
         }
         
@@ -163,11 +169,11 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
                 const range = XLSX.utils.decode_range(newData['!ref'] || 'A1:A1');
                 
                 // Copiar los datos nuevos al template existente
-                // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
-                // los encabezados del template
-                for (let R = range.s.r; R <= range.e.r; ++R) {
+                // IMPORTANTE: Comienza desde la fila 3 (índice 2) del template
+                // Saltamos la fila 0 de newData (headers) y comenzamos desde la fila 1
+                for (let R = range.s.r + 1; R <= range.e.r; ++R) { // +1 para saltear headers
                     for (let C = range.s.c; C <= range.e.c; ++C) {
-                        const targetRow = R + 2; // +2 para saltar las 2 filas de encabezado
+                        const targetRow = R + 1; // +1 porque ya saltamos headers, ahora solo saltamos las 2 filas del template
                         const cellAddress = XLSX.utils.encode_cell({ r: targetRow, c: C });
                         const sourceCellAddress = XLSX.utils.encode_cell({ r: R, c: C });
                         if (newData[sourceCellAddress]) {
