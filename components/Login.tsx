@@ -19,10 +19,15 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
   // Nivel 3: Acceso a todas las secciones (administrador)
   // Nivel 2: Acceso a SmartShip, PDF Generator y Rentabilidad
   // Nivel 1: Solo acceso a Rentabilidad
+  // Nivel 0: Invitado - Solo calculadora sin historial
   const validUsers: Record<string, UserData> = {
     'Yael': { password: '123', level: 2 },
     'Erick': { password: '123', level: 3 },
     'Pedro': { password: '123', level: 1 }
+  };
+
+  const handleGuestLogin = () => {
+    onLogin('Invitado', 0);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -113,6 +118,25 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
             Iniciar Sesión
           </button>
         </form>
+
+        {/* Separador */}
+        <div className="flex items-center gap-4">
+          <div className="flex-1 border-t border-gray-700"></div>
+          <span className="text-gray-500 text-xs">O</span>
+          <div className="flex-1 border-t border-gray-700"></div>
+        </div>
+
+        {/* Botón de invitado */}
+        <button
+          onClick={handleGuestLogin}
+          data-guest-login
+          className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out flex items-center justify-center text-sm sm:text-base border-2 border-gray-600"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          Ingresar como Invitado
+        </button>
 
 
         <footer className="text-center mt-8 text-gray-500 text-sm">

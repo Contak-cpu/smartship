@@ -20,8 +20,24 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
       <header className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+            {/* Botón Invitado */}
+            <button
+              onClick={() => {
+                onGoToLogin();
+                // Simular login como invitado
+                setTimeout(() => {
+                  const loginButton = document.querySelector('[data-guest-login]') as HTMLButtonElement;
+                  if (loginButton) loginButton.click();
+                }, 100);
+              }}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300 flex-shrink-0"
+            >
+              <span className="hidden sm:inline">Ingresar como invitado</span>
+              <span className="sm:hidden">Invitado</span>
+            </button>
+            
             {/* Nombre centrado */}
-            <h2 className="w-full text-center text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
+            <h2 className="absolute left-1/2 transform -translate-x-1/2 text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
               Kore Ops
             </h2>
             
