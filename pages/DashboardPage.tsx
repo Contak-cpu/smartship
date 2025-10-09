@@ -252,15 +252,6 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="text-center mt-8 text-gray-500 text-xs sm:text-sm max-w-7xl mx-auto">
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <p>Sistema modular de automatización logística</p>
-            <p className="mt-1 text-gray-600">
-              by <span className="text-green-500 font-semibold">pictoN</span>
-            </p>
-          </div>
-        </footer>
       </div>
     </DashboardLayout>
   );
