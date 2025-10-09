@@ -26,13 +26,21 @@ const ExcelIcon = () => (
 // Función independiente para exportar a Excel usando template
 const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
     try {
+        console.log('Iniciando exportación a Excel...');
+        
         // Cargar el template desde public/templates/template.xlsx
+        console.log('Cargando template desde /templates/template.xlsx...');
         const templateResponse = await fetch('/templates/template.xlsx');
         if (!templateResponse.ok) {
-            throw new Error('No se pudo cargar el template');
+            console.error('Error al cargar template:', templateResponse.status, templateResponse.statusText);
+            throw new Error(`No se pudo cargar el template: ${templateResponse.status} ${templateResponse.statusText}`);
         }
+        
         const templateBuffer = await templateResponse.arrayBuffer();
+        console.log('Template cargado, tamaño:', templateBuffer.byteLength, 'bytes');
+        
         const workbook = XLSX.read(templateBuffer, { type: 'array' });
+        console.log('Workbook creado, hojas disponibles:', workbook.SheetNames);
         
         // Función interna para convertir CSV a JSON (solo para Excel)
         const csvToJsonForExcel = (csvText: string): any[] => {
@@ -59,15 +67,20 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         
         // Procesar domicilios si existe contenido
         if (domicilioCSV && domicilioCSV.trim()) {
+            console.log('Procesando datos de domicilios...');
             const domicilioData = csvToJsonForExcel(domicilioCSV);
+            console.log('Datos de domicilios convertidos:', domicilioData.length, 'registros');
+            
             if (domicilioData.length > 0) {
                 // Seleccionar la primera hoja del template (Domicilios)
                 const sheetName = workbook.SheetNames[0]; // Primera hoja = Domicilios
+                console.log('Usando hoja para domicilios:', sheetName);
                 const worksheet = workbook.Sheets[sheetName];
                 
                 // Convertir datos CSV a formato de hoja
                 const newData = XLSX.utils.json_to_sheet(domicilioData);
                 const range = XLSX.utils.decode_range(newData['!ref'] || 'A1:A1');
+                console.log('Rango de datos nuevos:', range);
                 
                 // Copiar los datos nuevos al template existente
                 // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
@@ -82,20 +95,26 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
                         }
                     }
                 }
+                console.log('Datos de domicilios insertados en template');
             }
         }
         
         // Procesar sucursales si existe contenido y hay segunda hoja
         if (sucursalCSV && sucursalCSV.trim() && workbook.SheetNames.length > 1) {
+            console.log('Procesando datos de sucursales...');
             const sucursalData = csvToJsonForExcel(sucursalCSV);
+            console.log('Datos de sucursales convertidos:', sucursalData.length, 'registros');
+            
             if (sucursalData.length > 0) {
                 // Seleccionar la segunda hoja del template (Sucursales)
                 const sheetName = workbook.SheetNames[1]; // Segunda hoja = Sucursales
+                console.log('Usando hoja para sucursales:', sheetName);
                 const worksheet = workbook.Sheets[sheetName];
                 
                 // Convertir datos CSV a formato de hoja
                 const newData = XLSX.utils.json_to_sheet(sucursalData);
                 const range = XLSX.utils.decode_range(newData['!ref'] || 'A1:A1');
+                console.log('Rango de datos sucursales:', range);
                 
                 // Copiar los datos nuevos al template existente
                 // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
@@ -110,6 +129,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
                         }
                     }
                 }
+                console.log('Datos de sucursales insertados en template');
             }
         }
         
@@ -117,12 +137,18 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         const today = new Date();
         const dateString = today.toISOString().split('T')[0];
         const fileName = `Pedidos_Andreani_${dateString}.xlsx`;
+        console.log('Generando archivo:', fileName);
         
         // Genera el archivo Excel final con el template + tus datos
+        console.log('Escribiendo workbook...');
         const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+        console.log('Buffer generado, tamaño:', excelBuffer.byteLength, 'bytes');
+        
         const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        console.log('Blob creado');
         
         // Descargar el archivo Excel
+        console.log('Iniciando descarga...');
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
