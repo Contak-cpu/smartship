@@ -14,25 +14,18 @@ export const ProPlanPage: React.FC<ProPlanPageProps> = ({ onGoBack }) => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header simplificado */}
-      <header className="border-b border-gray-700" style={{ backgroundColor: '#202020' }}>
+      <header className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <button 
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-2 sm:gap-4 hover:opacity-80 transition-opacity"
-            >
-              <img 
-                src="/ko.png" 
-                alt="Kore Ops Logo" 
-                className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
-              />
-              <h2 className="text-base sm:text-lg font-bold text-white">Kore Ops</h2>
-            </button>
+            {/* Nombre centrado */}
+            <h2 className="w-full text-center text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              Kore Ops
+            </h2>
             
             {/* Botón Volver */}
             <button
               onClick={onGoBack}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300 flex-shrink-0"
             >
               Volver
             </button>

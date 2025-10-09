@@ -17,25 +17,18 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header simplificado */}
-      <header className="border-b border-gray-700" style={{ backgroundColor: '#202020' }}>
+      <header className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <button 
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-2 sm:gap-4 hover:opacity-80 transition-opacity"
-            >
-              <img 
-                src="/ko.png" 
-                alt="Kore Ops Logo" 
-                className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
-              />
-              <h2 className="text-base sm:text-lg font-bold text-white">Kore Ops</h2>
-            </button>
+            {/* Nombre centrado */}
+            <h2 className="w-full text-center text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              Kore Ops
+            </h2>
             
             {/* Botón Ya tengo un plan */}
             <button
               onClick={onGoToLogin}
-              className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300 flex-shrink-0"
             >
               <span className="hidden sm:inline">Ya tengo un plan</span>
               <span className="sm:hidden">Login</span>
@@ -57,9 +50,14 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
-            {/* Plan Básico - Nivel 1 */}
-            <div className="flex flex-col bg-white dark:bg-gray-800/50 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 sm:p-8">
-              <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Básico</h3>
+            {/* Plan Starter - Nivel 1 */}
+            <div className="relative flex flex-col bg-white dark:bg-gray-800/50 rounded-xl shadow-lg border-2 border-blue-500 p-6 sm:p-8">
+              <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
+                <span className="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
+                  Nivel 1
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Starter</h3>
               <div className="mt-4 flex items-baseline gap-1">
                 <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">$1</span>
                 <span className="text-sm sm:text-base font-medium text-gray-500 dark:text-gray-400">/mes</span>
@@ -69,25 +67,25 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
               </p>
               <button 
                 onClick={onShowBasicPlan}
-                className="mt-6 sm:mt-8 w-full bg-green-100 hover:bg-green-200 text-green-600 font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
+                className="mt-6 sm:mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
               >
                 Ver Detalles
               </button>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
                   <span className="text-gray-700 dark:text-gray-300">Calculadora de Rentabilidad</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
                   <span className="text-gray-700 dark:text-gray-300">Análisis financiero diario</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
                   <span className="text-gray-700 dark:text-gray-300">Soporte por email</span>
@@ -121,7 +119,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Todo del plan Básico</span>
+                  <span className="text-gray-700 dark:text-gray-300">Todo del plan Starter</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -145,7 +143,12 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
             </div>
 
             {/* Plan Pro (Nivel 3) */}
-            <div className="flex flex-col bg-white dark:bg-gray-800/50 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 sm:p-8">
+            <div className="relative flex flex-col bg-white dark:bg-gray-800/50 rounded-xl shadow-lg border-2 border-blue-500 p-6 sm:p-8">
+              <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
+                <span className="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
+                  Nivel 3
+                </span>
+              </div>
               <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Pro</h3>
               <div className="mt-4 flex items-baseline gap-1">
                 <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">$99</span>
@@ -156,31 +159,31 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
               </p>
               <button 
                 onClick={onShowProPlan}
-                className="mt-6 sm:mt-8 w-full bg-purple-100 hover:bg-purple-200 text-purple-600 font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
+                className="mt-6 sm:mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
               >
                 Ver Detalles
               </button>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
                   <span className="text-gray-700 dark:text-gray-300">Todo del plan Basic</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
                   <span className="text-gray-700 dark:text-gray-300">Funciones administrativas</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
                   <span className="text-gray-700 dark:text-gray-300">Acceso anticipado a nuevas funciones</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
                   <span className="text-gray-700 dark:text-gray-300">Soporte dedicado 24/7</span>

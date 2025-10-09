@@ -6,7 +6,7 @@ interface BasicPlanPageProps {
 
 export const BasicPlanPage: React.FC<BasicPlanPageProps> = ({ onGoBack }) => {
   const handleWhatsAppContact = () => {
-    const message = `Hola! Me interesa contratar el Plan Básico de Kore Ops por $1/mes. ¿Podrías ayudarme con el proceso de contratación?`;
+    const message = `Hola! Me interesa contratar el Plan Starter de Kore Ops por $1/mes. ¿Podrías ayudarme con el proceso de contratación?`;
     const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -14,25 +14,18 @@ export const BasicPlanPage: React.FC<BasicPlanPageProps> = ({ onGoBack }) => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header simplificado */}
-      <header className="border-b border-gray-700" style={{ backgroundColor: '#202020' }}>
+      <header className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <button 
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-2 sm:gap-4 hover:opacity-80 transition-opacity"
-            >
-              <img 
-                src="/ko.png" 
-                alt="Kore Ops Logo" 
-                className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
-              />
-              <h2 className="text-base sm:text-lg font-bold text-white">Kore Ops</h2>
-            </button>
+            {/* Nombre centrado */}
+            <h2 className="w-full text-center text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              Kore Ops
+            </h2>
             
             {/* Botón Volver */}
             <button
               onClick={onGoBack}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300 flex-shrink-0"
             >
               Volver
             </button>
@@ -47,10 +40,10 @@ export const BasicPlanPage: React.FC<BasicPlanPageProps> = ({ onGoBack }) => {
             {/* Breadcrumb */}
             <div>
               <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">
-                <span className="text-gray-800 dark:text-gray-200">Plan Básico - Nivel 1</span>
+                <span className="text-gray-800 dark:text-gray-200">Plan Starter - Nivel 1</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                Plan Básico - $1/mes
+                Plan Starter - $1/mes
               </h1>
               <p className="mt-4 max-w-2xl text-base sm:text-lg text-gray-600 dark:text-gray-300">
                 Perfecto para emprendedores que necesitan controlar su rentabilidad diaria. Acceso exclusivo a la Calculadora de Rentabilidad.
@@ -145,7 +138,7 @@ export const BasicPlanPage: React.FC<BasicPlanPageProps> = ({ onGoBack }) => {
                     onClick={handleWhatsAppContact}
                     className="mt-6 w-full bg-blue-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
                   >
-                    Contratar Plan Básico
+                    Contratar Plan Starter
                   </button>
                   <button 
                     onClick={handleWhatsAppContact}
@@ -163,13 +156,13 @@ export const BasicPlanPage: React.FC<BasicPlanPageProps> = ({ onGoBack }) => {
                   <div className="space-y-4">
                     <details className="group bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-800">
                       <summary className="flex cursor-pointer items-center justify-between font-semibold text-gray-800 dark:text-gray-200 list-none">
-                        ¿Qué incluye el plan Básico por $1/mes?
+                        ¿Qué incluye el plan Starter por $1/mes?
                         <svg className="w-5 h-5 transition-transform duration-300 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </summary>
                       <p className="mt-2 text-gray-600 dark:text-gray-300">
-                        El plan Básico te da acceso exclusivo a la Calculadora de Rentabilidad, permitiéndote analizar tus márgenes de ganancia, gastos en publicidad (Meta, TikTok, Google ADS) y rentabilidad diaria en tiempo real con soporte para ARS y USDT.
+                        El plan Starter te da acceso exclusivo a la Calculadora de Rentabilidad, permitiéndote analizar tus márgenes de ganancia, gastos en publicidad (Meta, TikTok, Google ADS) y rentabilidad diaria en tiempo real con soporte para ARS y USDT.
                       </p>
                     </details>
                     <details className="group bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-800">
