@@ -21,7 +21,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
   // Nivel 1: Solo acceso a Rentabilidad
   const validUsers: Record<string, UserData> = {
     'Yael': { password: '123', level: 3 },
-    'Erick': { password: '123', level: 3 }
+    'Erick': { password: '123', level: 3 },
+    'Pedro': { password: '123', level: 1 }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
