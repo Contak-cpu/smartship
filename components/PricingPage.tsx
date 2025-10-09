@@ -21,7 +21,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Nombre centrado */}
-            <h2 className="w-full text-center text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 className="w-full text-center text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
               Kore Ops
             </h2>
             
