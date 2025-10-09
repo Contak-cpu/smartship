@@ -26,7 +26,7 @@ const DashboardPage: React.FC = () => {
       path: '/rentabilidad',
       color: 'green',
       stats: 'Análisis Financiero',
-      requiredLevel: 1,
+      requiredLevel: 0, // Disponible para invitados
       icon: (
         <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

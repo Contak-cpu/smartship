@@ -47,7 +47,7 @@ export const routes: RouteObject[] = [
   {
     path: '/rentabilidad',
     element: (
-      <LevelProtectedRoute requiredLevel={1} sectionName="Calculadora de Rentabilidad">
+      <LevelProtectedRoute requiredLevel={0} sectionName="Calculadora de Rentabilidad">
         <RentabilidadPage />
       </LevelProtectedRoute>
     ),

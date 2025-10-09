@@ -189,6 +189,23 @@ const RentabilidadCalculator = () => {
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-6xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+        {/* Banner de invitado */}
+        {isGuest && (
+          <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-2 border-blue-500/50 rounded-xl p-4 mb-4">
+            <div className="flex items-center justify-center gap-3">
+              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-white font-semibold text-sm sm:text-base">
+                Utilizando como usuario invitado
+              </p>
+              <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/30">
+                Acceso Limitado
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <header className="text-center mb-4">
           <div className="flex items-center justify-center gap-3 mb-2">
