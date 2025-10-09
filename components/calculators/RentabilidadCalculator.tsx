@@ -187,29 +187,29 @@ const RentabilidadCalculator = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-6xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
-        {/* Banner de invitado */}
+    <div className="min-h-screen bg-gray-900 p-4">
+      <div className="w-full max-w-6xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 space-y-4">
+        {/* Banner de invitado - Compacto */}
         {isGuest && (
-          <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-2 border-blue-500/50 rounded-xl p-4 mb-4">
-            <div className="flex items-center justify-center gap-3">
-              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-2 border-blue-500/50 rounded-lg p-3 mb-4">
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-white font-semibold text-sm sm:text-base">
+              <p className="text-white font-semibold text-sm">
                 Utilizando como usuario invitado
               </p>
-              <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/30">
+              <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs font-bold border border-yellow-500/30">
                 Acceso Limitado
               </span>
             </div>
           </div>
         )}
 
-        {/* Header */}
+        {/* Header - Compacto */}
         <header className="text-center mb-4">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="text-green-500 size-10">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="text-green-500 size-8">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -219,17 +219,17 @@ const RentabilidadCalculator = () => {
                 />
               </svg>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">
               Calculadora de Rentabilidad
             </h1>
           </div>
-          <p className="text-green-400 font-medium text-sm sm:text-base">
+          <p className="text-green-400 font-medium text-sm">
             Analiza la rentabilidad diaria de tu ecommerce
           </p>
         </header>
 
-        {/* Cotización USDT */}
-        <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
+        {/* Cotización USDT - Compacto */}
+        <div className="bg-gray-700 p-3 rounded-lg border border-gray-600">
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Cotización USDT → ARS
           </label>
