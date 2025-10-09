@@ -74,6 +74,11 @@ const createExcelWithoutTemplate = (domicilioCSV: string, sucursalCSV: string) =
 // Función independiente para exportar a Excel usando template
 const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
     try {
+        console.log('===== INICIANDO EXPORTACIÓN EXCEL =====');
+        console.log('Domicilio CSV length:', domicilioCSV?.length);
+        console.log('Sucursal CSV length:', sucursalCSV?.length);
+        console.log('Primeros 200 chars de domicilio:', domicilioCSV?.substring(0, 200));
+        
         // Cargar el template desde public/templates/template.xlsx
         const templateResponse = await fetch('/templates/template.xlsx');
         if (!templateResponse.ok) {
@@ -81,6 +86,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         }
         const templateBuffer = await templateResponse.arrayBuffer();
         const workbook = XLSX.read(templateBuffer, { type: 'array' });
+        console.log('Template cargado exitosamente, hojas:', workbook.SheetNames);
         
         // Función interna para convertir CSV a JSON (solo para Excel)
         const csvToJsonForExcel = (csvText: string): any[] => {
@@ -108,19 +114,26 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         // Procesar domicilios si existe contenido
         if (domicilioCSV && domicilioCSV.trim()) {
             const domicilioData = csvToJsonForExcel(domicilioCSV);
+            console.log('Domicilio data:', domicilioData.length, 'registros');
+            console.log('Primer registro:', domicilioData[0]);
             
             if (domicilioData.length > 0 && workbook.SheetNames.length > 0) {
                 // Seleccionar la primera hoja del template (Domicilios)
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
+                console.log('Hoja seleccionada:', sheetName);
+                console.log('Hojas disponibles:', workbook.SheetNames);
                 
                 // Convertir datos CSV a formato de hoja
                 const newData = XLSX.utils.json_to_sheet(domicilioData);
                 const range = XLSX.utils.decode_range(newData['!ref'] || 'A1:A1');
+                console.log('Rango de datos:', range);
+                console.log('Primera celda de datos:', newData['A1']);
                 
                 // Copiar los datos nuevos al template existente
                 // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
                 // los encabezados del template
+                let cellsCopied = 0;
                 for (let R = range.s.r; R <= range.e.r; ++R) {
                     for (let C = range.s.c; C <= range.e.c; ++C) {
                         const targetRow = R + 2; // +2 para saltar las 2 filas de encabezado
@@ -128,9 +141,11 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
                         const sourceCellAddress = XLSX.utils.encode_cell({ r: R, c: C });
                         if (newData[sourceCellAddress]) {
                             worksheet[cellAddress] = newData[sourceCellAddress];
+                            cellsCopied++;
                         }
                     }
                 }
+                console.log('Celdas copiadas:', cellsCopied);
             }
         }
         
