@@ -21,6 +21,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { username, userLevel, logout, hasAccess } = useAuth();
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
   const allMenuItems: MenuItem[] = [
     {
       id: 'dashboard',
@@ -284,7 +289,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {/* Footer con botón de logout */}
         <div className="p-4 border-t border-gray-700">
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className={`
               w-full flex items-center gap-3 p-3 rounded-lg 
               bg-red-600 hover:bg-red-700 text-white 
