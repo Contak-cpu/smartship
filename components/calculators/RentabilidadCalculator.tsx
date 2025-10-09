@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface FormData {
   facturacion: string;
@@ -17,6 +17,19 @@ interface Resultados {
   totalAlBolsillo: number;
   rentabilidadPorcentaje: number;
   margenNeto: number;
+}
+
+interface HistorialItem {
+  id: string;
+  fecha: string;
+  hora: string;
+  facturacion: number;
+  ingresoReal: number;
+  totalGastos: number;
+  totalAlBolsillo: number;
+  rentabilidadPorcentaje: number;
+  cantidadVentas: number;
+  cantidadProductos: number;
 }
 
 type MonedaAds = 'ARS' | 'USDT';
@@ -41,6 +54,26 @@ const RentabilidadCalculator = () => {
 
   const [resultados, setResultados] = useState<Resultados | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [historial, setHistorial] = useState<HistorialItem[]>([]);
+
+  // Cargar historial desde localStorage al iniciar
+  useEffect(() => {
+    const savedHistorial = localStorage.getItem('rentabilidad_historial');
+    if (savedHistorial) {
+      try {
+        setHistorial(JSON.parse(savedHistorial));
+      } catch (e) {
+        console.error('Error al cargar historial:', e);
+      }
+    }
+  }, []);
+
+  // Guardar historial en localStorage cuando cambie
+  useEffect(() => {
+    if (historial.length > 0) {
+      localStorage.setItem('rentabilidad_historial', JSON.stringify(historial));
+    }
+  }, [historial]);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     // Permitir solo números y punto decimal
@@ -86,14 +119,32 @@ const RentabilidadCalculator = () => {
     const rentabilidadPorcentaje = (totalAlBolsillo / facturacion) * 100;
     const margenNeto = totalAlBolsillo;
 
-    setResultados({
+    const resultadosCalculados = {
       totalGastos,
       totalAlBolsillo,
       rentabilidadPorcentaje,
       margenNeto,
-    });
+    };
 
+    setResultados(resultadosCalculados);
     setShowResults(true);
+
+    // Agregar al historial
+    const now = new Date();
+    const nuevoItem: HistorialItem = {
+      id: now.getTime().toString(),
+      fecha: now.toLocaleDateString('es-AR'),
+      hora: now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      facturacion,
+      ingresoReal,
+      totalGastos,
+      totalAlBolsillo,
+      rentabilidadPorcentaje,
+      cantidadVentas: parseFloat(formData.cantidadVentas) || 0,
+      cantidadProductos: parseFloat(formData.cantidadProductos) || 0,
+    };
+
+    setHistorial(prev => [nuevoItem, ...prev]);
   };
 
   const limpiarFormulario = () => {
@@ -110,6 +161,17 @@ const RentabilidadCalculator = () => {
     });
     setResultados(null);
     setShowResults(false);
+  };
+
+  const limpiarHistorial = () => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar todo el historial?')) {
+      setHistorial([]);
+      localStorage.removeItem('rentabilidad_historial');
+    }
+  };
+
+  const eliminarItemHistorial = (id: string) => {
+    setHistorial(prev => prev.filter(item => item.id !== id));
   };
 
   const formatCurrency = (value: number): string => {
@@ -415,6 +477,97 @@ const RentabilidadCalculator = () => {
                   ? '⚠️ Rentabilidad baja. Considera optimizar gastos publicitarios.'
                   : '❌ Rentabilidad crítica. Revisa urgentemente tu estructura de costos.'}
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Historial de cálculos */}
+        {historial.length > 0 && (
+          <div className="bg-gray-700 rounded-2xl p-6 border border-gray-600">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Historial de Cálculos
+              </h3>
+              <button
+                onClick={limpiarHistorial}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Limpiar Historial
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {historial.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="bg-gray-800/80 rounded-lg p-4 border border-gray-600 hover:border-gray-500 transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-green-600 rounded-full w-8 h-8 flex items-center justify-center text-white font-bold text-sm">
+                        {historial.length - index}
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-400">
+                          {item.fecha} - {item.hora}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => eliminarItemHistorial(item.id)}
+                      className="text-gray-500 hover:text-red-400 transition-colors"
+                      title="Eliminar"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-gray-700/50 rounded p-2">
+                      <p className="text-xs text-gray-400 mb-1">Facturación</p>
+                      <p className="text-sm font-bold text-white">{formatCurrency(item.facturacion)}</p>
+                    </div>
+                    <div className="bg-gray-700/50 rounded p-2">
+                      <p className="text-xs text-gray-400 mb-1">Ingreso Real</p>
+                      <p className="text-sm font-bold text-white">{formatCurrency(item.ingresoReal)}</p>
+                    </div>
+                    <div className="bg-red-900/30 rounded p-2 border border-red-500/30">
+                      <p className="text-xs text-gray-400 mb-1">Total Gastos</p>
+                      <p className="text-sm font-bold text-red-400">{formatCurrency(item.totalGastos)}</p>
+                    </div>
+                    <div className="bg-green-900/30 rounded p-2 border border-green-500/30">
+                      <p className="text-xs text-gray-400 mb-1">Al Bolsillo</p>
+                      <p className="text-sm font-bold text-green-400">{formatCurrency(item.totalAlBolsillo)}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-gray-700 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {item.cantidadVentas > 0 && (
+                        <span className="text-xs text-gray-400">
+                          📦 {item.cantidadVentas} ventas
+                        </span>
+                      )}
+                      {item.cantidadProductos > 0 && (
+                        <span className="text-xs text-gray-400">
+                          📊 {item.cantidadProductos} productos
+                        </span>
+                      )}
+                    </div>
+                    <div className={`text-lg font-bold ${item.rentabilidadPorcentaje >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {item.rentabilidadPorcentaje.toFixed(2)}%
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
