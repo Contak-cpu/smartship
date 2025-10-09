@@ -118,11 +118,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed md:sticky top-0 left-0 h-screen bg-gray-800 border-r border-gray-700 
+          fixed md:sticky top-0 left-0 h-screen border-r border-gray-700 
           transition-all duration-300 z-30 flex flex-col
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           ${isSidebarOpen ? 'w-72' : 'md:w-20'}
         `}
+        style={{ backgroundColor: '#202020' }}
       >
         {/* Header del Sidebar */}
         <div className="p-6 border-b border-gray-700 flex items-center justify-between">
