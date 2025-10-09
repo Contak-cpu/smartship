@@ -22,126 +22,17 @@ const ExcelIcon = () => (
     </svg>
 );
 
-// Función para agregar encabezados combinados (versión simple que no mueve datos)
-const addCombinedHeadersSimple = (sheet: any, type: 'domicilio' | 'sucursal') => {
-    // Insertar fila vacía al inicio para los encabezados combinados
-    XLSX.utils.sheet_add_aoa(sheet, [['']], { origin: 'A1' });
-    
-    // Configurar los encabezados combinados según el tipo
-    if (type === 'domicilio') {
-        // Domicilios: A-G = Características, H-M = Destinatario, N-S = Domicilio Destino
-        sheet['A1'] = { v: 'Características', t: 's' };
-        sheet['H1'] = { v: 'Destinatario', t: 's' };
-        sheet['N1'] = { v: 'Domicilio Destino', t: 's' };
-        
-        // Combinar celdas A1:G1
-        if (!sheet['!merges']) sheet['!merges'] = [];
-        sheet['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
-        
-        // Combinar celdas H1:M1
-        sheet['!merges'].push({ s: { r: 0, c: 7 }, e: { r: 0, c: 12 } });
-        
-        // Combinar celdas N1:S1
-        sheet['!merges'].push({ s: { r: 0, c: 13 }, e: { r: 0, c: 18 } });
-        
-    } else if (type === 'sucursal') {
-        // Sucursales: A-G = Datos de envío, H-M = Destinatario, N = Destino
-        sheet['A1'] = { v: 'Datos de envío', t: 's' };
-        sheet['H1'] = { v: 'Destinatario', t: 's' };
-        sheet['N1'] = { v: 'Destino', t: 's' };
-        
-        // Combinar celdas A1:G1
-        if (!sheet['!merges']) sheet['!merges'] = [];
-        sheet['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
-        
-        // Combinar celdas H1:M1
-        sheet['!merges'].push({ s: { r: 0, c: 7 }, e: { r: 0, c: 12 } });
-        
-        // La celda N1 no se combina (solo una celda)
-    }
-    
-    // Aplicar formato a los encabezados combinados
-    const headerCells = ['A1', 'H1', 'N1'];
-    headerCells.forEach(cellRef => {
-        if (sheet[cellRef]) {
-            sheet[cellRef].s = {
-                font: { bold: true, sz: 11 },
-                alignment: { horizontal: 'center', vertical: 'center' }
-            };
-        }
-    });
-    
-    // Actualizar el rango de la hoja para incluir la nueva fila
-    if (sheet['!ref']) {
-        const range = XLSX.utils.decode_range(sheet['!ref']);
-        range.e.r += 1; // Agregar una fila más
-        sheet['!ref'] = XLSX.utils.encode_range(range);
-    }
-};
 
-// Función para restaurar los encabezados originales con formato completo
-const restoreOriginalHeaders = (sheet: any, type: 'domicilio' | 'sucursal') => {
-    if (type === 'domicilio') {
-        // Encabezados originales para domicilios
-        const domicilioHeaders = [
-            'Paquete Guardado Ej: 1',
-            'Peso (grs) Ej: ',
-            'Alto (cm) Ej: ',
-            'Ancho (cm) Ej: ',
-            'Profundidad (cm) Ej: ',
-            'Valor declarado ($ C/IVA) * Ej: ',
-            'Numero Interno Ej: ',
-            'Nombre * Ej: ',
-            'Apellido * Ej: ',
-            'DNI * Ej: ',
-            'Email * Ej: ',
-            'Celular código * Ej: ',
-            'Celular número * Ej: ',
-            'Calle * Ej: ',
-            'Número * Ej: ',
-            'Piso Ej: ',
-            'Departamento Ej: ',
-            'Provincia / Localidad / CP * Ej: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657',
-            'Observaciones Ej: '
-        ];
-        
-        // Aplicar encabezados en la fila 2
-        domicilioHeaders.forEach((header, index) => {
-            const cellRef = XLSX.utils.encode_cell({ r: 1, c: index }); // Fila 2 (índice 1)
-            sheet[cellRef] = { v: header, t: 's' };
-        });
-        
-    } else if (type === 'sucursal') {
-        // Encabezados originales para sucursales
-        const sucursalHeaders = [
-            'Paquete Guardado Ej: 1',
-            'Peso (grs) Ej: ',
-            'Alto (cm) Ej: ',
-            'Ancho (cm) Ej: ',
-            'Profundidad (cm) Ej: ',
-            'Valor declarado ($ C/IVA) * Ej: ',
-            'Numero Interno Ej: ',
-            'Nombre * Ej: ',
-            'Apellido * Ej: ',
-            'DNI * Ej: ',
-            'Email * Ej: ',
-            'Celular código * Ej: ',
-            'Celular número * Ej: ',
-            'Sucursal * Ej: 9 DE JULIO'
-        ];
-        
-        // Aplicar encabezados en la fila 2
-        sucursalHeaders.forEach((header, index) => {
-            const cellRef = XLSX.utils.encode_cell({ r: 1, c: index }); // Fila 2 (índice 1)
-            sheet[cellRef] = { v: header, t: 's' };
-        });
-    }
-};
-
-// Función independiente para exportar a Excel
-const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
+// Función independiente para exportar a Excel usando template
+const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
     try {
-        const workbook = XLSX.utils.book_new();
+        // Cargar el template desde public/templates/template.xlsx
+        const templateResponse = await fetch('/templates/template.xlsx');
+        if (!templateResponse.ok) {
+            throw new Error('No se pudo cargar el template');
+        }
+        const templateBuffer = await templateResponse.arrayBuffer();
+        const workbook = XLSX.read(templateBuffer, { type: 'array' });
         
         // Función interna para convertir CSV a JSON (solo para Excel)
         const csvToJsonForExcel = (csvText: string): any[] => {
@@ -166,38 +57,60 @@ const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
             return data;
         };
         
-        // Crear hoja de domicilios si existe contenido
+        // Procesar domicilios si existe contenido
         if (domicilioCSV && domicilioCSV.trim()) {
             const domicilioData = csvToJsonForExcel(domicilioCSV);
             if (domicilioData.length > 0) {
-                // Crear hoja directamente sin modificar encabezados
-                const domicilioSheet = XLSX.utils.json_to_sheet(domicilioData);
+                // Seleccionar la primera hoja del template (Domicilios)
+                const sheetName = workbook.SheetNames[0]; // Primera hoja = Domicilios
+                const worksheet = workbook.Sheets[sheetName];
                 
-                // Agregar encabezados combinados para domicilios (sin mover datos)
-                addCombinedHeadersSimple(domicilioSheet, 'domicilio');
+                // Convertir datos CSV a formato de hoja
+                const newData = XLSX.utils.json_to_sheet(domicilioData);
+                const range = XLSX.utils.decode_range(newData['!ref'] || 'A1:A1');
                 
-                XLSX.utils.book_append_sheet(workbook, domicilioSheet, 'Domicilios');
+                // Copiar los datos nuevos al template existente
+                // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
+                // los encabezados del template
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const targetRow = R + 2; // +2 para saltar las 2 filas de encabezado
+                        const cellAddress = XLSX.utils.encode_cell({ r: targetRow, c: C });
+                        const sourceCellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        if (newData[sourceCellAddress]) {
+                            worksheet[cellAddress] = newData[sourceCellAddress];
+                        }
+                    }
+                }
             }
         }
         
-        // Crear hoja de sucursales si existe contenido
-        if (sucursalCSV && sucursalCSV.trim()) {
+        // Procesar sucursales si existe contenido y hay segunda hoja
+        if (sucursalCSV && sucursalCSV.trim() && workbook.SheetNames.length > 1) {
             const sucursalData = csvToJsonForExcel(sucursalCSV);
             if (sucursalData.length > 0) {
-                // Crear hoja directamente sin modificar encabezados
-                const sucursalSheet = XLSX.utils.json_to_sheet(sucursalData);
+                // Seleccionar la segunda hoja del template (Sucursales)
+                const sheetName = workbook.SheetNames[1]; // Segunda hoja = Sucursales
+                const worksheet = workbook.Sheets[sheetName];
                 
-                // Agregar encabezados combinados para sucursales (sin mover datos)
-                addCombinedHeadersSimple(sucursalSheet, 'sucursal');
+                // Convertir datos CSV a formato de hoja
+                const newData = XLSX.utils.json_to_sheet(sucursalData);
+                const range = XLSX.utils.decode_range(newData['!ref'] || 'A1:A1');
                 
-                XLSX.utils.book_append_sheet(workbook, sucursalSheet, 'Sucursales');
+                // Copiar los datos nuevos al template existente
+                // IMPORTANTE: Comienza desde la fila 3 (índice 2) para respetar 
+                // los encabezados del template
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const targetRow = R + 2; // +2 para saltar las 2 filas de encabezado
+                        const cellAddress = XLSX.utils.encode_cell({ r: targetRow, c: C });
+                        const sourceCellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        if (newData[sourceCellAddress]) {
+                            worksheet[cellAddress] = newData[sourceCellAddress];
+                        }
+                    }
+                }
             }
-        }
-        
-        // Verificar que al menos una hoja fue creada
-        if (workbook.SheetNames.length === 0) {
-            alert('No hay datos para exportar a Excel');
-            return;
         }
         
         // Generar nombre de archivo con fecha
@@ -205,10 +118,21 @@ const exportToExcel = (domicilioCSV: string, sucursalCSV: string) => {
         const dateString = today.toISOString().split('T')[0];
         const fileName = `Pedidos_Andreani_${dateString}.xlsx`;
         
-        // Descargar el archivo Excel
-        XLSX.writeFile(workbook, fileName);
+        // Genera el archivo Excel final con el template + tus datos
+        const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         
-        console.log('Archivo Excel exportado exitosamente:', fileName);
+        // Descargar el archivo Excel
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        console.log('Archivo Excel exportado exitosamente usando template:', fileName);
         
     } catch (error) {
         console.error('Error al exportar a Excel:', error);
@@ -285,7 +209,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
                     </button>
                 )}
                 <button
-                    onClick={() => exportToExcel(domicilioCSV, sucursalCSV)}
+                    onClick={async () => await exportToExcel(domicilioCSV, sucursalCSV)}
                     disabled={!domicilioCSV && !sucursalCSV}
                     className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 disabled:hover:scale-100 text-sm sm:text-base"
                 >
