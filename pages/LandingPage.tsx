@@ -29,7 +29,7 @@ const LandingPage = () => {
     );
   }
 
-  return <Login onLogin={login} onGoBack={() => setShowPricing(true)} />;
+  return <Login onLogin={(username, level) => login(username, level)} onGoBack={() => setShowPricing(true)} />;
 };
 
 export default LandingPage;

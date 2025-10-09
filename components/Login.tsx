@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 
+interface UserData {
+  password: string;
+  level: number;
+}
+
 interface LoginProps {
-  onLogin: (username: string) => void;
+  onLogin: (username: string, level: number) => void;
   onGoBack?: () => void;
 }
 
@@ -10,10 +15,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  // Usuarios hardcodeados
-  const validUsers = {
-    'Yael': '123',
-    'Erick': '123'
+  // Usuarios hardcodeados con niveles de acceso
+  // Nivel 3: Acceso a todas las secciones (administrador)
+  // Nivel 2: Acceso a SmartShip, PDF Generator y Rentabilidad
+  // Nivel 1: Solo acceso a Rentabilidad
+  const validUsers: Record<string, UserData> = {
+    'Yael': { password: '123', level: 3 },
+    'Erick': { password: '123', level: 3 }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -25,8 +33,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
       return;
     }
 
-    if (validUsers[username as keyof typeof validUsers] === password) {
-      onLogin(username);
+    const user = validUsers[username];
+    if (user && user.password === password) {
+      onLogin(username, user.level);
     } else {
       setError('Usuario o contraseña incorrectos');
     }

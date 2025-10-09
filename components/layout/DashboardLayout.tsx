@@ -8,6 +8,7 @@ interface MenuItem {
   path: string;
   icon: React.ReactNode;
   description: string;
+  requiredLevel: number;
 }
 
 interface DashboardLayoutProps {
@@ -18,17 +19,30 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const { username, logout } = useAuth();
+  const { username, userLevel, logout, hasAccess } = useAuth();
 
-  const menuItems: MenuItem[] = [
+  const allMenuItems: MenuItem[] = [
     {
       id: 'dashboard',
       label: 'Inicio',
       path: '/',
       description: 'Panel de Control',
+      requiredLevel: 1,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      ),
+    },
+    {
+      id: 'rentabilidad',
+      label: 'Rentabilidad',
+      path: '/rentabilidad',
+      description: 'Calculadora de Rentabilidad',
+      requiredLevel: 1, // Nivel 1 y superiores
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },
@@ -37,6 +51,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       label: 'SmartShip',
       path: '/smartship',
       description: 'Transformador de Pedidos Andreani',
+      requiredLevel: 2, // Nivel 2 y superiores
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -48,24 +63,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       label: 'Generar PDFs',
       path: '/pdf-generator',
       description: 'Generador de PDFs Masivo',
+      requiredLevel: 2, // Nivel 2 y superiores
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
     },
-    {
-      id: 'rentabilidad',
-      label: 'Rentabilidad',
-      path: '/rentabilidad',
-      description: 'Calculadora de Rentabilidad',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
   ];
+
+  // NO filtrar - mostrar todas las opciones
+  const menuItems = allMenuItems;
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -200,7 +208,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {isSidebarOpen && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{username}</p>
-                <p className="text-xs text-gray-400">Usuario</p>
+                <p className="text-xs text-gray-400">
+                  Nivel {userLevel} {userLevel === 3 ? '(Admin)' : userLevel === 2 ? '(Avanzado)' : '(Básico)'}
+                </p>
               </div>
             )}
           </div>
@@ -210,6 +220,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
+            const isLocked = !hasAccess(item.requiredLevel);
+            
             return (
               <button
                 key={item.id}
@@ -223,18 +235,45 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   ${
                     isActive
                       ? 'bg-green-600 text-white shadow-lg shadow-green-600/50'
+                      : isLocked
+                      ? 'text-gray-500 hover:bg-gray-700/50 hover:text-gray-400 border border-gray-700'
                       : 'text-gray-400 hover:bg-gray-700 hover:text-white'
                   }
                   ${!isSidebarOpen && 'justify-center'}
                   active:scale-95
+                  ${isLocked && 'relative'}
                 `}
                 title={!isSidebarOpen ? item.label : undefined}
               >
-                <div className="flex-shrink-0">{item.icon}</div>
+                <div className="flex-shrink-0 relative">
+                  {item.icon}
+                  {isLocked && (
+                    <svg 
+                      className="w-3 h-3 text-yellow-500 absolute -top-1 -right-1" 
+                      fill="currentColor" 
+                      viewBox="0 0 20 20"
+                    >
+                      <path 
+                        fillRule="evenodd" 
+                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" 
+                        clipRule="evenodd" 
+                      />
+                    </svg>
+                  )}
+                </div>
                 {isSidebarOpen && (
                   <div className="flex-1 text-left min-w-0">
-                    <p className="font-medium truncate">{item.label}</p>
-                    <p className="text-xs opacity-80 truncate">{item.description}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">{item.label}</p>
+                      {isLocked && (
+                        <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/30 flex-shrink-0">
+                          Nivel {item.requiredLevel}
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-xs opacity-80 truncate ${isLocked && 'line-through'}`}>
+                      {item.description}
+                    </p>
                   </div>
                 )}
               </button>

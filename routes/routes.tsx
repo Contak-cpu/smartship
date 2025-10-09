@@ -1,5 +1,6 @@
 import { RouteObject } from 'react-router-dom';
 import ProtectedRoute from '../components/routing/ProtectedRoute';
+import LevelProtectedRoute from '../components/routing/LevelProtectedRoute';
 import PublicRoute from '../components/routing/PublicRoute';
 import HomePage from '../pages/HomePage';
 import PDFGeneratorPage from '../pages/PDFGeneratorPage';
@@ -29,25 +30,25 @@ export const routes: RouteObject[] = [
   {
     path: '/smartship',
     element: (
-      <ProtectedRoute>
+      <LevelProtectedRoute requiredLevel={2} sectionName="SmartShip - Transformador de Pedidos">
         <HomePage />
-      </ProtectedRoute>
+      </LevelProtectedRoute>
     ),
   },
   {
     path: '/pdf-generator',
     element: (
-      <ProtectedRoute>
+      <LevelProtectedRoute requiredLevel={2} sectionName="Generador de PDFs Masivo">
         <PDFGeneratorPage />
-      </ProtectedRoute>
+      </LevelProtectedRoute>
     ),
   },
   {
     path: '/rentabilidad',
     element: (
-      <ProtectedRoute>
+      <LevelProtectedRoute requiredLevel={1} sectionName="Calculadora de Rentabilidad">
         <RentabilidadPage />
-      </ProtectedRoute>
+      </LevelProtectedRoute>
     ),
   },
   // AGREGAR NUEVAS RUTAS AQUÍ
