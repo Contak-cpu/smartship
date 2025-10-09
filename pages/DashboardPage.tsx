@@ -16,7 +16,7 @@ interface FeatureCard {
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { hasAccess } = useAuth();
+  const { hasAccess, username } = useAuth();
 
   const allFeatures: FeatureCard[] = [
     {
@@ -143,7 +143,9 @@ const DashboardPage: React.FC = () => {
 
         {/* Features Grid */}
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold text-white mb-6 px-2">Selecciona una herramienta</h2>
+          <h2 className="text-2xl font-bold text-white mb-6 px-2">
+            Buenos días {username}, ¿en qué vas a trabajar hoy?
+          </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {features.map((feature) => {
               const colors = getColorClasses(feature.color);
