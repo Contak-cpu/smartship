@@ -84,21 +84,33 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
             console.log('Cargando template desde /templates/template.xlsx...');
             const templateResponse = await fetch('/templates/template.xlsx');
             
-            if (templateResponse.ok) {
-                const templateBuffer = await templateResponse.arrayBuffer();
-                console.log('Template cargado, tamaño:', templateBuffer.byteLength, 'bytes');
-                
-                workbook = XLSX.read(templateBuffer, { type: 'array' });
-                console.log('Template leído exitosamente, hojas disponibles:', workbook.SheetNames);
-                useTemplate = true;
-            } else {
+            if (!templateResponse.ok) {
                 throw new Error(`Template no encontrado: ${templateResponse.status}`);
             }
+            
+            const templateBuffer = await templateResponse.arrayBuffer();
+            console.log('Template cargado, tamaño:', templateBuffer.byteLength, 'bytes');
+            
+            // Intentar leer el template con diferentes opciones para evitar el error "HTML could not find <table>"
+            try {
+                workbook = XLSX.read(templateBuffer, { type: 'array', cellDates: false });
+                console.log('Template leído exitosamente, hojas disponibles:', workbook.SheetNames);
+                useTemplate = true;
+            } catch (xlsxError) {
+                console.error('Error al leer template con XLSX:', xlsxError);
+                // Intentar con diferentes opciones
+                try {
+                    workbook = XLSX.read(templateBuffer, { type: 'array', cellDates: false, cellNF: false, cellStyles: false });
+                    console.log('Template leído con opciones alternativas, hojas disponibles:', workbook.SheetNames);
+                    useTemplate = true;
+                } catch (xlsxError2) {
+                    console.error('Error persistente al leer template:', xlsxError2);
+                    throw new Error(`El archivo template.xlsx no es un archivo Excel válido: ${xlsxError2.message}`);
+                }
+            }
         } catch (templateError) {
-            console.warn('Error al cargar template:', templateError);
-            console.log('Usando método sin template como respaldo...');
-            workbook = createExcelWithoutTemplate(domicilioCSV, sucursalCSV);
-            useTemplate = false;
+            console.error('Error al cargar template:', templateError);
+            throw templateError;
         }
         
         // Solo procesar datos en el template si se está usando template
