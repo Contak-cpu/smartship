@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import { SupabaseTest } from '../components/SupabaseTest';
 
 interface FeatureCard {
   id: string;
@@ -214,6 +215,11 @@ const DashboardPage: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+
+          {/* Test de Supabase */}
+          <div className="mt-8">
+            <SupabaseTest />
           </div>
 
           {/* Info adicional */}
