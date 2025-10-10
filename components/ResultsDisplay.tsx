@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
 
 interface ResultsDisplayProps {
   domicilioCSV: string;
@@ -22,10 +23,10 @@ const ExcelIcon = () => (
     </svg>
 );
 
-// Función independiente para exportar a Excel (formato idéntico a plantilla Andreani)
+// Función independiente para exportar a Excel con desplegables correctos (una opción por fila)
 const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
     try {
-        const workbook = XLSX.utils.book_new();
+        const workbook = new ExcelJS.Workbook();
         
         // Cargar datos de configuración desde el archivo
         let configData: any[][] = [];
@@ -56,69 +57,187 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
             return data;
         };
         
+        // Extraer opciones para los desplegables - CORRECTAMENTE (una opción por fila)
+        const sucursalesOptions: string[] = [];
+        const provinciaLocalidadOptions: string[] = [];
+        const itemNoGenericoOptions: string[] = [];
+        
+        if (configData.length > 1) { // Saltar encabezado
+            for (let i = 1; i < configData.length; i++) {
+                const sucursal = configData[i][0]; // Columna A
+                const itemNoGenerico = configData[i][2]; // Columna C
+                const provinciaLocalidad = configData[i][4]; // Columna E
+                
+                if (sucursal && sucursal.trim()) {
+                    sucursalesOptions.push(sucursal); // Copiar exactamente tal como está
+                }
+                if (itemNoGenerico && itemNoGenerico.trim()) {
+                    itemNoGenericoOptions.push(itemNoGenerico); // Copiar exactamente tal como está
+                }
+                if (provinciaLocalidad && provinciaLocalidad.trim()) {
+                    provinciaLocalidadOptions.push(provinciaLocalidad); // Copiar exactamente tal como está
+                }
+            }
+        }
+        
+        console.log('📋 Opciones de Sucursales (individuales):', sucursalesOptions.length);
+        console.log('📋 Opciones de ItemNoGenerico (individuales):', itemNoGenericoOptions.length);
+        console.log('📋 Opciones de Provincia/Localidad (individuales):', provinciaLocalidadOptions.length);
+        console.log('📋 Primeras 3 opciones de sucursales:', sucursalesOptions.slice(0, 3));
+        console.log('📋 Primeras 3 opciones de ItemNoGenerico:', itemNoGenericoOptions.slice(0, 3));
+        console.log('📋 Primeras 3 opciones de provincia/localidad:', provinciaLocalidadOptions.slice(0, 3));
+        
         // Crear hoja de domicilios si existe contenido
         if (domicilioCSV && domicilioCSV.trim()) {
             const domicilioData = csvToDataArray(domicilioCSV);
             if (domicilioData.length > 0) {
-                // Crear hoja vacía
-                const ws: any = {};
+                const ws = workbook.addWorksheet('A domicilio');
                 
                 // FILA 1: Encabezados combinados
-                ws['A1'] = { v: 'Características', t: 's' };
-                ws['H1'] = { v: 'Destinatario', t: 's' };
-                ws['N1'] = { v: 'Domicilio destino', t: 's' };
-                
-                // FILA 2: Encabezados detallados
-                const headers = [
-                    'Paquete Guardado Ej: Mistery',
-                    'Peso (grs)Ej:',
-                    'Alto (cm)Ej:',
-                    'Ancho (cm)Ej:',
-                    'Profundidad (cm)Ej:',
-                    'Valor declarado ($ C/IVA) *Ej:',
-                    'Numero InternoEj:',
-                    'Nombre *Ej:',
-                    'Apellido *Ej:',
-                    'DNI *Ej:',
-                    'Email *Ej:',
-                    'Celular código *Ej:',
-                    'Celular número *Ej:',
-                    'Calle *Ej:',
-                    'Número *Ej:',
-                    'PisoEj:',
-                    'DepartamentoEj:',
-                    'Provincia / Localidad / CP * Ej: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657',
-                    'ObservacionesEj:'
-                ];
-                
-                headers.forEach((header, index) => {
-                    const cellRef = XLSX.utils.encode_cell({ r: 1, c: index });
-                    ws[cellRef] = { v: header, t: 's' };
-                });
-                
-                // DATOS desde fila 3
-                domicilioData.forEach((rowData, rowIndex) => {
-                    rowData.forEach((cellValue, colIndex) => {
-                        const cellRef = XLSX.utils.encode_cell({ r: rowIndex + 2, c: colIndex });
-                        ws[cellRef] = { v: cellValue || '', t: 's' };
-                    });
-                });
-                
-                // Definir el rango de la hoja
-                const range = {
-                    s: { r: 0, c: 0 },
-                    e: { r: domicilioData.length + 1, c: headers.length - 1 }
-                };
-                ws['!ref'] = XLSX.utils.encode_range(range);
+                ws.getCell('A1').value = 'Características';
+                ws.getCell('H1').value = 'Destinatario';
+                ws.getCell('N1').value = 'Domicilio destino';
                 
                 // Combinar celdas de la fila 1
-                ws['!merges'] = [
-                    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },   // Características (A1:G1)
-                    { s: { r: 0, c: 7 }, e: { r: 0, c: 12 } },  // Destinatario (H1:M1)
-                    { s: { r: 0, c: 13 }, e: { r: 0, c: 18 } }  // Domicilio destino (N1:S1)
+                ws.mergeCells('A1:G1');
+                ws.mergeCells('H1:M1');
+                ws.mergeCells('N1:S1');
+                
+                // FILA 2: Encabezados detallados (CORREGIDOS según plantilla Andreani)
+                const headers = [
+                    'Paquete Guardado Ej: Mistery',
+                    'Peso (grs) Ej: ',
+                    'Alto (cm) Ej: ',
+                    'Ancho (cm) Ej: ',
+                    'Profundidad (cm) Ej: ',
+                    'Valor declarado ($ C/IVA) * Ej: ',
+                    'Numero Interno Ej: ',
+                    'Nombre * Ej: ',
+                    'Apellido * Ej: ',
+                    'DNI * Ej: ',
+                    'Email * Ej: ',
+                    'Celular código * Ej: ',
+                    'Celular número * Ej: ',
+                    'Calle * Ej: ',
+                    'Número * Ej: ',
+                    'Piso Ej: ',
+                    'Departamento Ej: ',
+                    'Provincia / Localidad / CP * Ej: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657',
+                    'Observaciones Ej: '
                 ];
                 
-                XLSX.utils.book_append_sheet(workbook, ws, 'A domicilio');
+                ws.getRow(2).values = headers;
+                
+                // DATOS desde fila 3 (CORREGIDO: columnas numéricas específicas)
+                // Columnas numéricas en A DOMICILIO: B C D E F J L M O P (índices: 1 2 3 4 5 9 11 12 14 15)
+                const columnasNumericasDomicilio = [1, 2, 3, 4, 5, 9, 11, 12, 14, 15];
+                
+                domicilioData.forEach((rowData, rowIndex) => {
+                    try {
+                        const row = ws.getRow(rowIndex + 3);
+                        
+                        // Procesar cada valor según su tipo de columna
+                        rowData.forEach((value, colIndex) => {
+                            try {
+                                const cell = row.getCell(colIndex + 1);
+                                
+                                if (value && typeof value === 'string') {
+                                    const trimmedValue = value.trim();
+                                    
+                                    // Limpiar DNI/CUIT en la columna J (índice 9) - "DNI * Ej: "
+                                    if (colIndex === 9 && trimmedValue.length === 11) {
+                                        // Si tiene 11 dígitos (formato CUIT), extraer los 8 centrales
+                                        const cleanedDNI = trimmedValue.substring(2, 10);
+                                        console.log(`🔄 DNI limpiado: ${value} → ${cleanedDNI}`);
+                                        cell.value = Number(cleanedDNI);
+                                        return;
+                                    }
+                                    
+                                    // Si es una columna numérica, convertir a número
+                                    if (columnasNumericasDomicilio.includes(colIndex)) {
+                                        const numValue = Number(trimmedValue);
+                                        if (!isNaN(numValue)) {
+                                            cell.value = numValue;
+                                        } else {
+                                            cell.value = trimmedValue;
+                                        }
+                                    } else {
+                                        // Columnas de texto
+                                        cell.value = trimmedValue;
+                                    }
+                                } else if (value !== null && value !== undefined) {
+                                    cell.value = value;
+                                } else {
+                                    cell.value = '';
+                                }
+                            } catch (cellError) {
+                                console.warn(`⚠️ Error procesando celda ${rowIndex + 3},${colIndex + 1}:`, cellError);
+                                const cell = row.getCell(colIndex + 1);
+                                cell.value = value;
+                            }
+                        });
+                    } catch (rowError) {
+                        console.warn(`⚠️ Error procesando fila ${rowIndex + 3}:`, rowError);
+                        const row = ws.getRow(rowIndex + 3);
+                        row.values = rowData;
+                    }
+                });
+                
+                // AGREGAR VALIDACIÓN DE DATOS (DESPLEGABLE) en columna R (índice 18)
+                // CORRECTO: Una opción por cada fila de configuración
+                if (provinciaLocalidadOptions.length > 0) {
+                    try {
+                        const lastRow = Math.max(domicilioData.length + 2, 100); // +2 porque empezamos en fila 3
+                        
+                        // Crear validación usando la sintaxis correcta de ExcelJS
+                        for (let rowNum = 3; rowNum <= lastRow; rowNum++) {
+                            const cell = ws.getCell(`R${rowNum}`);
+                            // Usar referencia a la hoja de configuración para las opciones
+                            const configRange = `Configuracion!E2:E${provinciaLocalidadOptions.length + 1}`;
+                            cell.dataValidation = {
+                                type: 'list',
+                                allowBlank: true,
+                                formulae: [configRange],
+                                showErrorMessage: true,
+                                errorStyle: 'error',
+                                errorTitle: 'Valor inválido',
+                                error: 'Por favor seleccione una opción de la lista'
+                            };
+                        }
+                        
+                        console.log(`✅ Validación agregada en columna R (filas 3-${lastRow}) de "A domicilio" con ${provinciaLocalidadOptions.length} opciones individuales`);
+                    } catch (validationError) {
+                        console.warn('⚠️ Error agregando validación a domicilio:', validationError);
+                    }
+                }
+                
+                // AGREGAR VALIDACIÓN DE DATOS (DESPLEGABLE) en columna A - SIEMPRE VACÍA
+                if (itemNoGenericoOptions.length > 0) {
+                    try {
+                        const lastRow = Math.max(domicilioData.length + 2, 100); // +2 porque empezamos en fila 3
+                        
+                        for (let rowNum = 3; rowNum <= lastRow; rowNum++) {
+                            const cell = ws.getCell(`A${rowNum}`);
+                            // Usar referencia a la hoja de configuración para las opciones (columna C)
+                            const configRange = `Configuracion!C2:C${itemNoGenericoOptions.length + 1}`;
+                            cell.dataValidation = {
+                                type: 'list',
+                                allowBlank: true,
+                                formulae: [configRange],
+                                showErrorMessage: true,
+                                errorStyle: 'error',
+                                errorTitle: 'Valor inválido',
+                                error: 'Por favor seleccione una opción de la lista'
+                            };
+                            // Asegurar que la celda quede vacía
+                            cell.value = '';
+                        }
+                        
+                        console.log(`✅ Validación agregada en columna A (filas 3-${lastRow}) de "A domicilio" - SIEMPRE VACÍA`);
+                    } catch (validationError) {
+                        console.warn('⚠️ Error agregando validación a columna A domicilio:', validationError);
+                    }
+                }
             }
         }
         
@@ -126,104 +245,171 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         if (sucursalCSV && sucursalCSV.trim()) {
             const sucursalData = csvToDataArray(sucursalCSV);
             if (sucursalData.length > 0) {
-                // Crear hoja vacía
-                const ws: any = {};
+                const ws = workbook.addWorksheet('A sucursal');
                 
                 // FILA 1: Encabezados combinados
-                ws['A1'] = { v: 'Características', t: 's' };
-                ws['H1'] = { v: 'Destinatario', t: 's' };
-                ws['N1'] = { v: 'Destino', t: 's' };
+                ws.getCell('A1').value = 'Características';
+                ws.getCell('H1').value = 'Destinatario';
+                ws.getCell('N1').value = 'Destino';
                 
-                // FILA 2: Encabezados detallados
+                // Combinar celdas de la fila 1
+                ws.mergeCells('A1:G1');
+                ws.mergeCells('H1:M1');
+                
+                // FILA 2: Encabezados detallados (CORREGIDOS según plantilla Andreani)
                 const headers = [
                     'Paquete Guardado Ej: Mistery',
-                    'Peso (grs)Ej:',
-                    'Alto (cm)Ej:',
-                    'Ancho (cm)Ej:',
-                    'Profundidad (cm)Ej:',
-                    'Valor declarado ($ C/IVA) *Ej:',
-                    'Numero InternoEj:',
-                    'Nombre *Ej:',
-                    'Apellido *Ej:',
-                    'DNI *Ej:',
-                    'Email *Ej:',
-                    'Celular código *Ej:',
-                    'Celular número *Ej:',
+                    'Peso (grs) Ej: ',
+                    'Alto (cm) Ej: ',
+                    'Ancho (cm) Ej: ',
+                    'Profundidad (cm) Ej: ',
+                    'Valor declarado ($ C/IVA) * Ej: ',
+                    'Numero Interno Ej: ',
+                    'Nombre * Ej: ',
+                    'Apellido * Ej: ',
+                    'DNI * Ej: ',
+                    'Email * Ej: ',
+                    'Celular código * Ej: ',
+                    'Celular número * Ej: ',
                     'Sucursal * Ej: 9 DE JULIO'
                 ];
                 
-                headers.forEach((header, index) => {
-                    const cellRef = XLSX.utils.encode_cell({ r: 1, c: index });
-                    ws[cellRef] = { v: header, t: 's' };
-                });
+                ws.getRow(2).values = headers;
                 
-                // DATOS desde fila 3
+                // DATOS desde fila 3 (CORREGIDO: columnas numéricas específicas)
+                // Columnas numéricas en A SUCURSAL: B C D E F G J L M (índices: 1 2 3 4 5 6 9 11 12)
+                const columnasNumericasSucursal = [1, 2, 3, 4, 5, 6, 9, 11, 12];
+                
                 sucursalData.forEach((rowData, rowIndex) => {
-                    rowData.forEach((cellValue, colIndex) => {
-                        const cellRef = XLSX.utils.encode_cell({ r: rowIndex + 2, c: colIndex });
-                        ws[cellRef] = { v: cellValue || '', t: 's' };
-                    });
+                    try {
+                        const row = ws.getRow(rowIndex + 3);
+                        
+                        // Procesar cada valor según su tipo de columna
+                        rowData.forEach((value, colIndex) => {
+                            try {
+                                const cell = row.getCell(colIndex + 1);
+                                
+                                if (value && typeof value === 'string') {
+                                    const trimmedValue = value.trim();
+                                    
+                                    // Limpiar DNI/CUIT en la columna J (índice 9) - "DNI * Ej: "
+                                    if (colIndex === 9 && trimmedValue.length === 11) {
+                                        // Si tiene 11 dígitos (formato CUIT), extraer los 8 centrales
+                                        const cleanedDNI = trimmedValue.substring(2, 10);
+                                        console.log(`🔄 DNI limpiado: ${value} → ${cleanedDNI}`);
+                                        cell.value = Number(cleanedDNI);
+                                        return;
+                                    }
+                                    
+                                    // Si es una columna numérica, convertir a número
+                                    if (columnasNumericasSucursal.includes(colIndex)) {
+                                        const numValue = Number(trimmedValue);
+                                        if (!isNaN(numValue)) {
+                                            cell.value = numValue;
+                                        } else {
+                                            cell.value = trimmedValue;
+                                        }
+                                    } else {
+                                        // Columnas de texto
+                                        cell.value = trimmedValue;
+                                    }
+                                } else if (value !== null && value !== undefined) {
+                                    cell.value = value;
+                                } else {
+                                    cell.value = '';
+                                }
+                            } catch (cellError) {
+                                console.warn(`⚠️ Error procesando celda ${rowIndex + 3},${colIndex + 1}:`, cellError);
+                                const cell = row.getCell(colIndex + 1);
+                                cell.value = value;
+                            }
+                        });
+                    } catch (rowError) {
+                        console.warn(`⚠️ Error procesando fila ${rowIndex + 3}:`, rowError);
+                        const row = ws.getRow(rowIndex + 3);
+                        row.values = rowData;
+                    }
                 });
                 
-                // Definir el rango de la hoja
-                const range = {
-                    s: { r: 0, c: 0 },
-                    e: { r: sucursalData.length + 1, c: headers.length - 1 }
-                };
-                ws['!ref'] = XLSX.utils.encode_range(range);
+                // AGREGAR VALIDACIÓN DE DATOS (DESPLEGABLE) en columna N (índice 14)
+                // CORRECTO: Una opción por cada fila de configuración
+                if (sucursalesOptions.length > 0) {
+                    try {
+                        const lastRow = Math.max(sucursalData.length + 2, 100); // +2 porque empezamos en fila 3
+                        
+                        // Crear validación usando la sintaxis correcta de ExcelJS
+                        for (let rowNum = 3; rowNum <= lastRow; rowNum++) {
+                            const cell = ws.getCell(`N${rowNum}`);
+                            // Usar referencia a la hoja de configuración para las opciones
+                            const configRange = `Configuracion!A2:A${sucursalesOptions.length + 1}`;
+                            cell.dataValidation = {
+                                type: 'list',
+                                allowBlank: true,
+                                formulae: [configRange],
+                                showErrorMessage: true,
+                                errorStyle: 'error',
+                                errorTitle: 'Valor inválido',
+                                error: 'Por favor seleccione una sucursal de la lista'
+                            };
+                        }
+                        
+                        console.log(`✅ Validación agregada en columna N (filas 3-${lastRow}) de "A sucursal" con ${sucursalesOptions.length} opciones individuales`);
+                    } catch (validationError) {
+                        console.warn('⚠️ Error agregando validación a sucursal:', validationError);
+                    }
+                }
                 
-                // Combinar celdas de la fila 1
-                ws['!merges'] = [
-                    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },   // Características (A1:G1)
-                    { s: { r: 0, c: 7 }, e: { r: 0, c: 12 } }   // Destinatario (H1:M1)
-                ];
-                
-                XLSX.utils.book_append_sheet(workbook, ws, 'A sucursal');
+                // AGREGAR VALIDACIÓN DE DATOS (DESPLEGABLE) en columna A - SIEMPRE VACÍA
+                if (itemNoGenericoOptions.length > 0) {
+                    try {
+                        const lastRow = Math.max(sucursalData.length + 2, 100); // +2 porque empezamos en fila 3
+                        
+                        for (let rowNum = 3; rowNum <= lastRow; rowNum++) {
+                            const cell = ws.getCell(`A${rowNum}`);
+                            // Usar referencia a la hoja de configuración para las opciones (columna C)
+                            const configRange = `Configuracion!C2:C${itemNoGenericoOptions.length + 1}`;
+                            cell.dataValidation = {
+                                type: 'list',
+                                allowBlank: true,
+                                formulae: [configRange],
+                                showErrorMessage: true,
+                                errorStyle: 'error',
+                                errorTitle: 'Valor inválido',
+                                error: 'Por favor seleccione una opción de la lista'
+                            };
+                            // Asegurar que la celda quede vacía
+                            cell.value = '';
+                        }
+                        
+                        console.log(`✅ Validación agregada en columna A (filas 3-${lastRow}) de "A sucursal" - SIEMPRE VACÍA`);
+                    } catch (validationError) {
+                        console.warn('⚠️ Error agregando validación a columna A sucursal:', validationError);
+                    }
+                }
             }
         }
         
-        // Crear hoja de Configuración (oculta) con datos reales de Andreani
-        const configSheet: any = {};
+        // Crear hoja de Configuración con datos reales de Andreani
+        const configSheet = workbook.addWorksheet('Configuracion');
         
         if (configData.length > 0) {
             // Agregar todos los datos de configuración
             configData.forEach((rowData, rowIndex) => {
-                rowData.forEach((cellValue, colIndex) => {
-                    const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
-                    configSheet[cellRef] = { v: cellValue || '', t: 's' };
-                });
+                const row = configSheet.getRow(rowIndex + 1);
+                row.values = rowData;
             });
-            
-            // Definir el rango de la hoja
-            const range = {
-                s: { r: 0, c: 0 },
-                e: { r: configData.length - 1, c: 4 } // 5 columnas (0-4)
-            };
-            configSheet['!ref'] = XLSX.utils.encode_range(range);
         } else {
             // Si no hay datos, crear hoja vacía mínima
-            configSheet['A1'] = { v: 'Sucursal', t: 's' };
-            configSheet['C1'] = { v: 'ItemNoGenerico', t: 's' };
-            configSheet['E1'] = { v: 'ProvinciaLocalidaCodigosPostales', t: 's' };
-            configSheet['!ref'] = 'A1:E1';
+            configSheet.getCell('A1').value = 'Sucursal';
+            configSheet.getCell('C1').value = 'ItemNoGenerico';
+            configSheet.getCell('E1').value = 'ProvinciaLocalidaCodigosPostales';
         }
-        
-        XLSX.utils.book_append_sheet(workbook, configSheet, 'Configuracion');
         
         // Ocultar la hoja de configuración
-        if (workbook.Workbook) {
-            if (!workbook.Workbook.Sheets) workbook.Workbook.Sheets = [];
-        } else {
-            workbook.Workbook = { Sheets: [] };
-        }
-        
-        const configSheetIndex = workbook.SheetNames.indexOf('Configuracion');
-        if (configSheetIndex >= 0) {
-            workbook.Workbook.Sheets[configSheetIndex] = { Hidden: 1 };
-        }
+        configSheet.state = 'hidden';
         
         // Verificar que al menos una hoja fue creada
-        if (workbook.SheetNames.length === 0) {
+        if (workbook.worksheets.length === 0) {
             alert('No hay datos para exportar a Excel');
             return;
         }
@@ -233,13 +419,33 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
         const dateString = today.toISOString().split('T')[0];
         const fileName = `EnvioMasivoExcelPaquetes_${dateString}.xlsx`;
         
-        // Descargar el archivo Excel
-        XLSX.writeFile(workbook, fileName);
+        // Generar y descargar el archivo Excel
+        console.log('🔄 Generando buffer del archivo Excel...');
+        console.log('📊 Workbook info:', {
+            sheetCount: workbook.worksheets.length,
+            sheetNames: workbook.worksheets.map(ws => ws.name)
+        });
         
-        console.log('Archivo Excel exportado exitosamente:', fileName);
+        try {
+            const buffer = await workbook.xlsx.writeBuffer();
+            console.log('✅ Buffer generado, tamaño:', buffer.byteLength, 'bytes');
+            
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            link.click();
+            window.URL.revokeObjectURL(url);
+            
+            console.log('✅ Archivo Excel exportado exitosamente con desplegables CORRECTOS:', fileName);
+        } catch (bufferError) {
+            console.error('❌ Error generando buffer:', bufferError);
+            throw bufferError;
+        }
         
     } catch (error) {
-        console.error('Error al exportar a Excel:', error);
+        console.error('❌ Error al exportar a Excel:', error);
         alert('Error al exportar el archivo Excel. Por favor, inténtalo de nuevo.');
     }
 };

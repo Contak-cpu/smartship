@@ -1325,8 +1325,16 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       const codigoPostal = getColumnValue(order, 21); // Código postal
       const provincia = getColumnValue(order, 22); // Provincia o estado
       
-      // Construir dirección completa con toda la información disponible
-      let direccionCompleta = `${calle} ${numero}`.trim();
+      // Construir dirección básica para matching de sucursal
+      // Extraer solo el número básico del campo número (antes de "entre", "y", etc.)
+      let numeroBasico = numero;
+      if (numero && numero.includes('entre')) {
+        numeroBasico = numero.split('entre')[0].trim();
+      } else if (numero && numero.includes('y')) {
+        numeroBasico = numero.split('y')[0].trim();
+      }
+      
+      let direccionCompleta = `${calle} ${numeroBasico}`.trim();
       if (piso && piso.trim()) {
         direccionCompleta += `, ${piso}`;
       }
@@ -1346,12 +1354,13 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       console.log('=== DEBUGGING SUCURSAL ===');
       console.log('Calle extraída:', calle);
       console.log('Número extraído:', numero);
+      console.log('Número básico extraído:', numeroBasico);
       console.log('Piso extraído:', piso);
       console.log('Localidad extraída:', localidad);
       console.log('Ciudad extraída:', ciudad);
       console.log('Código postal extraído:', codigoPostal);
       console.log('Provincia extraída:', provincia);
-      console.log('Calle y número combinados:', `${calle} ${numero}`);
+      console.log('Calle y número básico combinados:', `${calle} ${numeroBasico}`);
       console.log('Dirección completa del pedido:', direccionCompleta);
       
       const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales);
