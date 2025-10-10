@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import { PDFDocument, rgb } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -22,6 +22,17 @@ const PDFGenerator = () => {
   const [showPdfPages, setShowPdfPages] = useState(false);
   const [showPositionConfig, setShowPositionConfig] = useState(false);
   const [isEditingPosition, setIsEditingPosition] = useState(false);
+  const [generatedPdfBlob, setGeneratedPdfBlob] = useState<Blob | null>(null);
+  const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null);
+
+  // Limpiar la URL del blob cuando el componente se desmonte
+  useEffect(() => {
+    return () => {
+      if (generatedPdfUrl) {
+        URL.revokeObjectURL(generatedPdfUrl);
+      }
+    };
+  }, [generatedPdfUrl]);
 
   const showMessage = (type: 'success' | 'error' | 'info', text: string) => {
     setMessage({ type, text });
@@ -169,11 +180,31 @@ const PDFGenerator = () => {
     return null;
   };
 
+  const handleDownloadPDF = () => {
+    if (!generatedPdfUrl || !generatedPdfBlob) {
+      showMessage('error', 'No hay PDF generado para descargar');
+      return;
+    }
+
+    const a = document.createElement('a');
+    a.href = generatedPdfUrl;
+    a.download = 'documentos_combinados.pdf';
+    a.click();
+    showMessage('success', 'PDF descargado exitosamente');
+  };
+
   const generatePDFs = async () => {
     if (!originalPdfDoc || csvData.length < 2) {
       showMessage('error', 'Carga el CSV y el PDF antes de continuar');
       return;
     }
+
+    // Limpiar PDF anterior si existe
+    if (generatedPdfUrl) {
+      URL.revokeObjectURL(generatedPdfUrl);
+    }
+    setGeneratedPdfBlob(null);
+    setGeneratedPdfUrl(null);
 
     setProcessing(true);
     const headers = csvData[0];
@@ -268,13 +299,17 @@ const PDFGenerator = () => {
       const pdfBytes = await finalPdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'documentos_combinados.pdf';
-      a.click();
-      URL.revokeObjectURL(url);
+      
+      // Liberar la URL anterior si existe
+      if (generatedPdfUrl) {
+        URL.revokeObjectURL(generatedPdfUrl);
+      }
+      
+      // Guardar el blob y la URL para permitir descargas posteriores
+      setGeneratedPdfBlob(blob);
+      setGeneratedPdfUrl(url);
 
-      showMessage('success', `PDF generado con ${finalPdfDoc.getPageCount()} páginas`);
+      showMessage('success', `PDF generado exitosamente con ${finalPdfDoc.getPageCount()} páginas. ¡Listo para descargar!`);
     } catch (error) {
       console.error('Error al generar PDF:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
@@ -642,12 +677,69 @@ const PDFGenerator = () => {
             {processing ? 'Procesando...' : 'Generar PDF'}
           </button>
         )}
+
+        {/* Download Section - Shown after PDF is generated */}
+        {generatedPdfBlob && (
+          <div className="bg-gray-700 p-6 rounded-lg border-2 border-green-500 animate-fade-in">
+            <h3 className="text-lg font-bold text-white mb-4 text-center flex items-center justify-center gap-2">
+              <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              PDF Generado Exitosamente
+            </h3>
+            
+            <div className="space-y-3">
+              {/* Download Button */}
+              <button
+                onClick={handleDownloadPDF}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Descargar PDF
+              </button>
+
+              {/* Preview Button */}
+              <button
+                onClick={() => generatedPdfUrl && window.open(generatedPdfUrl, '_blank')}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Previsualizar PDF
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-400 text-center mt-3">
+              💡 Puedes descargar o previsualizar el PDF las veces que necesites
+            </p>
+          </div>
+        )}
         
         <footer className="text-center mt-6 text-gray-500 text-xs sm:text-sm">
           <p>Creado para automatizar la generación de PDFs desde CSV.</p>
           <p className="mt-1 text-gray-600">by pictoN</p>
         </footer>
       </div>
+
+      <style>{`
+        @keyframes fade-in {
+          from { 
+            opacity: 0; 
+            transform: translateY(-10px); 
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0); 
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.5s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 };
