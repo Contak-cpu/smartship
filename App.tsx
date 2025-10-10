@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, useRoutes } from 'react-router-dom';
 import { routes } from './routes/routes';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Componente que renderiza las rutas
 const AppRoutes = () => {
@@ -10,9 +11,11 @@ const AppRoutes = () => {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <AppRoutes />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
   );
 };
 

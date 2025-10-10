@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Login } from '../components/Login';
 import { PricingPage } from '../components/PricingPage';
 import { BasicPlanPage } from '../components/BasicPlanPage';
@@ -7,9 +8,16 @@ import { useAuth } from '../hooks/useAuth';
 
 const LandingPage = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [showPricing, setShowPricing] = useState(true);
   const [showBasicPlan, setShowBasicPlan] = useState(false);
   const [showProPlan, setShowProPlan] = useState(false);
+
+  const handleLogin = (username: string) => {
+    login(username);
+    // Navegar inmediatamente después del login
+    navigate('/', { replace: true });
+  };
 
   if (showProPlan) {
     return <ProPlanPage onGoBack={() => setShowProPlan(false)} />;
@@ -29,7 +37,7 @@ const LandingPage = () => {
     );
   }
 
-  return <Login onLogin={login} onGoBack={() => setShowPricing(true)} />;
+  return <Login onLogin={handleLogin} onGoBack={() => setShowPricing(true)} />;
 };
 
 export default LandingPage;
