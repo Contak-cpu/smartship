@@ -13,11 +13,18 @@ interface FormData {
   gastosGoogleAds: string;
 }
 
+interface GastoPersonalizado {
+  id: string;
+  nombre: string;
+  monto: string;
+}
+
 interface Resultados {
   totalGastos: number;
   totalAlBolsillo: number;
   rentabilidadPorcentaje: number;
   margenNeto: number;
+  totalGastosPersonalizados: number;
 }
 
 interface HistorialItem {
@@ -31,6 +38,7 @@ interface HistorialItem {
   rentabilidadPorcentaje: number;
   cantidadVentas: number;
   cantidadProductos: number;
+  gastosPersonalizados?: GastoPersonalizado[];
 }
 
 type MonedaAds = 'ARS' | 'USDT';
@@ -55,6 +63,10 @@ const RentabilidadCalculator = () => {
   const [monedaTiktok, setMonedaTiktok] = useState<MonedaAds>('ARS');
   const [monedaGoogle, setMonedaGoogle] = useState<MonedaAds>('ARS');
   const [cotizacionUSDT, setCotizacionUSDT] = useState<string>('1100');
+
+  const [gastosPersonalizados, setGastosPersonalizados] = useState<GastoPersonalizado[]>([]);
+  const [nuevoGastoNombre, setNuevoGastoNombre] = useState('');
+  const [nuevoGastoMonto, setNuevoGastoMonto] = useState('');
 
   const [resultados, setResultados] = useState<Resultados | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -93,6 +105,38 @@ const RentabilidadCalculator = () => {
     return monto;
   };
 
+  const agregarGastoPersonalizado = () => {
+    if (nuevoGastoNombre.trim() === '' || nuevoGastoMonto === '') {
+      alert('Por favor completa el nombre y monto del gasto');
+      return;
+    }
+
+    if (parseFloat(nuevoGastoMonto) <= 0) {
+      alert('El monto debe ser mayor a 0');
+      return;
+    }
+
+    const nuevoGasto: GastoPersonalizado = {
+      id: Date.now().toString(),
+      nombre: nuevoGastoNombre.trim(),
+      monto: nuevoGastoMonto,
+    };
+
+    setGastosPersonalizados(prev => [...prev, nuevoGasto]);
+    setNuevoGastoNombre('');
+    setNuevoGastoMonto('');
+  };
+
+  const eliminarGastoPersonalizado = (id: string) => {
+    setGastosPersonalizados(prev => prev.filter(gasto => gasto.id !== id));
+  };
+
+  const calcularTotalGastosPersonalizados = (): number => {
+    return gastosPersonalizados.reduce((total, gasto) => {
+      return total + (parseFloat(gasto.monto) || 0);
+    }, 0);
+  };
+
   const calcularRentabilidad = () => {
     const facturacion = parseFloat(formData.facturacion) || 0;
     const ingresoReal = parseFloat(formData.ingresoReal) || 0;
@@ -103,6 +147,9 @@ const RentabilidadCalculator = () => {
     const gastosMetaARS = convertirARS(parseFloat(formData.gastosMetaAds) || 0, monedaMeta);
     const gastosTiktokARS = convertirARS(parseFloat(formData.gastosTiktokAds) || 0, monedaTiktok);
     const gastosGoogleARS = convertirARS(parseFloat(formData.gastosGoogleAds) || 0, monedaGoogle);
+
+    // Calcular total de gastos personalizados
+    const totalGastosPersonalizados = calcularTotalGastosPersonalizados();
 
     // Validar que al menos un gasto de ADS esté ingresado
     const tieneGastosAds = gastosMetaARS > 0 || gastosTiktokARS > 0 || gastosGoogleARS > 0;
@@ -118,7 +165,7 @@ const RentabilidadCalculator = () => {
     }
 
     const totalGastosAds = gastosMetaARS + gastosTiktokARS + gastosGoogleARS;
-    const totalGastos = gastosStock + gastosEnvio + totalGastosAds;
+    const totalGastos = gastosStock + gastosEnvio + totalGastosAds + totalGastosPersonalizados;
     const totalAlBolsillo = ingresoReal - totalGastos;
     const rentabilidadPorcentaje = (totalAlBolsillo / facturacion) * 100;
     const margenNeto = totalAlBolsillo;
@@ -128,6 +175,7 @@ const RentabilidadCalculator = () => {
       totalAlBolsillo,
       rentabilidadPorcentaje,
       margenNeto,
+      totalGastosPersonalizados,
     };
 
     setResultados(resultadosCalculados);
@@ -146,6 +194,7 @@ const RentabilidadCalculator = () => {
       rentabilidadPorcentaje,
       cantidadVentas: parseFloat(formData.cantidadVentas) || 0,
       cantidadProductos: parseFloat(formData.cantidadProductos) || 0,
+      gastosPersonalizados: gastosPersonalizados.length > 0 ? [...gastosPersonalizados] : undefined,
     };
 
     setHistorial(prev => [nuevoItem, ...prev]);
@@ -163,6 +212,9 @@ const RentabilidadCalculator = () => {
       gastosTiktokAds: '',
       gastosGoogleAds: '',
     });
+    setGastosPersonalizados([]);
+    setNuevoGastoNombre('');
+    setNuevoGastoMonto('');
     setResultados(null);
     setShowResults(false);
   };
@@ -420,6 +472,96 @@ const RentabilidadCalculator = () => {
                 </div>
               </div>
             </div>
+
+            {/* Gastos Personalizados */}
+            <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
+              <h4 className="text-sm font-bold text-purple-400 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                💼 Gastos Personalizados
+              </h4>
+              <p className="text-xs text-gray-400 mb-3">
+                Agrega gastos adicionales como logística privada, empleados, alquiler, etc.
+              </p>
+
+              {/* Formulario para agregar gastos */}
+              <div className="space-y-2 mb-3">
+                <input
+                  type="text"
+                  value={nuevoGastoNombre}
+                  onChange={(e) => setNuevoGastoNombre(e.target.value)}
+                  className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none text-sm"
+                  placeholder="Ej: Logística privada, Empleados, etc."
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && nuevoGastoMonto) {
+                      agregarGastoPersonalizado();
+                    }
+                  }}
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={nuevoGastoMonto}
+                    onChange={(e) => {
+                      if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) {
+                        setNuevoGastoMonto(e.target.value);
+                      }
+                    }}
+                    className="flex-1 p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none text-sm"
+                    placeholder="Monto (ARS)"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && nuevoGastoNombre) {
+                        agregarGastoPersonalizado();
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={agregarGastoPersonalizado}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Agregar
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista de gastos personalizados */}
+              {gastosPersonalizados.length > 0 && (
+                <div className="space-y-2 mt-3 max-h-48 overflow-y-auto">
+                  {gastosPersonalizados.map((gasto) => (
+                    <div
+                      key={gasto.id}
+                      className="bg-gray-600/50 p-2 rounded-lg border border-gray-500 flex items-center justify-between group hover:border-purple-500/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-white">{gasto.nombre}</p>
+                        <p className="text-xs text-green-400 font-semibold">
+                          {formatCurrency(parseFloat(gasto.monto))}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => eliminarGastoPersonalizado(gasto.id)}
+                        className="text-gray-400 hover:text-red-400 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                        title="Eliminar gasto"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  <div className="bg-purple-900/30 p-2 rounded-lg border border-purple-500/50 flex items-center justify-between mt-2">
+                    <p className="text-sm font-medium text-purple-300">Total Gastos Personalizados:</p>
+                    <p className="text-lg font-bold text-purple-400">
+                      {formatCurrency(calcularTotalGastosPersonalizados())}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -461,6 +603,11 @@ const RentabilidadCalculator = () => {
               <div className="bg-gray-800/80 p-4 rounded-lg border border-red-500/50">
                 <p className="text-sm text-gray-400 mb-1">Total Gastos</p>
                 <p className="text-2xl font-bold text-red-400">{formatCurrency(resultados.totalGastos)}</p>
+                {resultados.totalGastosPersonalizados > 0 && (
+                  <p className="text-xs text-purple-400 mt-1">
+                    (incluye {formatCurrency(resultados.totalGastosPersonalizados)} en gastos personalizados)
+                  </p>
+                )}
               </div>
 
               {/* Total al Bolsillo */}
@@ -600,7 +747,7 @@ const RentabilidadCalculator = () => {
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-gray-700 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-wrap">
                       {item.cantidadVentas > 0 && (
                         <span className="text-xs text-gray-400">
                           📦 {item.cantidadVentas} ventas
@@ -611,11 +758,33 @@ const RentabilidadCalculator = () => {
                           📊 {item.cantidadProductos} productos
                         </span>
                       )}
+                      {item.gastosPersonalizados && item.gastosPersonalizados.length > 0 && (
+                        <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full border border-purple-500/30">
+                          💼 {item.gastosPersonalizados.length} gasto{item.gastosPersonalizados.length > 1 ? 's' : ''} personalizado{item.gastosPersonalizados.length > 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
                     <div className={`text-lg font-bold ${item.rentabilidadPorcentaje >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {item.rentabilidadPorcentaje.toFixed(2)}%
                     </div>
                   </div>
+
+                  {/* Mostrar gastos personalizados si existen */}
+                  {item.gastosPersonalizados && item.gastosPersonalizados.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                      <p className="text-xs font-medium text-purple-400 mb-2">Gastos Personalizados:</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {item.gastosPersonalizados.map((gasto) => (
+                          <div key={gasto.id} className="bg-gray-700/30 rounded p-2">
+                            <p className="text-xs text-gray-300">{gasto.nombre}</p>
+                            <p className="text-xs font-bold text-purple-400">
+                              {formatCurrency(parseFloat(gasto.monto))}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
