@@ -11,6 +11,14 @@
   ],
   "routes": [
     {
+      "src": "/pdf.worker.min.mjs",
+      "dest": "/pdf.worker.min.mjs",
+      "headers": {
+        "Content-Type": "application/javascript",
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
       "src": "/assets/(.*)",
       "dest": "/assets/$1",
       "headers": {
@@ -19,6 +27,14 @@
     },
     {
       "src": "/(.*\\.js)$",
+      "dest": "/$1",
+      "headers": {
+        "Content-Type": "application/javascript",
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/(.*\\.mjs)$",
       "dest": "/$1",
       "headers": {
         "Content-Type": "application/javascript",

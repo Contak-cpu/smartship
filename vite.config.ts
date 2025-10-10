@@ -24,6 +24,7 @@ export default defineConfig({
       }
     }
   },
+  publicDir: 'public',
   esbuild: {
     drop: ['console', 'debugger'] // Eliminar console y debugger en producción
   }
