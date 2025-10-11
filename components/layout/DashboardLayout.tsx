@@ -136,7 +136,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               }}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-              <svg className="w-20 h-20 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-20 h-20 flex-shrink-0 text-blue-500 drop-shadow-lg transition-transform duration-300 hover:scale-110" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
               </svg>
               <div className="text-left">
@@ -155,7 +155,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               className="hover:opacity-80 transition-opacity"
               title="Ir al inicio"
             >
-              <svg className="w-20 h-20 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-20 h-20 text-blue-500 drop-shadow-lg transition-transform duration-300 hover:scale-110" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
               </svg>
             </button>
@@ -192,7 +192,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {/* Usuario */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-blue-600/30">
               {username?.charAt(0).toUpperCase()}
             </div>
             {isSidebarOpen && (
@@ -221,25 +221,25 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   handleNavigation(item.path);
                 }}
                 className={`
-                  w-full flex items-center gap-3 p-3 rounded-lg transition-colors duration-150
+                  group/menuitem w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300
                   ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/50'
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/50'
                       : isLocked
-                      ? 'text-gray-500 hover:bg-gray-700/50 hover:text-gray-400 border border-gray-700'
-                      : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                      ? 'text-gray-500 hover:bg-gray-700/50 hover:text-gray-400 border border-gray-700/50'
+                      : 'text-gray-400 hover:bg-gray-700/80 hover:text-white hover:shadow-lg'
                   }
                   ${!isSidebarOpen && 'justify-center'}
                   active:scale-95
                   ${isLocked && 'relative'}
                 `}
-                title={!isSidebarOpen ? item.label : undefined}
+                title={!isSidebarOpen ? (isLocked ? `${item.label} - Requiere Nivel ${item.requiredLevel}` : item.label) : undefined}
               >
-                <div className="flex-shrink-0 relative">
+                <div className="flex-shrink-0 relative transition-transform duration-300 group-hover/menuitem:scale-110">
                   {item.icon}
                   {isLocked && (
                     <svg 
-                      className="w-3 h-3 text-yellow-500 absolute -top-1 -right-1" 
+                      className="w-3.5 h-3.5 text-yellow-400 absolute -top-1 -right-1 animate-pulse" 
                       fill="currentColor" 
                       viewBox="0 0 20 20"
                     >
@@ -254,19 +254,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 {isSidebarOpen && (
                   <div className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium truncate">{item.label}</p>
+                      <p className="font-semibold truncate">{item.label}</p>
                       {isLocked && (
-                        <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/30 flex-shrink-0">
+                        <span className="text-xs bg-gradient-to-r from-yellow-500/30 to-yellow-600/30 text-yellow-400 px-2 py-1 rounded-full border border-yellow-500/40 flex-shrink-0 shadow-sm">
                           Nivel {item.requiredLevel}
                         </span>
                       )}
                       {!isLocked && userLevel === 0 && item.id === 'rentabilidad' && (
-                        <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full border border-yellow-500/30 flex-shrink-0">
+                        <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full border border-yellow-500/30 flex-shrink-0">
                           Limitado
                         </span>
                       )}
                     </div>
-                    <p className={`text-xs opacity-80 truncate ${isLocked && 'line-through'}`}>
+                    <p className={`text-xs opacity-80 truncate mt-0.5 ${isLocked && 'line-through'}`}>
                       {item.description}
                     </p>
                   </div>

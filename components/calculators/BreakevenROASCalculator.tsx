@@ -338,8 +338,8 @@ const BreakevenROASCalculator = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4">
-      <div className="w-full max-w-7xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 space-y-6">
+    <div className="min-h-screen bg-gray-950 p-4">
+      <div className="w-full max-w-7xl mx-auto bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-6 space-y-6 border border-gray-700/50">
         {/* Banner de invitado */}
         {isGuest && (
           <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-2 border-blue-500/50 rounded-lg p-3">
@@ -397,7 +397,7 @@ const BreakevenROASCalculator = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Columna Izquierda - Configuración Base */}
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-blue-400 border-b border-gray-600 pb-2">
+            <h3 className="text-xl font-bold text-white border-b border-gray-600 pb-2">
               ⚙️ Configuración Base
             </h3>
 
@@ -446,8 +446,8 @@ const BreakevenROASCalculator = () => {
             </div>
 
             {/* Gastos Personalizados */}
-            <div className="bg-purple-900/20 p-4 rounded-lg border border-purple-500/50">
-              <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2">
+            <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
+              <h4 className="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
@@ -501,11 +501,11 @@ const BreakevenROASCalculator = () => {
                   {gastosPersonalizados.map((gasto) => (
                     <div
                       key={gasto.id}
-                      className="bg-gray-600/50 p-2 rounded-lg border border-gray-500 flex items-center justify-between group hover:border-purple-500/50 transition-colors"
+                      className="bg-gray-600/50 p-2 rounded-lg border border-gray-500 flex items-center justify-between group hover:border-blue-500/50 transition-colors"
                     >
                       <div className="flex-1">
                         <p className="text-sm font-medium text-white">{gasto.nombre}</p>
-                        <p className="text-xs text-green-400 font-semibold">
+                        <p className="text-xs text-blue-400 font-semibold">
                           {formatCurrency(parseFloat(gasto.monto))}
                         </p>
                       </div>
@@ -521,10 +521,10 @@ const BreakevenROASCalculator = () => {
                     </div>
                   ))}
                   {gastosPersonalizados.length > 0 && (
-                    <div className="bg-purple-900/30 p-2 rounded-lg border border-purple-500/50">
+                    <div className="bg-blue-900/30 p-2 rounded-lg border border-blue-500/50">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-purple-300">Total:</p>
-                        <p className="text-lg font-bold text-purple-400">
+                        <p className="text-sm font-medium text-blue-300">Total:</p>
+                        <p className="text-lg font-bold text-blue-400">
                           {formatCurrency(calcularTotalGastosPersonalizados())}
                         </p>
                       </div>
@@ -623,7 +623,7 @@ const BreakevenROASCalculator = () => {
 
           {/* Columna Derecha - Precio, CPA y Target */}
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-blue-400 border-b border-gray-600 pb-2">
+            <h3 className="text-xl font-bold text-white border-b border-gray-600 pb-2">
               🎯 Precio y Objetivos
             </h3>
 
@@ -641,10 +641,10 @@ const BreakevenROASCalculator = () => {
                 />
               </div>
 
-              <div className="bg-purple-900/20 p-4 rounded-lg border border-purple-500/50">
-                <label className="block text-sm font-medium text-purple-300 mb-2">
-                  CPA Estimado (ARS)
-                </label>
+            <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                CPA Estimado (ARS)
+              </label>
                 <input
                   type="text"
                   value={formData.cpaEstimado}
@@ -657,10 +657,10 @@ const BreakevenROASCalculator = () => {
                 </p>
               </div>
 
-              <div className="bg-orange-900/20 p-4 rounded-lg border border-orange-500/50">
-                <label className="block text-sm font-medium text-orange-300 mb-2">
-                  Target Profit (%) *
-                </label>
+            <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Target Profit (%) *
+              </label>
                 <input
                   type="text"
                   value={formData.targetProfitPorcentaje}
@@ -720,34 +720,34 @@ const BreakevenROASCalculator = () => {
             </h3>
 
             {/* Costos Base */}
-            <div className="bg-gray-800/80 p-4 rounded-lg border border-blue-500/50">
-              <h4 className="text-lg font-bold text-blue-300 mb-3">📊 Costos Base</h4>
+            <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
+              <h4 className="text-lg font-bold text-white mb-3">📊 Costos Base</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-gray-700/50 p-3 rounded">
                   <p className="text-xs text-gray-400 mb-1">Producto</p>
                   <p className="text-sm font-bold text-white">{formatCurrency(resultados.productoPesos)}</p>
-                  <p className="text-xs text-green-400">{formatUSD(resultados.productoUSD)}</p>
+                  <p className="text-xs text-gray-400">{formatUSD(resultados.productoUSD)}</p>
                 </div>
                 <div className="bg-gray-700/50 p-3 rounded">
                   <p className="text-xs text-gray-400 mb-1">Envío</p>
                   <p className="text-sm font-bold text-white">{formatCurrency(resultados.envioPesos)}</p>
-                  <p className="text-xs text-green-400">{formatUSD(resultados.envioUSD)}</p>
+                  <p className="text-xs text-gray-400">{formatUSD(resultados.envioUSD)}</p>
                 </div>
                 <div className="bg-gray-700/50 p-3 rounded">
                   <p className="text-xs text-gray-400 mb-1">Fulfillment</p>
                   <p className="text-sm font-bold text-white">{formatCurrency(resultados.fulfillmentPesos)}</p>
-                  <p className="text-xs text-green-400">{formatUSD(resultados.fulfillmentUSD)}</p>
+                  <p className="text-xs text-gray-400">{formatUSD(resultados.fulfillmentUSD)}</p>
                 </div>
-                <div className="bg-blue-900/30 p-3 rounded border border-blue-500/30">
+                <div className="bg-gray-700/50 p-3 rounded border border-gray-600">
                   <p className="text-xs text-gray-400 mb-1">% Comisiones</p>
-                  <p className="text-sm font-bold text-blue-400">{resultados.porcentajeComisionesTotal.toFixed(2)}%</p>
-                  <p className="text-xs text-blue-400">{formatCurrency(resultados.totalComisionesPesos)}</p>
+                  <p className="text-sm font-bold text-white">{resultados.porcentajeComisionesTotal.toFixed(2)}%</p>
+                  <p className="text-xs text-gray-400">{formatCurrency(resultados.totalComisionesPesos)}</p>
                 </div>
                 {resultados.gastosPersonalizadosPesos > 0 && (
-                  <div className="bg-purple-900/30 p-3 rounded border border-purple-500/30 col-span-2">
+                  <div className="bg-gray-700/50 p-3 rounded border border-gray-600 col-span-2">
                     <p className="text-xs text-gray-400 mb-1">Gastos Personalizados</p>
-                    <p className="text-sm font-bold text-purple-400">{formatCurrency(resultados.gastosPersonalizadosPesos)}</p>
-                    <p className="text-xs text-purple-400">{formatUSD(resultados.gastosPersonalizadosUSD)}</p>
+                    <p className="text-sm font-bold text-white">{formatCurrency(resultados.gastosPersonalizadosPesos)}</p>
+                    <p className="text-xs text-gray-400">{formatUSD(resultados.gastosPersonalizadosUSD)}</p>
                   </div>
                 )}
               </div>
@@ -755,30 +755,30 @@ const BreakevenROASCalculator = () => {
 
             {/* Costos Totales */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-800/80 p-4 rounded-lg border border-red-500/50">
+              <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
                 <p className="text-sm text-gray-400 mb-1">Costos Sin CPA</p>
-                <p className="text-2xl font-bold text-red-400">{formatCurrency(resultados.costosSinCPA)}</p>
+                <p className="text-2xl font-bold text-white">{formatCurrency(resultados.costosSinCPA)}</p>
                 <p className="text-sm text-gray-400">{formatUSD(resultados.costosSinCPAUSD)}</p>
               </div>
 
-              <div className="bg-gray-800/80 p-4 rounded-lg border border-red-500/50">
+              <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
                 <p className="text-sm text-gray-400 mb-1">Total Costos con CPA</p>
-                <p className="text-2xl font-bold text-red-400">{formatCurrency(resultados.totalCostosConCPA)}</p>
+                <p className="text-2xl font-bold text-white">{formatCurrency(resultados.totalCostosConCPA)}</p>
                 <p className="text-sm text-gray-400">{formatUSD(resultados.totalCostosConCPAUSD)}</p>
               </div>
             </div>
 
             {/* Precio de Venta y Utilidad */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-800/80 p-4 rounded-lg border border-green-500/50">
+              <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
                 <p className="text-sm text-gray-400 mb-1">Precio de Venta</p>
-                <p className="text-2xl font-bold text-green-400">{formatCurrency(resultados.precioVentaPesos)}</p>
+                <p className="text-2xl font-bold text-blue-400">{formatCurrency(resultados.precioVentaPesos)}</p>
                 <p className="text-sm text-gray-400">{formatUSD(resultados.precioVentaUSD)}</p>
               </div>
 
-              <div className="bg-gray-800/80 p-4 rounded-lg border border-green-500/50">
+              <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
                 <p className="text-sm text-gray-400 mb-1">Utilidad Neta</p>
-                <p className={`text-2xl font-bold ${resultados.utilidadNeta >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <p className={`text-2xl font-bold ${resultados.utilidadNeta >= 0 ? 'text-blue-400' : 'text-white'}`}>
                   {formatCurrency(resultados.utilidadNeta)}
                 </p>
                 <p className="text-sm text-gray-400">{formatUSD(resultados.utilidadNetaUSD)}</p>
@@ -786,45 +786,45 @@ const BreakevenROASCalculator = () => {
             </div>
 
             {/* CPA y Target */}
-            <div className="bg-gray-800/80 p-4 rounded-lg border border-yellow-500/50">
-              <h4 className="text-lg font-bold text-yellow-300 mb-3">🎯 CPA y Target Profit</h4>
+            <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
+              <h4 className="text-lg font-bold text-white mb-3">🎯 CPA y Target Profit</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="bg-orange-900/30 p-3 rounded border border-orange-500/30">
+                <div className="bg-gray-700/50 p-3 rounded border border-gray-600">
                   <p className="text-xs text-gray-400 mb-1">CPA Breakeven</p>
-                  <p className="text-xl font-bold text-orange-400">{formatCurrency(resultados.cpaBreakeven)}</p>
+                  <p className="text-xl font-bold text-blue-400">{formatCurrency(resultados.cpaBreakeven)}</p>
                   <p className="text-xs text-gray-400">{formatUSD(resultados.cpaBreakevenUSD)}</p>
-                  <p className="text-xs text-orange-300 mt-1">Tu punto de equilibrio</p>
+                  <p className="text-xs text-gray-400 mt-1">Tu punto de equilibrio</p>
                 </div>
-                <div className="bg-green-900/30 p-3 rounded border border-green-500/30">
+                <div className="bg-gray-700/50 p-3 rounded border border-gray-600">
                   <p className="text-xs text-gray-400 mb-1">CPA Objetivo</p>
-                  <p className="text-xl font-bold text-green-400">{formatCurrency(resultados.cpaObjetivo)}</p>
+                  <p className="text-xl font-bold text-blue-400">{formatCurrency(resultados.cpaObjetivo)}</p>
                   <p className="text-xs text-gray-400">{formatUSD(resultados.cpaObjetivoUSD)}</p>
-                  <p className="text-xs text-green-300 mt-1">Para alcanzar tu target</p>
+                  <p className="text-xs text-gray-400 mt-1">Para alcanzar tu target</p>
                 </div>
-                <div className="bg-purple-900/30 p-3 rounded border border-purple-500/30">
+                <div className="bg-gray-700/50 p-3 rounded border border-gray-600">
                   <p className="text-xs text-gray-400 mb-1">Target Profit</p>
-                  <p className="text-xl font-bold text-purple-400">{formatCurrency(resultados.targetProfitPesos)}</p>
+                  <p className="text-xl font-bold text-blue-400">{formatCurrency(resultados.targetProfitPesos)}</p>
                   <p className="text-xs text-gray-400">{formatUSD(resultados.targetProfitUSD)}</p>
-                  <p className="text-xs text-purple-300 mt-1">{formData.targetProfitPorcentaje}% sobre venta</p>
+                  <p className="text-xs text-gray-400 mt-1">{formData.targetProfitPorcentaje}% sobre venta</p>
                 </div>
               </div>
             </div>
 
             {/* ROAS */}
-            <div className="bg-gray-800/80 p-4 rounded-lg border border-cyan-500/50">
-              <h4 className="text-lg font-bold text-cyan-300 mb-3">📈 ROAS (Return on Ad Spend)</h4>
+            <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
+              <h4 className="text-lg font-bold text-white mb-3">📈 ROAS (Return on Ad Spend)</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-cyan-900/30 p-4 rounded-lg border border-cyan-500/30">
+                <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
                   <p className="text-sm text-gray-400 mb-1">ROAS Breakeven</p>
-                  <p className="text-4xl font-bold text-cyan-400">{resultados.roasBreakeven.toFixed(2)}</p>
-                  <p className="text-xs text-cyan-300 mt-2">
+                  <p className="text-4xl font-bold text-blue-400">{resultados.roasBreakeven.toFixed(2)}</p>
+                  <p className="text-xs text-gray-400 mt-2">
                     Por cada $1 invertido, necesitas generar ${resultados.roasBreakeven.toFixed(2)} para no perder
                   </p>
                 </div>
-                <div className="bg-green-900/30 p-4 rounded-lg border border-green-500/30">
+                <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
                   <p className="text-sm text-gray-400 mb-1">ROAS Objetivo ({formData.targetProfitPorcentaje}%)</p>
-                  <p className="text-4xl font-bold text-green-400">{resultados.roasObjetivo.toFixed(2)}</p>
-                  <p className="text-xs text-green-300 mt-2">
+                  <p className="text-4xl font-bold text-blue-400">{resultados.roasObjetivo.toFixed(2)}</p>
+                  <p className="text-xs text-gray-400 mt-2">
                     Por cada $1 invertido, genera ${resultados.roasObjetivo.toFixed(2)} para tu objetivo
                   </p>
                 </div>
@@ -832,8 +832,8 @@ const BreakevenROASCalculator = () => {
             </div>
 
             {/* Análisis */}
-            <div className="bg-gray-800/80 p-4 rounded-lg border border-yellow-500/50">
-              <p className="text-sm font-medium text-yellow-400 mb-2">💡 Análisis y Recomendaciones:</p>
+            <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
+              <p className="text-sm font-medium text-blue-400 mb-2">💡 Análisis y Recomendaciones:</p>
               <div className="space-y-2 text-sm text-gray-300">
                 {resultados.utilidadNeta > 0 ? (
                   <p>✅ <strong>Utilidad positiva:</strong> Tu producto es rentable con estos parámetros.</p>
@@ -947,13 +947,13 @@ const BreakevenROASCalculator = () => {
                       <p className="text-xs text-gray-400 mb-1">Precio Venta</p>
                       <p className="text-sm font-bold text-white">{formatCurrency(item.precioVenta)}</p>
                     </div>
-                    <div className="bg-green-900/30 rounded p-2 border border-green-500/30">
+                    <div className="bg-blue-900/30 rounded p-2 border border-blue-500/30">
                       <p className="text-xs text-gray-400 mb-1">Utilidad Neta</p>
-                      <p className="text-sm font-bold text-green-400">{formatCurrency(item.utilidadNeta)}</p>
+                      <p className="text-sm font-bold text-blue-400">{formatCurrency(item.utilidadNeta)}</p>
                     </div>
-                    <div className="bg-cyan-900/30 rounded p-2 border border-cyan-500/30">
+                    <div className="bg-blue-900/30 rounded p-2 border border-blue-500/30">
                       <p className="text-xs text-gray-400 mb-1">ROAS Objetivo</p>
-                      <p className="text-sm font-bold text-cyan-400">{item.roasObjetivo.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-blue-400">{item.roasObjetivo.toFixed(2)}</p>
                     </div>
                   </div>
 
@@ -961,7 +961,7 @@ const BreakevenROASCalculator = () => {
                     <span className="text-xs text-gray-400">
                       🎯 Target: {item.targetProfitPorcentaje}%
                     </span>
-                    <span className="text-xs text-orange-400 font-bold">
+                    <span className="text-xs text-blue-400 font-bold">
                       CPA Max: {formatCurrency(item.cpaObjetivo)}
                     </span>
                   </div>

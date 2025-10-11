@@ -239,8 +239,8 @@ const RentabilidadCalculator = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4">
-      <div className="w-full max-w-7xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 space-y-6">
+    <div className="min-h-screen bg-gray-950 p-4">
+      <div className="w-full max-w-7xl mx-auto bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-6 space-y-6 border border-gray-700/50">
         {/* Banner de invitado */}
         {isGuest && (
           <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-2 border-blue-500/50 rounded-lg p-3">
@@ -306,7 +306,7 @@ const RentabilidadCalculator = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Columna Izquierda - Ingresos */}
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-blue-400 border-b border-gray-600 pb-2">
+            <h3 className="text-xl font-bold text-white border-b border-gray-600 pb-2">
               📈 Ingresos del Día
             </h3>
 
@@ -367,8 +367,8 @@ const RentabilidadCalculator = () => {
             </div>
 
             {/* Gastos Personalizados */}
-            <div className="bg-purple-900/20 p-4 rounded-lg border border-purple-500/50">
-              <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2">
+            <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
+              <h4 className="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
@@ -424,11 +424,11 @@ const RentabilidadCalculator = () => {
                   {gastosPersonalizados.map((gasto) => (
                     <div
                       key={gasto.id}
-                      className="bg-gray-600/50 p-2 rounded-lg border border-gray-500 flex items-center justify-between group hover:border-purple-500/50 transition-colors"
+                      className="bg-gray-600/50 p-2 rounded-lg border border-gray-500 flex items-center justify-between group hover:border-blue-500/50 transition-colors"
                     >
                       <div className="flex-1">
                         <p className="text-sm font-medium text-white">{gasto.nombre}</p>
-                        <p className="text-xs text-green-400 font-semibold">
+                        <p className="text-xs text-blue-400 font-semibold">
                           {formatCurrency(parseFloat(gasto.monto))}
                         </p>
                       </div>
@@ -444,10 +444,10 @@ const RentabilidadCalculator = () => {
                     </div>
                   ))}
                   {gastosPersonalizados.length > 0 && (
-                    <div className="bg-purple-900/30 p-2 rounded-lg border border-purple-500/50">
+                    <div className="bg-blue-900/30 p-2 rounded-lg border border-blue-500/50">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-purple-300">Total:</p>
-                        <p className="text-lg font-bold text-purple-400">
+                        <p className="text-sm font-medium text-blue-300">Total:</p>
+                        <p className="text-lg font-bold text-blue-400">
                           {formatCurrency(calcularTotalGastosPersonalizados())}
                         </p>
                       </div>
@@ -460,7 +460,7 @@ const RentabilidadCalculator = () => {
 
           {/* Columna Derecha - Gastos */}
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-red-400 border-b border-gray-600 pb-2">
+            <h3 className="text-xl font-bold text-white border-b border-gray-600 pb-2">
               📉 Gastos del Día
             </h3>
 
@@ -605,42 +605,42 @@ const RentabilidadCalculator = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Total Gastos */}
-              <div className="bg-gray-800/80 p-4 rounded-lg border border-red-500/50">
+              <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
                 <p className="text-sm text-gray-400 mb-1">Total Gastos</p>
-                <p className="text-2xl font-bold text-red-400">{formatCurrency(resultados.totalGastos)}</p>
+                <p className="text-2xl font-bold text-white">{formatCurrency(resultados.totalGastos)}</p>
                 {resultados.totalGastosPersonalizados > 0 && (
-                  <p className="text-xs text-purple-400 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     (incluye {formatCurrency(resultados.totalGastosPersonalizados)} en gastos personalizados)
                   </p>
                 )}
               </div>
 
               {/* Total al Bolsillo */}
-              <div className="bg-gray-800/80 p-4 rounded-lg border border-green-500/50">
+              <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
                 <p className="text-sm text-gray-400 mb-1">Total al Bolsillo</p>
-                <p className="text-2xl font-bold text-green-400">{formatCurrency(resultados.totalAlBolsillo)}</p>
+                <p className="text-2xl font-bold text-blue-400">{formatCurrency(resultados.totalAlBolsillo)}</p>
               </div>
 
               {/* Rentabilidad % */}
-              <div className="bg-gray-800/80 p-4 rounded-lg border border-blue-500/50">
+              <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
                 <p className="text-sm text-gray-400 mb-1">Rentabilidad (%)</p>
-                <p className={`text-3xl font-bold ${resultados.rentabilidadPorcentaje >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <p className={`text-3xl font-bold ${resultados.rentabilidadPorcentaje >= 0 ? 'text-blue-400' : 'text-white'}`}>
                   {resultados.rentabilidadPorcentaje.toFixed(2)}%
                 </p>
               </div>
 
               {/* Margen Neto */}
-              <div className="bg-gray-800/80 p-4 rounded-lg border border-purple-500/50">
+              <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
                 <p className="text-sm text-gray-400 mb-1">Margen Neto</p>
-                <p className={`text-2xl font-bold ${resultados.margenNeto >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <p className={`text-2xl font-bold ${resultados.margenNeto >= 0 ? 'text-blue-400' : 'text-white'}`}>
                   {formatCurrency(resultados.margenNeto)}
                 </p>
               </div>
             </div>
 
             {/* Análisis adicional */}
-            <div className="bg-gray-800/80 p-4 rounded-lg border border-yellow-500/50">
-              <p className="text-sm font-medium text-yellow-400 mb-2">📊 Análisis:</p>
+            <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-600">
+              <p className="text-sm font-medium text-blue-400 mb-2">📊 Análisis:</p>
               <p className="text-sm text-gray-300">
                 {resultados.rentabilidadPorcentaje >= 30
                   ? '✅ Excelente rentabilidad. Tu negocio está muy bien optimizado.'
@@ -741,13 +741,13 @@ const RentabilidadCalculator = () => {
                       <p className="text-xs text-gray-400 mb-1">Ingreso Real</p>
                       <p className="text-sm font-bold text-white">{formatCurrency(item.ingresoReal)}</p>
                     </div>
-                    <div className="bg-red-900/30 rounded p-2 border border-red-500/30">
+                    <div className="bg-gray-700/50 rounded p-2 border border-gray-600">
                       <p className="text-xs text-gray-400 mb-1">Total Gastos</p>
-                      <p className="text-sm font-bold text-red-400">{formatCurrency(item.totalGastos)}</p>
+                      <p className="text-sm font-bold text-white">{formatCurrency(item.totalGastos)}</p>
                     </div>
-                    <div className="bg-green-900/30 rounded p-2 border border-green-500/30">
+                    <div className="bg-blue-900/30 rounded p-2 border border-blue-500/30">
                       <p className="text-xs text-gray-400 mb-1">Al Bolsillo</p>
-                      <p className="text-sm font-bold text-green-400">{formatCurrency(item.totalAlBolsillo)}</p>
+                      <p className="text-sm font-bold text-blue-400">{formatCurrency(item.totalAlBolsillo)}</p>
                     </div>
                   </div>
 
@@ -764,12 +764,12 @@ const RentabilidadCalculator = () => {
                         </span>
                       )}
                       {item.gastosPersonalizados && item.gastosPersonalizados.length > 0 && (
-                        <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full border border-purple-500/30">
+                        <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full border border-blue-500/30">
                           💼 {item.gastosPersonalizados.length} gasto{item.gastosPersonalizados.length > 1 ? 's' : ''} personalizado{item.gastosPersonalizados.length > 1 ? 's' : ''}
                         </span>
                       )}
                     </div>
-                    <div className={`text-lg font-bold ${item.rentabilidadPorcentaje >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <div className={`text-lg font-bold ${item.rentabilidadPorcentaje >= 0 ? 'text-blue-400' : 'text-white'}`}>
                       {item.rentabilidadPorcentaje.toFixed(2)}%
                     </div>
                   </div>
@@ -777,12 +777,12 @@ const RentabilidadCalculator = () => {
                   {/* Mostrar gastos personalizados si existen */}
                   {item.gastosPersonalizados && item.gastosPersonalizados.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-700">
-                      <p className="text-xs font-medium text-purple-400 mb-2">Gastos Personalizados:</p>
+                      <p className="text-xs font-medium text-blue-400 mb-2">Gastos Personalizados:</p>
                       <div className="grid grid-cols-2 gap-2">
                         {item.gastosPersonalizados.map((gasto) => (
                           <div key={gasto.id} className="bg-gray-700/30 rounded p-2">
                             <p className="text-xs text-gray-300">{gasto.nombre}</p>
-                            <p className="text-xs font-bold text-purple-400">
+                            <p className="text-xs font-bold text-blue-400">
                               {formatCurrency(parseFloat(gasto.monto))}
                             </p>
                           </div>

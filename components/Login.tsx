@@ -48,8 +48,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md mx-auto bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 border border-gray-700/50 animate-fadeIn">
         {/* Botón Volver */}
         {onGoBack && (
           <div className="flex justify-start">
@@ -67,7 +67,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
         
         <div className="text-center">
           <div className="flex justify-center mb-3">
-            <svg className="w-16 h-16 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 text-blue-500 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
               <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
             </svg>
           </div>
