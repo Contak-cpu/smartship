@@ -1,16 +1,17 @@
-# 🚀 SmartShip - Transformador de Pedidos Andreani
+# 🐋 South Wale - Herramientas para Ecommerce
 
-Una aplicación web moderna para convertir automáticamente pedidos de Tiendanube al formato requerido por Andreani para envíos.
+Una suite completa de herramientas profesionales para gestionar y optimizar tu ecommerce, incluyendo calculadoras financieras, análisis de rentabilidad y automatización de envíos.
 
 ## ✨ Características Principales
 
-- **🔄 Conversión Automática**: Transforma archivos CSV de Tiendanube al formato Andreani
-- **📍 Separación Inteligente**: Distingue automáticamente entre envíos a domicilio y sucursales
-- **🎯 Mapeo de Sucursales**: Búsqueda inteligente de sucursales Andreani por dirección
-- **🔤 Normalización**: Manejo automático de caracteres especiales y acentos
-- **📊 Columnas Optimizadas**: Peso, alto, ancho, profundidad y valor al inicio de la planilla
-- **💻 Interfaz Moderna**: Diseño responsive con Tailwind CSS
-- **⚡ Procesamiento Rápido**: Optimizado para manejar grandes volúmenes de pedidos
+- **📊 Calculadora de Rentabilidad**: Analiza tu rentabilidad diaria con soporte para múltiples monedas
+- **📈 Breakeven y ROAS**: Calcula tu punto de equilibrio y retorno de inversión publicitaria
+- **🔄 SmartShip**: Transforma archivos CSV de Tiendanube al formato Andreani
+- **📍 Integración SKU**: Integra SKUs en rótulos de envío de Andreani (Nivel Admin)
+- **💼 Gastos Personalizados**: Agrega y gestiona gastos adicionales en tus cálculos
+- **💻 Interfaz Moderna**: Diseño responsive y armónico con Tailwind CSS
+- **🔐 Sistema de Niveles**: Control de acceso por planes (Invitado, Starter, Basic, Pro)
+- **⚡ Procesamiento Rápido**: Optimizado para manejar grandes volúmenes de datos
 
 ## 🛠️ Tecnologías Utilizadas
 
@@ -29,8 +30,8 @@ Una aplicación web moderna para convertir automáticamente pedidos de Tiendanub
 ### Instalación Local
 ```bash
 # Clonar el repositorio
-git clone https://github.com/Contak-cpu/smartship.git
-cd smartship
+git clone https://github.com/tuusuario/south-wale.git
+cd south-wale
 
 # Instalar dependencias
 npm install
@@ -67,35 +68,41 @@ El proyecto está configurado para deploy automático en Vercel:
 Si necesitas configurar variables de entorno en Vercel:
 ```
 NODE_ENV=production
-VITE_APP_NAME=SmartShip - Transformador de Pedidos Andreani
-VITE_APP_VERSION=1.0.0
+VITE_APP_NAME=South Wale - Herramientas para Ecommerce
+VITE_APP_VERSION=2.0.0
 ```
 
 ## 📋 Cómo Usar la Aplicación
 
-1. **Subir Archivo**: Arrastra y suelta tu archivo CSV de Tiendanube
+### Calculadoras Financieras
+1. **Rentabilidad**: Ingresa tus ingresos y gastos del día para calcular tu rentabilidad
+2. **Breakeven & ROAS**: Calcula tu punto de equilibrio y retorno de inversión publicitaria
+3. **Gastos Personalizados**: Agrega gastos adicionales para análisis más precisos
+
+### SmartShip
+1. **Subir Archivo**: Arrastra tu archivo CSV de Tiendanube
 2. **Procesar**: Haz clic en "Procesar Archivo" 
-3. **Descargar**: Descarga los archivos CSV procesados:
-   - `Domicilios.csv` - Para envíos a domicilio
-   - `Sucursales.csv` - Para envíos a sucursales
-   - `Combinado.csv` - Ambos tipos en un solo archivo
+3. **Descargar**: Descarga los archivos procesados para Andreani
 
 ## 📁 Estructura del Proyecto
 
 ```
-smartship/
-├── components/          # Componentes React
-│   ├── FileUploader.tsx
-│   ├── ResultsDisplay.tsx
-│   └── StatusDisplay.tsx
-├── services/           # Lógica de procesamiento
-│   └── csvProcessor.ts
-├── public/             # Archivos estáticos
-│   ├── sucursales.csv
-│   └── Domicilios - Hoja 1.csv
-├── types.ts            # Definiciones de tipos TypeScript
-├── App.tsx             # Componente principal
-└── index.tsx          # Punto de entrada
+south-wale/
+├── components/
+│   ├── calculators/          # Calculadoras financieras
+│   │   ├── RentabilidadCalculator.tsx
+│   │   └── BreakevenROASCalculator.tsx
+│   ├── layout/               # Componentes de layout
+│   │   ├── DashboardLayout.tsx
+│   │   └── Navigation.tsx
+│   ├── routing/              # Componentes de enrutamiento
+│   └── pdf/                  # Generación de PDFs
+├── pages/                    # Páginas principales
+├── services/                 # Lógica de procesamiento
+├── hooks/                    # React hooks personalizados
+├── routes/                   # Configuración de rutas
+├── types.ts                  # Definiciones de tipos TypeScript
+└── App.tsx                   # Componente principal
 ```
 
 ## 🔧 Configuración
@@ -180,4 +187,4 @@ Para soporte técnico o preguntas:
 
 ---
 
-**Desarrollado con ❤️ para automatizar la logística de envíos**
+**Desarrollado con ❤️ por pictoN para optimizar tu ecommerce** 🐋

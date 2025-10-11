@@ -9,7 +9,7 @@ interface PricingPageProps {
 
 export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBasicPlan, onShowIntermediatePlan, onShowProPlan }) => {
   const handlePlanSelection = (planName: string) => {
-    const message = `Hola! Me interesa el plan ${planName} de ShipSmart. ¿Podrías darme más información?`;
+    const message = `Hola! Me interesa el plan ${planName} de South Wale. ¿Podrías darme más información?`;
     const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -38,7 +38,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
             
             {/* Nombre centrado */}
             <h2 className="absolute left-1/2 transform -translate-x-1/2 text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
-              Kore Ops
+              South Wale
             </h2>
             
             {/* Botón Ya tengo un plan */}
@@ -98,6 +98,12 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Calculadora Breakeven & ROAS</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
+                  </svg>
                   <span className="text-gray-700 dark:text-gray-300">Análisis financiero diario</span>
                 </li>
                 <li className="flex items-center gap-3">
@@ -147,12 +153,6 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
-                  <span className="text-gray-700 dark:text-gray-300">Generador de PDFs Masivo</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
-                  </svg>
                   <span className="text-gray-700 dark:text-gray-300">Soporte prioritario</span>
                 </li>
               </ul>
@@ -185,6 +185,12 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
                     <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
                   </svg>
                   <span className="text-gray-700 dark:text-gray-300">Todo del plan Basic</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd"></path>
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Integrar SKU en Rótulos Andreani</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">

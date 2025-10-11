@@ -6,7 +6,7 @@ interface ProPlanPageProps {
 
 export const ProPlanPage: React.FC<ProPlanPageProps> = ({ onGoBack }) => {
   const handleWhatsAppContact = () => {
-    const message = `Hola! Me interesa contratar el Plan Pro de Kore Ops por $99/mes. ¿Podrías ayudarme con el proceso de contratación?`;
+    const message = `Hola! Me interesa contratar el Plan Pro de South Wale por $99/mes. ¿Podrías ayudarme con el proceso de contratación?`;
     const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -19,7 +19,7 @@ export const ProPlanPage: React.FC<ProPlanPageProps> = ({ onGoBack }) => {
           <div className="flex items-center justify-between h-16">
             {/* Nombre centrado */}
             <h2 className="w-full text-center text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
-              Kore Ops
+              South Wale
             </h2>
             
             {/* Botón Volver */}
@@ -56,6 +56,15 @@ export const ProPlanPage: React.FC<ProPlanPageProps> = ({ onGoBack }) => {
                 <div>
                   <h3 className="text-lg font-semibold text-blue-500 mb-4">Características principales</h3>
                   <div className="grid md:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-4 text-gray-600 dark:text-gray-300">
+                    <div className="flex items-start space-x-3">
+                      <svg className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <div>
+                        <p className="font-medium text-gray-800 dark:text-gray-100">Integrar SKU en Rótulos Andreani</p>
+                        <p className="text-sm">Integra automáticamente los SKUs de tus productos en los rótulos de envío.</p>
+                      </div>
+                    </div>
                     <div className="flex items-start space-x-3">
                       <svg className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />

@@ -240,10 +240,10 @@ const RentabilidadCalculator = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 p-4">
-      <div className="w-full max-w-6xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 space-y-4">
-        {/* Banner de invitado - Compacto */}
+      <div className="w-full max-w-7xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 space-y-6">
+        {/* Banner de invitado */}
         {isGuest && (
-          <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-2 border-blue-500/50 rounded-lg p-3 mb-4">
+          <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-2 border-blue-500/50 rounded-lg p-3">
             <div className="flex items-center justify-center gap-2">
               <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -258,10 +258,10 @@ const RentabilidadCalculator = () => {
           </div>
         )}
 
-        {/* Header - Compacto */}
-        <header className="text-center mb-4">
+        {/* Header */}
+        <header className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="text-green-500 size-8">
+            <div className="text-blue-500 size-8">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -275,15 +275,15 @@ const RentabilidadCalculator = () => {
               Calculadora de Rentabilidad
             </h1>
           </div>
-          <p className="text-green-400 font-medium text-sm">
+          <p className="text-blue-400 font-medium text-sm">
             Analiza la rentabilidad diaria de tu ecommerce
           </p>
         </header>
 
-        {/* Cotización USDT - Compacto */}
-        <div className="bg-gray-700 p-3 rounded-lg border border-gray-600">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Cotización USDT → ARS
+        {/* Cotización USDT - Destacado */}
+        <div className="bg-yellow-900/20 p-4 rounded-lg border border-yellow-500/50">
+          <label className="block text-sm font-medium text-yellow-300 mb-2">
+            💵 Cotización USDT → ARS
           </label>
           <div className="flex items-center gap-3">
             <span className="text-gray-400 text-sm">1 USDT =</span>
@@ -295,187 +295,80 @@ const RentabilidadCalculator = () => {
                   setCotizacionUSDT(e.target.value);
                 }
               }}
-              className="flex-1 p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
+              className="flex-1 p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-blue-500 focus:outline-none font-bold text-lg"
               placeholder="1100"
             />
             <span className="text-gray-400 text-sm">ARS</span>
           </div>
         </div>
 
-        {/* Formulario en grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Formulario en 2 columnas balanceadas */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Columna Izquierda - Ingresos */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-green-400 border-b border-gray-600 pb-2">
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold text-blue-400 border-b border-gray-600 pb-2">
               📈 Ingresos del Día
             </h3>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Facturación del Día (ARS) *
-              </label>
-              <input
-                type="text"
-                value={formData.facturacion}
-                onChange={(e) => handleInputChange('facturacion', e.target.value)}
-                className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-green-500 focus:outline-none"
-                placeholder="0.00"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Ingreso Real del Día (ARS) *
-              </label>
-              <input
-                type="text"
-                value={formData.ingresoReal}
-                onChange={(e) => handleInputChange('ingresoReal', e.target.value)}
-                className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-green-500 focus:outline-none"
-                placeholder="0.00"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Cantidad de Ventas
+                  Facturación del Día (ARS) *
                 </label>
                 <input
                   type="text"
-                  value={formData.cantidadVentas}
-                  onChange={(e) => handleInputChange('cantidadVentas', e.target.value)}
-                  className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-green-500 focus:outline-none"
-                  placeholder="0"
+                  value={formData.facturacion}
+                  onChange={(e) => handleInputChange('facturacion', e.target.value)}
+                  className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-blue-500 focus:outline-none"
+                  placeholder="0.00"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Cantidad de Productos
+                  Ingreso Real del Día (ARS) *
                 </label>
                 <input
                   type="text"
-                  value={formData.cantidadProductos}
-                  onChange={(e) => handleInputChange('cantidadProductos', e.target.value)}
-                  className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-green-500 focus:outline-none"
-                  placeholder="0"
+                  value={formData.ingresoReal}
+                  onChange={(e) => handleInputChange('ingresoReal', e.target.value)}
+                  className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-blue-500 focus:outline-none"
+                  placeholder="0.00"
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Columna Derecha - Gastos */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-red-400 border-b border-gray-600 pb-2">
-              📉 Gastos del Día
-            </h3>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Gastos en Stock (ARS)
-              </label>
-              <input
-                type="text"
-                value={formData.gastosStock}
-                onChange={(e) => handleInputChange('gastosStock', e.target.value)}
-                className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-green-500 focus:outline-none"
-                placeholder="0.00"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Gastos en Envío (ARS)
-              </label>
-              <input
-                type="text"
-                value={formData.gastosEnvio}
-                onChange={(e) => handleInputChange('gastosEnvio', e.target.value)}
-                className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-green-500 focus:outline-none"
-                placeholder="0.00"
-              />
-            </div>
-
-            <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
-              <h4 className="text-sm font-bold text-blue-400 mb-3">💰 Gastos en Publicidad (mínimo uno requerido)</h4>
-
-              {/* Meta ADS */}
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Meta ADS
-                </label>
-                <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Cantidad de Ventas
+                  </label>
                   <input
                     type="text"
-                    value={formData.gastosMetaAds}
-                    onChange={(e) => handleInputChange('gastosMetaAds', e.target.value)}
-                    className="flex-1 p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
-                    placeholder="0.00"
+                    value={formData.cantidadVentas}
+                    onChange={(e) => handleInputChange('cantidadVentas', e.target.value)}
+                    className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-blue-500 focus:outline-none"
+                    placeholder="0"
                   />
-                  <select
-                    value={monedaMeta}
-                    onChange={(e) => setMonedaMeta(e.target.value as MonedaAds)}
-                    className="p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
-                  >
-                    <option value="ARS">ARS</option>
-                    <option value="USDT">USDT</option>
-                  </select>
                 </div>
-              </div>
 
-              {/* TikTok ADS */}
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  TikTok ADS
-                </label>
-                <div className="flex gap-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Cantidad de Productos
+                  </label>
                   <input
                     type="text"
-                    value={formData.gastosTiktokAds}
-                    onChange={(e) => handleInputChange('gastosTiktokAds', e.target.value)}
-                    className="flex-1 p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
-                    placeholder="0.00"
+                    value={formData.cantidadProductos}
+                    onChange={(e) => handleInputChange('cantidadProductos', e.target.value)}
+                    className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-blue-500 focus:outline-none"
+                    placeholder="0"
                   />
-                  <select
-                    value={monedaTiktok}
-                    onChange={(e) => setMonedaTiktok(e.target.value as MonedaAds)}
-                    className="p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
-                  >
-                    <option value="ARS">ARS</option>
-                    <option value="USDT">USDT</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Google ADS */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Google ADS
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={formData.gastosGoogleAds}
-                    onChange={(e) => handleInputChange('gastosGoogleAds', e.target.value)}
-                    className="flex-1 p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
-                    placeholder="0.00"
-                  />
-                  <select
-                    value={monedaGoogle}
-                    onChange={(e) => setMonedaGoogle(e.target.value as MonedaAds)}
-                    className="p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
-                  >
-                    <option value="ARS">ARS</option>
-                    <option value="USDT">USDT</option>
-                  </select>
                 </div>
               </div>
             </div>
 
             {/* Gastos Personalizados */}
-            <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
-              <h4 className="text-sm font-bold text-purple-400 mb-3 flex items-center gap-2">
+            <div className="bg-purple-900/20 p-4 rounded-lg border border-purple-500/50">
+              <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
@@ -491,7 +384,7 @@ const RentabilidadCalculator = () => {
                   type="text"
                   value={nuevoGastoNombre}
                   onChange={(e) => setNuevoGastoNombre(e.target.value)}
-                  className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none text-sm"
+                  className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-blue-500 focus:outline-none text-sm"
                   placeholder="Ej: Logística privada, Empleados, etc."
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && nuevoGastoMonto) {
@@ -508,7 +401,7 @@ const RentabilidadCalculator = () => {
                         setNuevoGastoMonto(e.target.value);
                       }
                     }}
-                    className="flex-1 p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none text-sm"
+                    className="flex-1 p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-blue-500 focus:outline-none text-sm"
                     placeholder="Monto (ARS)"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && nuevoGastoNombre) {
@@ -518,11 +411,8 @@ const RentabilidadCalculator = () => {
                   />
                   <button
                     onClick={agregarGastoPersonalizado}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium flex items-center gap-1"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
                     Agregar
                   </button>
                 </div>
@@ -530,7 +420,7 @@ const RentabilidadCalculator = () => {
 
               {/* Lista de gastos personalizados */}
               {gastosPersonalizados.length > 0 && (
-                <div className="space-y-2 mt-3 max-h-48 overflow-y-auto">
+                <div className="space-y-2 max-h-48 overflow-y-auto">
                   {gastosPersonalizados.map((gasto) => (
                     <div
                       key={gasto.id}
@@ -553,23 +443,138 @@ const RentabilidadCalculator = () => {
                       </button>
                     </div>
                   ))}
-                  <div className="bg-purple-900/30 p-2 rounded-lg border border-purple-500/50 flex items-center justify-between mt-2">
-                    <p className="text-sm font-medium text-purple-300">Total Gastos Personalizados:</p>
-                    <p className="text-lg font-bold text-purple-400">
-                      {formatCurrency(calcularTotalGastosPersonalizados())}
-                    </p>
-                  </div>
+                  {gastosPersonalizados.length > 0 && (
+                    <div className="bg-purple-900/30 p-2 rounded-lg border border-purple-500/50">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-purple-300">Total:</p>
+                        <p className="text-lg font-bold text-purple-400">
+                          {formatCurrency(calcularTotalGastosPersonalizados())}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Columna Derecha - Gastos */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold text-red-400 border-b border-gray-600 pb-2">
+              📉 Gastos del Día
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Gastos en Stock (ARS)
+                </label>
+                <input
+                  type="text"
+                  value={formData.gastosStock}
+                  onChange={(e) => handleInputChange('gastosStock', e.target.value)}
+                  className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-blue-500 focus:outline-none"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Gastos en Envío (ARS)
+                </label>
+                <input
+                  type="text"
+                  value={formData.gastosEnvio}
+                  onChange={(e) => handleInputChange('gastosEnvio', e.target.value)}
+                  className="w-full p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-blue-500 focus:outline-none"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
+              <h4 className="text-sm font-bold text-blue-400 mb-3">💰 Gastos en Publicidad (mínimo uno requerido)</h4>
+
+              {/* Meta ADS */}
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Meta ADS
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.gastosMetaAds}
+                    onChange={(e) => handleInputChange('gastosMetaAds', e.target.value)}
+                    className="flex-1 p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-blue-500 focus:outline-none"
+                    placeholder="0.00"
+                  />
+                  <select
+                    value={monedaMeta}
+                    onChange={(e) => setMonedaMeta(e.target.value as MonedaAds)}
+                    className="p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="ARS">ARS</option>
+                    <option value="USDT">USDT</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* TikTok ADS */}
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  TikTok ADS
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.gastosTiktokAds}
+                    onChange={(e) => handleInputChange('gastosTiktokAds', e.target.value)}
+                    className="flex-1 p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-blue-500 focus:outline-none"
+                    placeholder="0.00"
+                  />
+                  <select
+                    value={monedaTiktok}
+                    onChange={(e) => setMonedaTiktok(e.target.value as MonedaAds)}
+                    className="p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="ARS">ARS</option>
+                    <option value="USDT">USDT</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Google ADS */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Google ADS
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.gastosGoogleAds}
+                    onChange={(e) => handleInputChange('gastosGoogleAds', e.target.value)}
+                    className="flex-1 p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-blue-500 focus:outline-none"
+                    placeholder="0.00"
+                  />
+                  <select
+                    value={monedaGoogle}
+                    onChange={(e) => setMonedaGoogle(e.target.value as MonedaAds)}
+                    className="p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="ARS">ARS</option>
+                    <option value="USDT">USDT</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Botones */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 pt-4">
           <button
             onClick={calcularRentabilidad}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-150 flex items-center justify-center gap-2"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-150 flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -590,9 +595,9 @@ const RentabilidadCalculator = () => {
 
         {/* Resultados */}
         {showResults && resultados && (
-          <div className="bg-gradient-to-br from-green-900/50 to-gray-700 p-6 rounded-2xl border-2 border-green-500 space-y-4 animate-fadeIn">
+          <div className="bg-gradient-to-br from-blue-900/50 to-gray-700 p-6 rounded-2xl border-2 border-blue-500 space-y-4 animate-fadeIn">
             <h3 className="text-2xl font-bold text-white text-center mb-4 flex items-center justify-center gap-2">
-              <svg className="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Resultados del Análisis
@@ -654,7 +659,7 @@ const RentabilidadCalculator = () => {
           <div className="bg-gray-700 rounded-2xl p-6 border border-gray-600">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Historial de Cálculos
@@ -705,7 +710,7 @@ const RentabilidadCalculator = () => {
 
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="bg-green-600 rounded-full w-8 h-8 flex items-center justify-center text-white font-bold text-sm">
+                      <div className="bg-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-white font-bold text-sm">
                         {historial.length - index}
                       </div>
                       <div>
@@ -791,7 +796,7 @@ const RentabilidadCalculator = () => {
           </div>
         )}
 
-        <footer className="text-center mt-6 text-gray-500 text-xs sm:text-sm">
+        <footer className="text-center text-gray-500 text-xs sm:text-sm">
           <p>Calculadora de Rentabilidad para Ecommerce</p>
           <p className="mt-1 text-gray-600">by pictoN</p>
         </footer>

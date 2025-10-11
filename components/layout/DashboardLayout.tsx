@@ -40,6 +40,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       ),
     },
     {
+      id: 'breakeven-roas',
+      label: 'Breakeven & ROAS',
+      path: '/breakeven-roas',
+      description: 'Calcula tu Breakeven y ROAS',
+      requiredLevel: 1, // Plan Starter
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
+    },
+    {
       id: 'rentabilidad',
       label: 'Rentabilidad',
       path: '/rentabilidad',
@@ -65,25 +77,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     },
     {
       id: 'pdf-generator',
-      label: 'Generar PDFs',
+      label: 'SKU en Rótulos',
       path: '/pdf-generator',
-      description: 'Generador de PDFs Masivo',
-      requiredLevel: 2, // Nivel 2 y superiores
+      description: 'Integrar SKU en Rótulos Andreani',
+      requiredLevel: 3, // Nivel 3 (Admin)
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-    },
-    {
-      id: 'proximamente',
-      label: 'Próximamente',
-      path: '/proximamente',
-      description: 'Funciones Exclusivas Admin',
-      requiredLevel: 3, // Solo nivel 3
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },
@@ -136,13 +136,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               }}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-              <img 
-                src="/ko.png" 
-                alt="Kore Ops Logo" 
-                className="w-20 h-20 flex-shrink-0 object-contain"
-              />
+              <svg className="w-20 h-20 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
+              </svg>
               <div className="text-left">
-                <h2 className="text-xl font-bold text-white">Kore Ops</h2>
+                <h2 className="text-xl font-bold text-white">South Wale</h2>
                 <p className="text-xs text-gray-400">Panel de Control</p>
               </div>
             </button>
@@ -157,11 +155,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               className="hover:opacity-80 transition-opacity"
               title="Ir al inicio"
             >
-              <img 
-                src="/ko.png" 
-                alt="Kore Ops Logo" 
-                className="w-20 h-20 object-contain"
-              />
+              <svg className="w-20 h-20 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
+              </svg>
             </button>
           )}
           <button
@@ -196,7 +192,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {/* Usuario */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
               {username?.charAt(0).toUpperCase()}
             </div>
             {isSidebarOpen && (
@@ -228,7 +224,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   w-full flex items-center gap-3 p-3 rounded-lg transition-colors duration-150
                   ${
                     isActive
-                      ? 'bg-green-600 text-white shadow-lg shadow-green-600/50'
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/50'
                       : isLocked
                       ? 'text-gray-500 hover:bg-gray-700/50 hover:text-gray-400 border border-gray-700'
                       : 'text-gray-400 hover:bg-gray-700 hover:text-white'
@@ -314,7 +310,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {!isSidebarOpen && (
         <button
           onClick={() => setIsSidebarOpen(true)}
-          className="fixed bottom-6 left-6 md:hidden bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-lg z-10 transition-colors"
+          className="fixed bottom-6 left-6 md:hidden bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg z-10 transition-colors"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

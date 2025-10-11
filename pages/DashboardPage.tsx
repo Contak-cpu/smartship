@@ -39,6 +39,25 @@ const DashboardPage: React.FC = () => {
       ),
     },
     {
+      id: 'breakeven-roas',
+      title: 'Calcula tu Breakeven y ROAS',
+      description: 'Determina tu punto de equilibrio y ROAS objetivo. Calcula el CPA máximo, comisiones, costos totales y el retorno de inversión necesario en publicidad.',
+      path: '/breakeven-roas',
+      color: 'green',
+      stats: 'Análisis de Inversión',
+      requiredLevel: 1, // Plan Starter
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+          />
+        </svg>
+      ),
+    },
+    {
       id: 'smartship',
       title: 'SmartShip',
       description: 'Procesa y transforma archivos CSV de pedidos de Andreani automáticamente. Separa envíos a domicilio y sucursal con un solo clic.',
@@ -59,30 +78,11 @@ const DashboardPage: React.FC = () => {
     },
     {
       id: 'pdf-generator',
-      title: 'Generador de PDFs',
-      description: 'Crea múltiples documentos PDF de forma masiva a partir de plantillas personalizables. Ideal para etiquetas, facturas y documentos repetitivos.',
+      title: 'Integrar SKU en Rótulos Andreani',
+      description: 'Integra automáticamente los SKUs de tus productos en los rótulos de envío de Andreani. Genera PDFs personalizados con códigos SKU para identificación rápida.',
       path: '/pdf-generator',
-      color: 'blue',
-      stats: 'Generación Masiva',
-      requiredLevel: 2,
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 'proximamente',
-      title: 'Próximamente',
-      description: 'Funcionalidades exclusivas en desarrollo para administradores. Panel de analytics, gestión de usuarios, reportes automatizados y más.',
-      path: '/proximamente',
       color: 'purple',
-      stats: 'Solo Nivel 3',
+      stats: 'Nivel Admin',
       requiredLevel: 3,
       icon: (
         <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@ const DashboardPage: React.FC = () => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
       ),
@@ -104,11 +104,11 @@ const DashboardPage: React.FC = () => {
     switch (color) {
       case 'green':
         return {
-          bg: 'bg-green-600',
-          hover: 'hover:bg-green-700',
-          text: 'text-green-500',
-          border: 'border-green-500',
-          shadow: 'hover:shadow-green-500/50',
+          bg: 'bg-blue-600',
+          hover: 'hover:bg-blue-700',
+          text: 'text-blue-500',
+          border: 'border-blue-500',
+          shadow: 'hover:shadow-blue-500/50',
         };
       case 'blue':
         return {

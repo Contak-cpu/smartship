@@ -66,8 +66,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
         )}
         
         <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">🔐 SmartShip</h1>
-          <p className="text-indigo-400 font-medium text-sm sm:text-base">Transformador de Pedidos Andreani</p>
+          <div className="flex justify-center mb-3">
+            <svg className="w-16 h-16 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
+            </svg>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">South Wale</h1>
+          <p className="text-blue-400 font-medium text-sm sm:text-base">Herramientas para Ecommerce</p>
           <p className="text-gray-500 text-xs sm:text-sm mt-2">Inicia sesión para continuar</p>
         </div>
 
@@ -81,7 +86,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300"
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
               placeholder="Ingresa tu usuario"
               autoComplete="username"
             />
@@ -96,7 +101,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300"
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
               placeholder="Ingresa tu contraseña"
               autoComplete="current-password"
             />
@@ -110,7 +115,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
 
           <button
             type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
@@ -140,7 +145,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
 
 
         <footer className="text-center mt-8 text-gray-500 text-sm">
-          <p>Creado para automatizar la logística de envíos.</p>
+          <p>Herramientas profesionales para tu ecommerce.</p>
         </footer>
       </div>
     </div>
