@@ -227,13 +227,14 @@ const BreakevenROASCalculator = () => {
     const targetProfitPesos = precioVenta * (targetProfitPorcentaje / 100);
     const targetProfitUSD = targetProfitPesos / valorDolar;
 
-    // Calcular CPA Objetivo
-    const cpaObjetivo = precioVenta * (targetProfitPorcentaje / 100);
+    // Calcular CPA Objetivo (CPA máximo para alcanzar el target profit)
+    // CPA Objetivo = Margen Bruto - Target Profit
+    const cpaObjetivo = cpaBreakeven - targetProfitPesos;
     const cpaObjetivoUSD = cpaObjetivo / valorDolar;
 
     // Calcular ROAS
     const roasBreakeven = cpaBreakeven > 0 ? precioVenta / cpaBreakeven : 0;
-    const roasObjetivo = cpaObjetivo > 0 ? precioVenta / (precioVenta - costosSinCPA - cpaObjetivo) : 0;
+    const roasObjetivo = cpaObjetivo > 0 ? precioVenta / cpaObjetivo : 0;
 
     const resultadosCalculados: Resultados = {
       productoPesos: producto,
