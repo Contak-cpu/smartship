@@ -45,6 +45,16 @@ const Navigation = () => {
       ),
       color: 'bg-blue-600 hover:bg-blue-700',
     },
+    {
+      path: '/historial',
+      label: 'Historial',
+      icon: (
+        <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      color: 'bg-blue-600 hover:bg-blue-700',
+    },
     // AGREGAR NUEVOS ENLACES AQUÍ
     // Ejemplo:
     // {

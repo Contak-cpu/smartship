@@ -5,6 +5,7 @@ import { FileUploader } from '../components/FileUploader';
 import { StatusDisplay } from '../components/StatusDisplay';
 import { ResultsDisplay } from '../components/ResultsDisplay';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import { guardarEnHistorialSmartShip } from '../src/utils/historialStorage';
 
 // Función para normalizar caracteres problemáticos en el CSV final
 const normalizarCSVFinal = (content: string): string => {
@@ -128,6 +129,28 @@ const limpiarSeparacionFilas = (content: string): string => {
   return cleanedLines.join('\n');
 };
 
+// Función para convertir CSV a array de objetos
+const csvToArray = (csvContent: string): any[] => {
+  const lines = csvContent.trim().split('\n');
+  if (lines.length === 0) return [];
+  
+  const headers = lines[0].split(';').map(h => h.trim());
+  const data: any[] = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(';');
+    if (values.length === headers.length) {
+      const obj: any = {};
+      headers.forEach((header, index) => {
+        obj[header] = values[index]?.trim() || '';
+      });
+      data.push(obj);
+    }
+  }
+  
+  return data;
+};
+
 const HomePage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
@@ -171,6 +194,16 @@ const HomePage: React.FC = () => {
         console.log('Processing completed:', processedData);
         setResults(processedData);
         setStatus(ProcessStatus.SUCCESS);
+        
+        // Guardar en historial
+        try {
+          const datosDomicilio = csvToArray(processedData.domicilioCSV);
+          const datosSucursal = csvToArray(processedData.sucursalCSV);
+          guardarEnHistorialSmartShip(selectedFile.name, datosDomicilio, datosSucursal);
+        } catch (historialError) {
+          console.error('Error al guardar en historial:', historialError);
+          // No interrumpir el flujo si falla el guardado del historial
+        }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error desconocido.';
         console.error('Processing error:', err);

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Papa from 'papaparse';
 import { PDFDocument, rgb } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
+import { guardarEnHistorialSKU } from '../../src/utils/historialStorage';
 
 const PDFGenerator = () => {
   const [csvData, setCsvData] = useState<string[][]>([]);
@@ -273,6 +274,43 @@ const PDFGenerator = () => {
       a.download = 'documentos_combinados.pdf';
       a.click();
       URL.revokeObjectURL(url);
+
+      // Guardar en historial
+      try {
+        console.log('Iniciando guardado en historial SKU...');
+        console.log('Tamaño del PDF:', pdfBytes.length, 'bytes');
+        
+        // Convertir pdfBytes a base64 en chunks para evitar problemas con PDFs grandes
+        let binary = '';
+        const bytes = new Uint8Array(pdfBytes);
+        const chunkSize = 0x8000; // 32KB chunks
+        
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+          binary += String.fromCharCode.apply(null, Array.from(chunk));
+        }
+        
+        const base64 = btoa(binary);
+        console.log('PDF convertido a base64. Tamaño base64:', base64.length, 'caracteres');
+        
+        const nombreArchivo = csvFileName || 'documento';
+        const cantidadRegistros = csvData.length - 1; // -1 para no contar el header
+        
+        guardarEnHistorialSKU(nombreArchivo, cantidadRegistros, base64);
+        console.log('PDF guardado exitosamente en historial');
+        showMessage('success', `PDF guardado en historial`);
+      } catch (historialError) {
+        console.error('Error al guardar en historial:', historialError);
+        if (historialError instanceof Error) {
+          console.error('Detalle del error:', historialError.message);
+          if (historialError.name === 'QuotaExceededError') {
+            showMessage('error', 'El PDF es muy grande para guardar en historial. Intenta con un archivo más pequeño.');
+          } else {
+            showMessage('error', `No se pudo guardar en historial: ${historialError.message}`);
+          }
+        }
+        // No interrumpir el flujo si falla el guardado del historial
+      }
 
       showMessage('success', `PDF generado con ${finalPdfDoc.getPageCount()} páginas`);
     } catch (error) {

@@ -95,6 +95,25 @@ const DashboardPage: React.FC = () => {
         </svg>
       ),
     },
+    {
+      id: 'historial',
+      title: 'Historial de Archivos',
+      description: 'Accede a todos tus archivos procesados (SmartShip y SKU en Rótulos) sin necesidad de volver a cargarlos. Descarga archivos previos en cualquier momento.',
+      path: '/historial',
+      color: 'blue',
+      stats: 'Gestión de Archivos',
+      requiredLevel: 2,
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      ),
+    },
   ];
 
   // NO filtrar - mostrar todas pero marcar las bloqueadas

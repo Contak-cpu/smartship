@@ -8,6 +8,7 @@ import LandingPage from '../pages/LandingPage';
 import DashboardPage from '../pages/DashboardPage';
 import RentabilidadPage from '../pages/RentabilidadPage';
 import BreakevenROASPage from '../pages/BreakevenROASPage';
+import HistorialPage from '../pages/HistorialPage';
 
 // Configuración centralizada de rutas
 // Para agregar nuevas rutas, simplemente añade un nuevo objeto a este array
@@ -57,6 +58,14 @@ export const routes: RouteObject[] = [
     element: (
       <LevelProtectedRoute requiredLevel={1} sectionName="Calcula tu Breakeven y ROAS">
         <BreakevenROASPage />
+      </LevelProtectedRoute>
+    ),
+  },
+  {
+    path: '/historial',
+    element: (
+      <LevelProtectedRoute requiredLevel={2} sectionName="Historial de Archivos">
+        <HistorialPage />
       </LevelProtectedRoute>
     ),
   },
