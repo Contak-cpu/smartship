@@ -993,6 +993,12 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       cleanPhone = cleanPhone.substring(2);
     }
     
+    // Remover el "9" adicional de celulares argentinos (formato: +54 9 AREA NUMERO)
+    // En Argentina, después del código de país viene un "9" para celulares
+    if (cleanPhone.startsWith('9')) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+    
     // Función para obtener el código de área basado en la provincia
     const getCodigoArea = (provincia: string, phone: string): { codigo: string; numero: string } => {
       const provinciaLower = provincia.toLowerCase();
@@ -1188,6 +1194,21 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     
     const { codigo: celularCodigo, numero: celularNumero } = getCodigoArea(provincia, cleanPhone);
     
+    // Procesar DNI / CUIT
+    // Si tiene 11 dígitos (CUIT), convertir a DNI eliminando los primeros 2 y el último dígito
+    const dniCuit = getColumnValue(order, 12).replace(/\D/g, ''); // Eliminar caracteres no numéricos
+    let dniProcesado = dniCuit;
+    if (dniCuit.length === 11) {
+      // Es un CUIT, extraer el DNI (quitar los primeros 2 dígitos y el último)
+      dniProcesado = dniCuit.substring(2, 10);
+      console.log(`CUIT detectado (${dniCuit}) -> DNI extraído: ${dniProcesado}`);
+    } else if (dniCuit.length === 8 || dniCuit.length === 7) {
+      // Es un DNI válido
+      dniProcesado = dniCuit;
+    } else {
+      console.warn(`Formato de DNI/CUIT no reconocido: ${dniCuit} (${dniCuit.length} dígitos)`);
+    }
+    
     const baseData = {
       'Paquete Guardado Ej:': '', // Siempre vacío
       'Peso (grs)': 1,
@@ -1198,14 +1219,14 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       'Numero Interno': `#${getColumnValue(order, 0)}`, // Número de orden con #
       'Nombre *': nombreNormalizado || '',
       'Apellido *': apellidoNormalizado || '',
-      'DNI *': getColumnValue(order, 12), // DNI / CUIT
+      'DNI *': dniProcesado, // DNI procesado (convertido desde CUIT si es necesario)
       'Email *': getColumnValue(order, 1), // Email
       'Celular código *': celularCodigo,
       'Celular número *': celularNumero,
     };
     
     const medioEnvio = getColumnValue(order, 24); // Medio de envío
-    console.log('Processing order:', baseData['Numero Interno'], 'Medio de envío:', medioEnvio);
+    console.log('🔍 Processing order:', baseData['Numero Interno'], 'Medio de envío:', medioEnvio);
     
     // Función auxiliar para normalizar texto y comparar
     const normalizeText = (text: string) => {
@@ -1226,11 +1247,26 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     };
     
     const medioEnvioNormalizado = medioEnvio ? normalizeText(medioEnvio) : '';
+    console.log('📦 Medio de envío normalizado:', medioEnvioNormalizado);
     
-    if (medioEnvioNormalizado && (
-      (medioEnvioNormalizado.includes("andreani estandar") && medioEnvioNormalizado.includes("domicilio")) ||
-      medioEnvioNormalizado.includes("envio a domicilio - andreani")
-    )) {
+    // Detectar envío a domicilio - condiciones más flexibles
+    const esDomicilio = medioEnvioNormalizado && (
+      medioEnvioNormalizado.includes("domicilio") ||
+      medioEnvioNormalizado.includes("andreani") && medioEnvioNormalizado.includes("estandar") ||
+      medioEnvioNormalizado.includes("envio a domicilio") ||
+      medioEnvioNormalizado.includes("a domicilio")
+    );
+    
+    // Detectar envío a sucursal
+    const esSucursal = medioEnvioNormalizado && (
+      medioEnvioNormalizado.includes("punto de retiro") ||
+      medioEnvioNormalizado.includes("sucursal") ||
+      medioEnvioNormalizado.includes("retiro")
+    );
+    
+    console.log('🏠 Es domicilio?', esDomicilio, '| 🏢 Es sucursal?', esSucursal);
+    
+    if (esDomicilio && !esSucursal) {
       contadorDomicilios++;
       console.log(`[DOMICILIO ${contadorDomicilios}] Agregando pedido:`, baseData['Numero Interno']);
       
@@ -1305,15 +1341,33 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       const calleNormalizada = normalizarNombre(getColumnValue(order, 16));
       const pisoNormalizado = normalizarNombre(getColumnValue(order, 18));
       
+      // Procesar número de calle - debe ser SOLO números
+      let numeroCalle = getColumnValue(order, 17).trim();
+      
+      // Reemplazar "SN" o "S/N" con "0"
+      if (/^s[\s\/\-]*n$/i.test(numeroCalle)) {
+        numeroCalle = '0';
+      } else {
+        // Extraer solo números del campo
+        const soloNumeros = numeroCalle.match(/\d+/);
+        if (soloNumeros && soloNumeros[0]) {
+          numeroCalle = soloNumeros[0];
+        } else {
+          // Si no hay números, usar "0" como fallback
+          console.warn(`Número de calle no válido: "${numeroCalle}" - usando "0" como fallback`);
+          numeroCalle = '0';
+        }
+      }
+      
       domicilios.push({
         ...baseData,
         'Calle *': calleNormalizada, // Dirección normalizada
-        'Número *': getColumnValue(order, 17).replace(/^SN$/i, '0'), // Número (reemplazar SN con 0)
+        'Número *': numeroCalle, // Número procesado (solo dígitos)
         'Piso': pisoNormalizado, // Piso normalizado
         'Departamento': pisoNormalizado, // As per spec, use 'Piso' for both
         'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
       });
-    } else if (medioEnvio && medioEnvio.includes('Punto de retiro')) {
+    } else if (esSucursal && !esDomicilio) {
       contadorSucursales++;
       console.log(`[SUCURSAL ${contadorSucursales}] Agregando pedido:`, baseData['Numero Interno']);
       // Construir dirección completa con TODA la información disponible
@@ -1373,7 +1427,12 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       });
     } else {
       contadorNoProcesados++;
-      console.log(`[NO PROCESADO ${contadorNoProcesados}] Pedido ${baseData['Numero Interno']} - Medio de envío desconocido:`, medioEnvio);
+      console.error(`❌ [NO PROCESADO ${contadorNoProcesados}] Pedido ${baseData['Numero Interno']}`);
+      console.error(`   Medio de envío original: "${medioEnvio}"`);
+      console.error(`   Medio de envío normalizado: "${medioEnvioNormalizado}"`);
+      console.error(`   ⚠️ El medio de envío no coincide con ningún patrón conocido`);
+      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar"`);
+      console.error(`   ✅ Patrones de SUCURSAL: "punto de retiro", "sucursal", "retiro"`);
     }
   }
 
@@ -1464,9 +1523,62 @@ export const processVentasOrders = async (csvContent: string): Promise<{
     const valorDeclarado = values[9]?.replace(/"/g, '') || '4500';
 
     // Separar código de área y número de teléfono
-    const telefonoLimpio = telefono.replace(/[^\d]/g, '');
-    const codigoArea = telefonoLimpio.substring(0, telefonoLimpio.length - 8) || '11';
-    const numeroTelefono = telefonoLimpio.substring(telefonoLimpio.length - 8) || '00000000';
+    let telefonoLimpio = telefono.replace(/[^\d]/g, '');
+    
+    // Remover el prefijo internacional +54 si existe
+    if (telefonoLimpio.startsWith('54')) {
+      telefonoLimpio = telefonoLimpio.substring(2);
+    }
+    
+    // Remover el "9" adicional de celulares argentinos (formato: +54 9 AREA NUMERO)
+    if (telefonoLimpio.startsWith('9')) {
+      telefonoLimpio = telefonoLimpio.substring(1);
+    }
+    
+    // Función auxiliar para obtener código de área y número
+    const separarTelefono = (phone: string, prov: string): { codigo: string; numero: string } => {
+      const provinciaLower = prov.toLowerCase();
+      
+      // Buenos Aires - código 11 (2 dígitos)
+      if ((provinciaLower.includes('buenos aires') || provinciaLower.includes('capital federal')) && phone.startsWith('11')) {
+        return { codigo: '11', numero: phone.substring(2) };
+      }
+      
+      // Códigos de 3 dígitos
+      const codigos3 = ['221', '223', '291', '341', '342', '343', '351', '358', '261', '381', '376', '362', '379', '370', '387', '388', '380', '383', '385', '264', '297', '299'];
+      for (const cod of codigos3) {
+        if (phone.startsWith(cod)) {
+          return { codigo: cod, numero: phone.substring(3) };
+        }
+      }
+      
+      // Códigos de 4 dígitos
+      const codigos4 = ['2652', '2901', '2920', '2944', '2954', '2965', '2966', '3541'];
+      for (const cod of codigos4) {
+        if (phone.startsWith(cod)) {
+          return { codigo: cod, numero: phone.substring(4) };
+        }
+      }
+      
+      // Fallback: asumir código de 2 dígitos
+      return { codigo: phone.substring(0, 2), numero: phone.substring(2) };
+    };
+    
+    const { codigo: codigoArea, numero: numeroTelefono } = separarTelefono(telefonoLimpio, provincia);
+
+    // Procesar DNI / CUIT
+    const dniCuitLimpio = dni.replace(/\D/g, '');
+    let dniProcesado = dniCuitLimpio;
+    if (dniCuitLimpio.length === 11) {
+      // Es un CUIT, extraer el DNI (quitar los primeros 2 dígitos y el último)
+      dniProcesado = dniCuitLimpio.substring(2, 10);
+      console.log(`CUIT detectado (${dniCuitLimpio}) -> DNI extraído: ${dniProcesado}`);
+    } else if (dniCuitLimpio.length === 8 || dniCuitLimpio.length === 7) {
+      // Es un DNI válido
+      dniProcesado = dniCuitLimpio;
+    } else {
+      console.warn(`Formato de DNI/CUIT no reconocido: ${dniCuitLimpio} (${dniCuitLimpio.length} dígitos)`);
+    }
 
     // Datos base para ambos tipos
     const baseData = {
@@ -1479,14 +1591,42 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       'Numero Interno\nEj: ': `#${numeroOrden}`,
       'Nombre *\nEj: ': nombreCompleto,
       'Apellido *\nEj: ': apellidoComprador,
-      'DNI *\nEj: ': dni,
+      'DNI *\nEj: ': dniProcesado,
       'Email *\nEj: ': email,
       'Celular código *\nEj: ': codigoArea,
       'Celular número *\nEj: ': numeroTelefono,
     };
 
+    // Normalizar medio de envío para detectar tipo
+    const medioEnvioNorm = medioEnvio.toLowerCase().trim()
+      .replace(/[áàäâ]/g, 'a')
+      .replace(/[éèëê]/g, 'e')
+      .replace(/[íìïî]/g, 'i')
+      .replace(/[óòöô]/g, 'o')
+      .replace(/[úùüû]/g, 'u');
+    
+    console.log('🔍 Processing order (VENTAS):', numeroOrden, 'Medio de envío:', medioEnvio);
+    console.log('📦 Medio de envío normalizado:', medioEnvioNorm);
+    
+    // Detectar envío a domicilio - condiciones más flexibles
+    const esDomicilioVentas = medioEnvioNorm && (
+      medioEnvioNorm.includes("domicilio") ||
+      medioEnvioNorm.includes("andreani") && medioEnvioNorm.includes("estandar") ||
+      medioEnvioNorm.includes("envio a domicilio") ||
+      medioEnvioNorm.includes("a domicilio")
+    );
+    
+    // Detectar envío a sucursal
+    const esSucursalVentas = medioEnvioNorm && (
+      medioEnvioNorm.includes("punto de retiro") ||
+      medioEnvioNorm.includes("sucursal") ||
+      medioEnvioNorm.includes("retiro")
+    );
+    
+    console.log('🏠 Es domicilio?', esDomicilioVentas, '| 🏢 Es sucursal?', esSucursalVentas);
+    
     // Determinar si es envío a domicilio o sucursal
-    if (medioEnvio.includes('domicilio')) {
+    if (esDomicilioVentas && !esSucursalVentas) {
       contadorDomicilios++;
       console.log(`[DOMICILIO ${contadorDomicilios}] Procesando pedido:`, numeroOrden);
       // Procesar envío a domicilio
@@ -1529,6 +1669,24 @@ export const processVentasOrders = async (csvContent: string): Promise<{
         .replace(/[–—]/g, '-')
         .replace(/[…]/g, '...')
         .replace(/[]/g, '');
+
+      // Procesar número de calle - debe ser SOLO números
+      let numeroCalleVentas = numero.trim();
+      
+      // Reemplazar "SN" o "S/N" con "0"
+      if (/^s[\s\/\-]*n$/i.test(numeroCalleVentas)) {
+        numeroCalleVentas = '0';
+      } else {
+        // Extraer solo números del campo
+        const soloNumeros = numeroCalleVentas.match(/\d+/);
+        if (soloNumeros && soloNumeros[0]) {
+          numeroCalleVentas = soloNumeros[0];
+        } else {
+          // Si no hay números, usar "0" como fallback
+          console.warn(`Número de calle no válido: "${numeroCalleVentas}" - usando "0" como fallback`);
+          numeroCalleVentas = '0';
+        }
+      }
 
       // Buscar el formato EXACTO en domiciliosData.ts - TAL CUAL como está definido
       let formatoProvinciaLocalidadCP = '';
@@ -1597,14 +1755,14 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       domicilios.push({
         ...baseData,
         'Calle *\nEj: ': calleNormalizada,
-        'Número *\nEj: ': numero,
+        'Número *\nEj: ': numeroCalleVentas,
         'Piso\nEj: ': pisoNormalizado,
         'Departamento\nEj: ': pisoNormalizado,
         'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657': formatoProvinciaLocalidadCP,
         'Observaciones\nEj: ': '',
       });
 
-    } else if (medioEnvio.includes('Punto de retiro') || medioEnvio.includes('sucursal')) {
+    } else if (esSucursalVentas && !esDomicilioVentas) {
       contadorSucursales++;
       console.log(`[SUCURSAL ${contadorSucursales}] Procesando pedido:`, numeroOrden);
       // Procesar envío a sucursal
@@ -1617,7 +1775,12 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       });
     } else {
       contadorNoProcesados++;
-      console.log(`[NO PROCESADO ${contadorNoProcesados}] Pedido ${numeroOrden} - Medio de envío desconocido:`, medioEnvio);
+      console.error(`❌ [NO PROCESADO ${contadorNoProcesados}] Pedido ${numeroOrden}`);
+      console.error(`   Medio de envío original: "${medioEnvio}"`);
+      console.error(`   Medio de envío normalizado: "${medioEnvioNorm}"`);
+      console.error(`   ⚠️ El medio de envío no coincide con ningún patrón conocido`);
+      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar"`);
+      console.error(`   ✅ Patrones de SUCURSAL: "punto de retiro", "sucursal", "retiro"`);
     }
   }
 
