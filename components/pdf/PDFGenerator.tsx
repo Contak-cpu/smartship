@@ -222,6 +222,9 @@ const PDFGenerator = () => {
       
       copiedPages.forEach((page: any) => finalPdfDoc.addPage(page));
 
+      // Objeto para almacenar el conteo de productos
+      const productCount: { [key: string]: number } = {};
+
       for (let i = 0; i < pdfPagesData.length; i++) {
         const pageData = pdfPagesData[i];
         const orderNumber = pageData.orderNumber;
@@ -248,6 +251,13 @@ const PDFGenerator = () => {
             
             skuParts.forEach(skuPart => {
               if (skuPart) {
+                // Limpiar el SKU de cantidades previas para el conteo
+                const cleanSku = skuPart.replace(/\s*\(x\d+\)/g, '').trim();
+                const qty = parseInt(quantity) || 1;
+                
+                // Actualizar el conteo global de productos
+                productCount[cleanSku] = (productCount[cleanSku] || 0) + qty;
+                
                 // Agregar cantidad solo si existe y no está ya incluida en el SKU
                 const productText = quantity.trim() !== '' && !skuPart.includes('(x') 
                   ? `${skuPart} (x${quantity})` 
@@ -296,6 +306,106 @@ const PDFGenerator = () => {
         }
       }
 
+      // Agregar página final con el resumen de productos
+      if (Object.keys(productCount).length > 0) {
+        const summaryPage = finalPdfDoc.addPage([595.28, 841.89]); // Tamaño A4
+        const { width, height } = summaryPage.getSize();
+        
+        // Título de la página
+        summaryPage.drawText('RESUMEN DE PRODUCTOS', {
+          x: 50,
+          y: height - 50,
+          size: 18,
+          color: rgb(0, 0, 0),
+        });
+        
+        summaryPage.drawText('Conteo total de productos y cantidades', {
+          x: 50,
+          y: height - 75,
+          size: 12,
+          color: rgb(0.3, 0.3, 0.3),
+        });
+        
+        // Línea separadora
+        summaryPage.drawLine({
+          start: { x: 50, y: height - 85 },
+          end: { x: width - 50, y: height - 85 },
+          thickness: 1,
+          color: rgb(0, 0, 0),
+        });
+        
+        // Listar productos y cantidades
+        let yPosition = height - 110;
+        const lineHeight = 20;
+        const leftMargin = 50;
+        const rightMargin = width - 100;
+        
+        // Ordenar productos alfabéticamente
+        const sortedProducts = Object.entries(productCount).sort((a, b) => 
+          a[0].localeCompare(b[0])
+        );
+        
+        sortedProducts.forEach(([product, count], index) => {
+          // Si llegamos al final de la página, no dibujar más
+          if (yPosition < 50) {
+            return;
+          }
+          
+          // Producto
+          summaryPage.drawText(`${index + 1}. ${product}`, {
+            x: leftMargin,
+            y: yPosition,
+            size: 11,
+            color: rgb(0, 0, 0),
+          });
+          
+          // Cantidad (alineada a la derecha)
+          const quantityText = `x${count}`;
+          summaryPage.drawText(quantityText, {
+            x: rightMargin,
+            y: yPosition,
+            size: 11,
+            color: rgb(0, 0, 0),
+          });
+          
+          yPosition -= lineHeight;
+        });
+        
+        // Total de productos únicos
+        summaryPage.drawLine({
+          start: { x: 50, y: yPosition + 10 },
+          end: { x: width - 50, y: yPosition + 10 },
+          thickness: 1,
+          color: rgb(0, 0, 0),
+        });
+        
+        yPosition -= 20;
+        summaryPage.drawText(`Total de productos únicos: ${sortedProducts.length}`, {
+          x: leftMargin,
+          y: yPosition,
+          size: 12,
+          color: rgb(0, 0, 0),
+        });
+        
+        const totalQuantity = Object.values(productCount).reduce((sum, qty) => sum + qty, 0);
+        summaryPage.drawText(`Cantidad total de unidades: ${totalQuantity}`, {
+          x: leftMargin,
+          y: yPosition - 20,
+          size: 12,
+          color: rgb(0, 0, 0),
+        });
+        
+        // Footer
+        summaryPage.drawText('Generado por FACIL.UNO', {
+          x: leftMargin,
+          y: 30,
+          size: 9,
+          color: rgb(0.5, 0.5, 0.5),
+        });
+        
+        console.log(`Página de resumen agregada con ${sortedProducts.length} productos únicos`);
+      }
+
       const pdfBytes = await finalPdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -333,7 +443,7 @@ const PDFGenerator = () => {
               </svg>
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-white">
-              PDF Generator
+              FACIL.UNO
             </h1>
           </div>
           <p className="text-green-400 font-medium text-sm sm:text-base">
@@ -422,7 +532,7 @@ const PDFGenerator = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block text-gray-300">
-                    Columna con el texto a insertar (SKU)
+                    SKU en Rotulos
                   </label>
                   <select 
                     value={selectedColumn} 

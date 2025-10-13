@@ -36,11 +36,11 @@ const DashboardPage: React.FC = () => {
     },
     {
       id: 'pdf-generator',
-      title: 'Generador de PDFs',
-      description: 'Crea múltiples documentos PDF de forma masiva a partir de plantillas personalizables. Ideal para etiquetas, facturas y documentos repetitivos.',
+      title: 'SKU en Rotulos',
+      description: 'Inserta SKUs en rotulos de PDFs de forma masiva con resumen de productos. Genera documentos con conteo automático de productos y cantidades.',
       path: '/pdf-generator',
       color: 'blue',
-      stats: 'Generación Masiva',
+      stats: 'Generación de Rotulos',
       icon: (
         <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
