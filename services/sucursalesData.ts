@@ -1685,6 +1685,8 @@ export const SUCURSALES_DATA: SucursalInfo[] = [
 { nombre_sucursal: "PUNTO ANDREANI HOP GORRITI		 0", direccion: "GORRITI		 0" },
 { nombre_sucursal: "PUNTO ANDREANI HOP GRAHAM BELL 1490", direccion: "GRAHAM BELL 1490" },
 { nombre_sucursal: "PUNTO ANDREANI HOP GRAL ALVEAR 1504", direccion: "GRAL ALVEAR 1504" },
+{ nombre_sucursal: "PUNTO ANDREANI HOP GRAL J. GERVASIO ARTIGAS 337", direccion: "GRAL J. GERVASIO ARTIGAS 337" },
+{ nombre_sucursal: "PUNTO ANDREANI HOP GRAL J. GERVASIO ARTIGAS 6032", direccion: "GRAL J. GERVASIO ARTIGAS 6032" },
 { nombre_sucursal: "PUNTO ANDREANI HOP GRAL JOSE MARIA PAZ 1225", direccion: "GRAL JOSE MARIA PAZ 1225" },
 { nombre_sucursal: "PUNTO ANDREANI HOP GRAL JUAN M DE PUEYRREDON 587", direccion: "GRAL JUAN M DE PUEYRREDON 587" },
 { nombre_sucursal: "PUNTO ANDREANI HOP GRAL M DE ESCALADA 320", direccion: "GRAL M DE ESCALADA 320" },

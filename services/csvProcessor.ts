@@ -437,7 +437,8 @@ export const combineCSVs = (domicilioCSV: string, sucursalCSV: string): string =
     });
   }
   
-  return combinedContent.trim();
+  // Asegurar que termine con salto de línea para que la fila posterior quede vacía
+  return combinedContent;
 };
 
 const fetchSucursales = async (): Promise<AndreaniSucursalInfo[]> => {
@@ -1211,11 +1212,11 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     
     const baseData = {
       'Paquete Guardado Ej:': '', // Siempre vacío
-      'Peso (grs)': 1,
-      'Alto (cm)': 1,
-      'Ancho (cm)': 1,
-      'Profundidad (cm)': 1,
-      'Valor declarado ($ C/IVA) *': 4500,
+      'Peso (grs)': 400,
+      'Alto (cm)': 10,
+      'Ancho (cm)': 10,
+      'Profundidad (cm)': 10,
+      'Valor declarado ($ C/IVA) *': 6000,
       'Numero Interno': `#${getColumnValue(order, 0)}`, // Número de orden con #
       'Nombre *': nombreNormalizado || '',
       'Apellido *': apellidoNormalizado || '',
@@ -1520,7 +1521,7 @@ export const processVentasOrders = async (csvContent: string): Promise<{
     const codigoPostal = values[21]?.replace(/"/g, '') || '';
     const provincia = values[22]?.replace(/"/g, '') || '';
     const medioEnvio = values[24]?.replace(/"/g, '') || '';
-    const valorDeclarado = values[9]?.replace(/"/g, '') || '4500';
+    const valorDeclarado = values[9]?.replace(/"/g, '') || '6000';
 
     // Separar código de área y número de teléfono
     let telefonoLimpio = telefono.replace(/[^\d]/g, '');
@@ -1583,10 +1584,10 @@ export const processVentasOrders = async (csvContent: string): Promise<{
     // Datos base para ambos tipos
     const baseData = {
       'Paquete Guardado \nEj: 1': '',
-      'Peso (grs)\nEj: ': '1',
-      'Alto (cm)\nEj: ': '1',
-      'Ancho (cm)\nEj: ': '1',
-      'Profundidad (cm)\nEj: ': '1',
+      'Peso (grs)\nEj: ': '400',
+      'Alto (cm)\nEj: ': '10',
+      'Ancho (cm)\nEj: ': '10',
+      'Profundidad (cm)\nEj: ': '10',
       'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado,
       'Numero Interno\nEj: ': `#${numeroOrden}`,
       'Nombre *\nEj: ': nombreCompleto,

@@ -187,7 +187,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
                 // CORRECTO: Una opción por cada fila de configuración
                 if (provinciaLocalidadOptions.length > 0) {
                     try {
-                        const lastRow = Math.max(domicilioData.length + 2, 100); // +2 porque empezamos en fila 3
+                        const lastRow = domicilioData.length + 2; // +2 para headers (filas 1-2), datos desde fila 3
                         
                         // Crear validación usando la sintaxis correcta de ExcelJS
                         for (let rowNum = 3; rowNum <= lastRow; rowNum++) {
@@ -214,7 +214,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
                 // AGREGAR VALIDACIÓN DE DATOS (DESPLEGABLE) en columna A - SIEMPRE VACÍA
                 if (itemNoGenericoOptions.length > 0) {
                     try {
-                        const lastRow = Math.max(domicilioData.length + 2, 100); // +2 porque empezamos en fila 3
+                        const lastRow = domicilioData.length + 2; // +2 para headers (filas 1-2), datos desde fila 3
                         
                         for (let rowNum = 3; rowNum <= lastRow; rowNum++) {
                             const cell = ws.getCell(`A${rowNum}`);
@@ -335,7 +335,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
                 // CORRECTO: Una opción por cada fila de configuración
                 if (sucursalesOptions.length > 0) {
                     try {
-                        const lastRow = Math.max(sucursalData.length + 2, 100); // +2 porque empezamos en fila 3
+                        const lastRow = sucursalData.length + 2; // +2 para headers (filas 1-2), datos desde fila 3
                         
                         // Crear validación usando la sintaxis correcta de ExcelJS
                         for (let rowNum = 3; rowNum <= lastRow; rowNum++) {
@@ -362,7 +362,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
                 // AGREGAR VALIDACIÓN DE DATOS (DESPLEGABLE) en columna A - SIEMPRE VACÍA
                 if (itemNoGenericoOptions.length > 0) {
                     try {
-                        const lastRow = Math.max(sucursalData.length + 2, 100); // +2 porque empezamos en fila 3
+                        const lastRow = sucursalData.length + 2; // +2 para headers (filas 1-2), datos desde fila 3
                         
                         for (let rowNum = 3; rowNum <= lastRow; rowNum++) {
                             const cell = ws.getCell(`A${rowNum}`);
