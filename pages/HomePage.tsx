@@ -6,6 +6,8 @@ import { StatusDisplay } from '../components/StatusDisplay';
 import { ResultsDisplay } from '../components/ResultsDisplay';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { guardarEnHistorialSmartShip } from '../src/utils/historialStorage';
+import { useAuth } from '../hooks/useAuth';
+import { guardarPedidosDesdeCSV, PedidoProcesado } from '../services/informacionService';
 
 // Función para normalizar caracteres problemáticos en el CSV final
 const normalizarCSVFinal = (content: string): string => {
@@ -152,6 +154,7 @@ const csvToArray = (csvContent: string): any[] => {
 };
 
 const HomePage: React.FC = () => {
+  const { username, userId } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
   const [error, setError] = useState<string | null>(null);
@@ -199,10 +202,95 @@ const HomePage: React.FC = () => {
         try {
           const datosDomicilio = csvToArray(processedData.domicilioCSV);
           const datosSucursal = csvToArray(processedData.sucursalCSV);
-          guardarEnHistorialSmartShip(selectedFile.name, datosDomicilio, datosSucursal);
+          await guardarEnHistorialSmartShip(selectedFile.name, datosDomicilio, datosSucursal, username);
         } catch (historialError) {
           console.error('Error al guardar en historial:', historialError);
           // No interrumpir el flujo si falla el guardado del historial
+        }
+
+        // Guardar pedidos en Supabase para la sección Información
+        try {
+          console.log('Guardando pedidos en Supabase...');
+          const pedidosParaGuardar: PedidoProcesado[] = [];
+          const hoy = new Date().toISOString().split('T')[0];
+          
+          // Procesar pedidos de domicilio
+          const datosDomicilio = csvToArray(processedData.domicilioCSV);
+          datosDomicilio.forEach((item: any) => {
+            const numeroPedido = item['Numero Interno Ej: '] || item['Numero Interno'] || '';
+            const nombreCompleto = item['Nombre * Ej: '] || item['Nombre'] || '';
+            const apellidoCompleto = item['Apellido * Ej: '] || item['Apellido'] || '';
+            const emailCliente = item['Email * Ej: '] || item['Email'] || '';
+            const telefono = `${item['Celular código * Ej: '] || ''}${item['Celular número * Ej: '] || ''}`;
+            const calle = item['Calle * Ej: '] || '';
+            const numero = item['Número * Ej: '] || '';
+            const piso = item['Piso Ej: '] || '';
+            const depto = item['Departamento Ej: '] || '';
+            const direccion = `${calle} ${numero}${piso ? ' Piso ' + piso : ''}${depto ? ' Depto ' + depto : ''}`.trim();
+            const provinciaLocalidadCP = item['Provincia / Localidad / CP * Ej: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657'] || '';
+            
+            const partes = provinciaLocalidadCP.split('/').map((p: string) => p.trim());
+            const provincia = partes[0] || '';
+            const localidad = partes[1] || '';
+            const codigoPostal = partes[2] || '';
+            
+            if (numeroPedido && emailCliente) {
+              pedidosParaGuardar.push({
+                user_id: userId,
+                username,
+                numeroPedido,
+                emailCliente,
+                nombreCliente: nombreCompleto,
+                apellidoCliente: apellidoCompleto,
+                telefono,
+                direccion,
+                provincia,
+                localidad,
+                codigoPostal,
+                tipoEnvio: 'domicilio',
+                fechaProcesamiento: hoy,
+                archivoOrigen: selectedFile.name,
+              });
+            }
+          });
+
+          // Procesar pedidos de sucursal
+          const datosSucursal = csvToArray(processedData.sucursalCSV);
+          datosSucursal.forEach((item: any) => {
+            const numeroPedido = item['Numero Interno Ej: '] || item['Numero Interno'] || '';
+            const nombreCompleto = item['Nombre * Ej: '] || item['Nombre'] || '';
+            const apellidoCompleto = item['Apellido * Ej: '] || item['Apellido'] || '';
+            const emailCliente = item['Email * Ej: '] || item['Email'] || '';
+            const telefono = `${item['Celular código * Ej: '] || ''}${item['Celular número * Ej: '] || ''}`;
+            const sucursal = item['Sucursal * Ej: 9 DE JULIO'] || '';
+            
+            if (numeroPedido && emailCliente) {
+              pedidosParaGuardar.push({
+                user_id: userId,
+                username,
+                numeroPedido,
+                emailCliente,
+                nombreCliente: nombreCompleto,
+                apellidoCliente: apellidoCompleto,
+                telefono,
+                direccion: `Sucursal: ${sucursal}`,
+                provincia: '',
+                localidad: sucursal,
+                codigoPostal: '',
+                tipoEnvio: 'sucursal',
+                fechaProcesamiento: hoy,
+                archivoOrigen: selectedFile.name,
+              });
+            }
+          });
+
+          if (pedidosParaGuardar.length > 0) {
+            const resultado = await guardarPedidosDesdeCSV(pedidosParaGuardar);
+            console.log(`✅ Pedidos procesados: ${resultado.guardados} guardados, ${resultado.duplicados} duplicados, ${resultado.errores} errores`);
+          }
+        } catch (infoError) {
+          console.error('Error al guardar pedidos para Información:', infoError);
+          // No interrumpir el flujo si falla
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error desconocido.';

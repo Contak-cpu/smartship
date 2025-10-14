@@ -17,7 +17,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
   const VALID_CODES = ['2310']; // Códigos de activación válidos
 
   const handlePlanSelection = (planName: string) => {
-    const message = `Hola! Me interesa el plan ${planName} de South Wale. ¿Podrías darme más información?`;
+    const message = `Hola! Me interesa el plan ${planName} de FACIL.UNO. ¿Podrías darme más información?`;
     const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -45,7 +45,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
         
         // Esperar 2 segundos antes de abrir WhatsApp
         setTimeout(() => {
-          const message = `Hola! Tengo el código de invitación ${invitationCode} y me interesa el plan ${selectedPlan} de South Wale. ¿Podrías darme más información?`;
+          const message = `Hola! Tengo el código de invitación ${invitationCode} y me interesa el plan ${selectedPlan} de FACIL.UNO. ¿Podrías darme más información?`;
           const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
           window.open(whatsappUrl, '_blank');
           
@@ -85,7 +85,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
             
             {/* Nombre centrado */}
             <h2 className="absolute left-1/2 transform -translate-x-1/2 text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
-              South Wale
+              FACIL.UNO
             </h2>
             
             {/* Botón Ya tengo un plan */}
@@ -307,7 +307,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
               {!isValidated ? (
                 <>
                   <p className="text-gray-300 text-base leading-relaxed">
-                    El acceso a <span className="text-green-400 font-bold">South Wale</span> es limitado y está disponible únicamente para personas que reciban una{' '}
+                    El acceso a <span className="text-green-400 font-bold">FACIL.UNO</span> es limitado y está disponible únicamente para personas que reciban una{' '}
                     <span className="text-green-400 font-bold">invitación exclusiva</span>.
                   </p>
                   

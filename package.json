@@ -1,5 +1,5 @@
 {
-  "name": "transformador-de-pedidos-andreani",
+  "name": "facil-uno",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,6 +13,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.75.0",
     "exceljs": "^4.4.0",
     "papaparse": "^5.5.3",
     "pdf-lib": "^1.17.1",

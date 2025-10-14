@@ -1,49 +1,45 @@
 import React, { useState } from 'react';
-
-interface UserData {
-  password: string;
-  level: number;
-}
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginProps {
-  onLogin: (username: string, level: number) => void;
   onGoBack?: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
-  const [username, setUsername] = useState('');
+export const Login: React.FC<LoginProps> = ({ onGoBack }) => {
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Usuarios hardcodeados con niveles de acceso
-  // Nivel 3: Acceso a todas las secciones (administrador)
-  // Nivel 2: Acceso a SmartShip, PDF Generator y Rentabilidad
-  // Nivel 1: Solo acceso a Rentabilidad
-  // Nivel 0: Invitado - Solo calculadora sin historial
-  const validUsers: Record<string, UserData> = {
-    'Yael': { password: '123', level: 2 },
-    'Erick': { password: '123', level: 3 },
-    'Pedro': { password: '123', level: 1 }
-  };
-
-  const handleGuestLogin = () => {
-    onLogin('Invitado', 0);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    if (!username || !password) {
+    if (!email || !password) {
       setError('Por favor, completa todos los campos');
+      setIsLoading(false);
       return;
     }
 
-    const user = validUsers[username];
-    if (user && user.password === password) {
-      onLogin(username, user.level);
-    } else {
-      setError('Usuario o contraseña incorrectos');
+    try {
+      const { error: signInError } = await signIn(email, password);
+      
+      if (signInError) {
+        setError('Email o contraseña incorrectos');
+        console.error('Error de autenticación:', signInError);
+      } else {
+        // Redireccionar al dashboard
+        navigate('/', { replace: true });
+      }
+    } catch (err) {
+      console.error('Error en login:', err);
+      setError('Error al iniciar sesión. Intenta nuevamente.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -71,24 +67,25 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
               <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
             </svg>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">South Wale</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">FACIL.UNO</h1>
           <p className="text-blue-400 font-medium text-sm sm:text-base">Herramientas para Ecommerce</p>
           <p className="text-gray-500 text-xs sm:text-sm mt-2">Inicia sesión para continuar</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
-              Usuario
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              Email
             </label>
             <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-              placeholder="Ingresa tu usuario"
-              autoComplete="username"
+              placeholder="tu@email.com"
+              autoComplete="email"
+              disabled={isLoading}
             />
           </div>
 
@@ -104,6 +101,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
               className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
               placeholder="Ingresa tu contraseña"
               autoComplete="current-password"
+              disabled={isLoading}
             />
           </div>
 
@@ -115,33 +113,34 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoBack }) => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
+            disabled={isLoading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
-            Iniciar Sesión
+            {isLoading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Iniciando sesión...
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                Iniciar Sesión
+              </>
+            )}
           </button>
         </form>
 
-        {/* Separador */}
-        <div className="flex items-center gap-4">
-          <div className="flex-1 border-t border-gray-700"></div>
-          <span className="text-gray-500 text-xs">O</span>
-          <div className="flex-1 border-t border-gray-700"></div>
+        {/* Info de acceso temporal (eliminar en producción) */}
+        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 text-xs text-gray-400">
+          <p className="text-center">
+            💡 <span className="text-blue-400 font-medium">Para testing:</span> Crea tu cuenta en Supabase Dashboard
+          </p>
         </div>
-
-        {/* Botón de invitado */}
-        <button
-          onClick={handleGuestLogin}
-          data-guest-login
-          className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out flex items-center justify-center text-sm sm:text-base border-2 border-gray-600"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          Ingresar como Invitado
-        </button>
 
 
         <footer className="text-center mt-8 text-gray-500 text-sm">

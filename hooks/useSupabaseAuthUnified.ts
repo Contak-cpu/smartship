@@ -1,22 +1,14 @@
-import { useContext } from 'react';
-import { SupabaseAuthContext } from '../contexts/SupabaseAuthContext';
+import { useSupabaseAuth } from './useSupabaseAuth';
 
 /**
- * Hook principal de autenticación - Usa Supabase Auth
- * Mantiene compatibilidad con la API anterior para no romper componentes existentes
+ * Hook unificado que usa Supabase Auth y mantiene compatibilidad con la API anterior
  */
 export const useAuth = () => {
-  const context = useContext(SupabaseAuthContext);
-  
-  if (!context) {
-    throw new Error('useAuth debe usarse dentro de un SupabaseAuthProvider');
-  }
+  const { user, session, isLoading, signIn, signOut } = useSupabaseAuth();
 
-  const { user, session, isLoading, signIn, signOut, signUp } = context;
-
-  // Mapear a la estructura esperada por los componentes existentes
+  // Mapear el user de Supabase a la estructura anterior
   const username = user?.user_metadata?.username || user?.email?.split('@')[0] || 'Usuario';
-  const userLevel = (user?.user_metadata?.nivel as number) || 0;
+  const userLevel = user?.user_metadata?.nivel || 0;
   const userId = user?.id || '';
 
   const hasAccess = (requiredLevel: number): boolean => {
@@ -35,7 +27,7 @@ export const useAuth = () => {
   };
 
   return {
-    // API compatible con la anterior
+    // Compatibilidad con API anterior
     username,
     userLevel,
     userId,
@@ -44,12 +36,12 @@ export const useAuth = () => {
     logout,
     isAuthenticated: !!user,
     
-    // API de Supabase (para funcionalidades avanzadas)
+    // API de Supabase
     user,
     session,
     isLoading,
     signIn,
     signOut,
-    signUp,
   };
 };
+

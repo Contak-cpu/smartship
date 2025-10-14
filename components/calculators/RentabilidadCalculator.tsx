@@ -44,7 +44,7 @@ interface HistorialItem {
 type MonedaAds = 'ARS' | 'USDT';
 
 const RentabilidadCalculator = () => {
-  const { userLevel } = useAuth();
+  const { userLevel, username } = useAuth();
   const isGuest = userLevel === 0;
   
   const [formData, setFormData] = useState<FormData>({
@@ -62,7 +62,7 @@ const RentabilidadCalculator = () => {
   const [monedaMeta, setMonedaMeta] = useState<MonedaAds>('ARS');
   const [monedaTiktok, setMonedaTiktok] = useState<MonedaAds>('ARS');
   const [monedaGoogle, setMonedaGoogle] = useState<MonedaAds>('ARS');
-  const [cotizacionUSDT, setCotizacionUSDT] = useState<string>('1100');
+  const [cotizacionUSDT, setCotizacionUSDT] = useState<string>('1440');
 
   const [gastosPersonalizados, setGastosPersonalizados] = useState<GastoPersonalizado[]>([]);
   const [nuevoGastoNombre, setNuevoGastoNombre] = useState('');
@@ -72,9 +72,11 @@ const RentabilidadCalculator = () => {
   const [showResults, setShowResults] = useState(false);
   const [historial, setHistorial] = useState<HistorialItem[]>([]);
 
-  // Cargar historial desde localStorage al iniciar
+  // Cargar historial desde localStorage al iniciar (específico por usuario)
   useEffect(() => {
-    const savedHistorial = localStorage.getItem('rentabilidad_historial');
+    const { username } = useAuth();
+    const storageKey = username ? `rentabilidad_historial_${username}` : 'rentabilidad_historial';
+    const savedHistorial = localStorage.getItem(storageKey);
     if (savedHistorial) {
       try {
         setHistorial(JSON.parse(savedHistorial));
@@ -84,10 +86,12 @@ const RentabilidadCalculator = () => {
     }
   }, []);
 
-  // Guardar historial en localStorage cuando cambie
+  // Guardar historial en localStorage cuando cambie (específico por usuario)
   useEffect(() => {
+    const { username } = useAuth();
+    const storageKey = username ? `rentabilidad_historial_${username}` : 'rentabilidad_historial';
     if (historial.length > 0) {
-      localStorage.setItem('rentabilidad_historial', JSON.stringify(historial));
+      localStorage.setItem(storageKey, JSON.stringify(historial));
     }
   }, [historial]);
 
@@ -221,8 +225,10 @@ const RentabilidadCalculator = () => {
 
   const limpiarHistorial = () => {
     if (window.confirm('¿Estás seguro de que deseas eliminar todo el historial?')) {
+      const { username } = useAuth();
+      const storageKey = username ? `rentabilidad_historial_${username}` : 'rentabilidad_historial';
       setHistorial([]);
-      localStorage.removeItem('rentabilidad_historial');
+      localStorage.removeItem(storageKey);
     }
   };
 
@@ -280,13 +286,13 @@ const RentabilidadCalculator = () => {
           </p>
         </header>
 
-        {/* Cotización USDT - Destacado */}
+        {/* Valor Dólar al Día - Destacado */}
         <div className="bg-yellow-900/20 p-4 rounded-lg border border-yellow-500/50">
           <label className="block text-sm font-medium text-yellow-300 mb-2">
-            💵 Cotización USDT → ARS
+            💵 Valor Dólar al Día (ARS)
           </label>
           <div className="flex items-center gap-3">
-            <span className="text-gray-400 text-sm">1 USDT =</span>
+            <span className="text-gray-400 text-sm">1 USD =</span>
             <input
               type="text"
               value={cotizacionUSDT}
@@ -296,7 +302,7 @@ const RentabilidadCalculator = () => {
                 }
               }}
               className="flex-1 p-3 border rounded-lg bg-gray-700 text-white border-gray-600 focus:border-blue-500 focus:outline-none font-bold text-lg"
-              placeholder="1100"
+              placeholder="1440"
             />
             <span className="text-gray-400 text-sm">ARS</span>
           </div>

@@ -1,4 +1,4 @@
-# 🐋 South Wale - Herramientas para Ecommerce
+# 🚀 FACIL.UNO - Herramientas para Ecommerce
 
 Una suite completa de herramientas profesionales para gestionar y optimizar tu ecommerce, incluyendo calculadoras financieras, análisis de rentabilidad y automatización de envíos.
 
@@ -30,8 +30,8 @@ Una suite completa de herramientas profesionales para gestionar y optimizar tu e
 ### Instalación Local
 ```bash
 # Clonar el repositorio
-git clone https://github.com/tuusuario/south-wale.git
-cd south-wale
+git clone https://github.com/tuusuario/facil-uno.git
+cd facil-uno
 
 # Instalar dependencias
 npm install
@@ -68,7 +68,7 @@ El proyecto está configurado para deploy automático en Vercel:
 Si necesitas configurar variables de entorno en Vercel:
 ```
 NODE_ENV=production
-VITE_APP_NAME=South Wale - Herramientas para Ecommerce
+VITE_APP_NAME=FACIL.UNO - Herramientas para Ecommerce
 VITE_APP_VERSION=2.0.0
 ```
 
@@ -87,7 +87,7 @@ VITE_APP_VERSION=2.0.0
 ## 📁 Estructura del Proyecto
 
 ```
-south-wale/
+facil-uno/
 ├── components/
 │   ├── calculators/          # Calculadoras financieras
 │   │   ├── RentabilidadCalculator.tsx
@@ -187,4 +187,4 @@ Para soporte técnico o preguntas:
 
 ---
 
-**Desarrollado con ❤️ por pictoN para optimizar tu ecommerce** 🐋
+**Desarrollado con ❤️ por pictoN para optimizar tu ecommerce** 🚀

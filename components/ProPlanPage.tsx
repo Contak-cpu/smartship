@@ -6,7 +6,7 @@ interface ProPlanPageProps {
 
 export const ProPlanPage: React.FC<ProPlanPageProps> = ({ onGoBack }) => {
   const handleWhatsAppContact = () => {
-    const message = `Hola! Me interesa contratar el Plan Pro de South Wale por $99/mes. ¿Podrías ayudarme con el proceso de contratación?`;
+    const message = `Hola! Me interesa contratar el Plan Pro de FACIL.UNO por $99/mes. ¿Podrías ayudarme con el proceso de contratación?`;
     const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -19,7 +19,7 @@ export const ProPlanPage: React.FC<ProPlanPageProps> = ({ onGoBack }) => {
           <div className="flex items-center justify-between h-16">
             {/* Nombre centrado */}
             <h2 className="w-full text-center text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
-              South Wale
+              FACIL.UNO
             </h2>
             
             {/* Botón Volver */}

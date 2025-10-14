@@ -152,7 +152,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
               </svg>
               <div className="text-left">
-                <h2 className="text-xl font-bold text-white">South Wale</h2>
+                <h2 className="text-xl font-bold text-white">FACIL.UNO</h2>
                 <p className="text-xs text-gray-400">Panel de Control</p>
               </div>
             </button>

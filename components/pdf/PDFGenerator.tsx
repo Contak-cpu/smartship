@@ -3,8 +3,11 @@ import Papa from 'papaparse';
 import { PDFDocument, rgb } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { guardarEnHistorialSKU } from '../../src/utils/historialStorage';
+import { useAuth } from '../../hooks/useAuth';
+import { guardarStockDespachado, StockDespachado } from '../../services/informacionService';
 
 const PDFGenerator = () => {
+  const { username, userId } = useAuth();
   const [csvData, setCsvData] = useState<string[][]>([]);
   const [csvFileName, setCsvFileName] = useState<string>('');
   const [pdfTemplate, setPdfTemplate] = useState<ArrayBuffer | null>(null);
@@ -192,6 +195,10 @@ const PDFGenerator = () => {
       
       copiedPages.forEach((page: any) => finalPdfDoc.addPage(page));
 
+      // Array para almacenar stock despachado
+      const stockDespachado: StockDespachado[] = [];
+      const hoy = new Date().toISOString().split('T')[0];
+
       for (let i = 0; i < pdfPagesData.length; i++) {
         const pageData = pdfPagesData[i];
         const orderNumber = pageData.orderNumber;
@@ -223,6 +230,19 @@ const PDFGenerator = () => {
                   ? `${skuPart} (x${quantity})` 
                   : skuPart;
                 allProducts.push(productText);
+
+                // Registrar para stock despachado
+                const cantidadNumerica = parseInt(quantity) || 1;
+                stockDespachado.push({
+                  user_id: userId,
+                  username,
+                  sku: skuPart,
+                  nombreProducto: skuPart,
+                  cantidad: cantidadNumerica,
+                  numeroPedido: orderNumber || '',
+                  fechaDespacho: hoy,
+                  archivoRotulo: csvFileName || 'documento',
+                });
               }
             });
           }
@@ -296,7 +316,7 @@ const PDFGenerator = () => {
         const nombreArchivo = csvFileName || 'documento';
         const cantidadRegistros = csvData.length - 1; // -1 para no contar el header
         
-        guardarEnHistorialSKU(nombreArchivo, cantidadRegistros, base64);
+        await guardarEnHistorialSKU(nombreArchivo, cantidadRegistros, base64, username);
         console.log('PDF guardado exitosamente en historial');
         showMessage('success', `PDF guardado en historial`);
       } catch (historialError) {
@@ -310,6 +330,18 @@ const PDFGenerator = () => {
           }
         }
         // No interrumpir el flujo si falla el guardado del historial
+      }
+
+      // Guardar stock despachado en Supabase
+      if (stockDespachado.length > 0) {
+        try {
+          console.log(`Guardando ${stockDespachado.length} items de stock despachado en Supabase...`);
+          await guardarStockDespachado(stockDespachado);
+          console.log(`✅ Stock despachado guardado: ${stockDespachado.length} items`);
+        } catch (stockError) {
+          console.error('Error al guardar stock despachado:', stockError);
+          // No interrumpir el flujo si falla
+        }
       }
 
       showMessage('success', `PDF generado con ${finalPdfDoc.getPageCount()} páginas`);

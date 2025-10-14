@@ -114,6 +114,25 @@ const DashboardPage: React.FC = () => {
         </svg>
       ),
     },
+    {
+      id: 'informacion',
+      title: 'Información y Estadísticas',
+      description: 'Panel de control completo con estadísticas de pedidos, clientes recurrentes, stock despachado y análisis de tu operación. Control automático de duplicados y seguimiento de inventario.',
+      path: '/informacion',
+      color: 'blue',
+      stats: 'Análisis Inteligente',
+      requiredLevel: 2,
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+          />
+        </svg>
+      ),
+    },
   ];
 
   // NO filtrar - mostrar todas pero marcar las bloqueadas
@@ -235,8 +254,8 @@ const DashboardPage: React.FC = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-                  Bienvenido a South Wale
-                  <span className="text-2xl">🐋</span>
+                  Bienvenido a FACIL.UNO
+                  <span className="text-2xl">🚀</span>
                 </h3>
                 <p className="text-gray-300 text-base leading-relaxed mb-4">
                   Tu suite completa de herramientas profesionales para optimizar y escalar tu ecommerce. 
