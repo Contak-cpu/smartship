@@ -39,6 +39,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         </svg>
       ),
     },
+    // Panel Admin - Solo para nivel Dios (999)
+    ...(userLevel === 999 ? [{
+      id: 'admin',
+      label: '👑 Panel Admin',
+      path: '/admin',
+      description: 'Administración del Sistema',
+      requiredLevel: 999,
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+    }] : []),
     {
       id: 'breakeven-roas',
       label: 'Breakeven & ROAS',
@@ -211,7 +224,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{username}</p>
                 <p className="text-xs text-gray-400">
-                  Nivel {userLevel} {userLevel === 3 ? '(Admin)' : userLevel === 2 ? '(Avanzado)' : '(Básico)'}
+                  Nivel {userLevel} {userLevel === 999 ? '👑 (Dios)' : userLevel === 3 ? '(Admin)' : userLevel === 2 ? '(Avanzado)' : '(Básico)'}
                 </p>
               </div>
             )}
@@ -235,10 +248,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 className={`
                   group/menuitem w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300
                   ${
-                    isActive
+                    isActive && item.id === 'admin'
+                      ? 'bg-gradient-to-r from-red-600 to-purple-600 text-white shadow-lg shadow-red-600/50'
+                      : isActive
                       ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/50'
                       : isLocked
                       ? 'text-gray-500 hover:bg-gray-700/50 hover:text-gray-400 border border-gray-700/50'
+                      : item.id === 'admin'
+                      ? 'text-red-400 hover:bg-red-900/20 hover:text-red-300 hover:shadow-lg border border-red-500/30'
                       : 'text-gray-400 hover:bg-gray-700/80 hover:text-white hover:shadow-lg'
                   }
                   ${!isSidebarOpen && 'justify-center'}

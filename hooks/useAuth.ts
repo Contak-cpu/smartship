@@ -12,11 +12,12 @@ export const useAuth = () => {
     throw new Error('useAuth debe usarse dentro de un SupabaseAuthProvider');
   }
 
-  const { user, session, isLoading, signIn, signOut, signUp } = context;
+  const { user, session, userProfile, isLoading, signIn, signOut, signUp, refreshUserProfile } = context;
 
   // Mapear a la estructura esperada por los componentes existentes
-  const username = user?.user_metadata?.username || user?.email?.split('@')[0] || 'Usuario';
-  const userLevel = (user?.user_metadata?.nivel as number) || 0;
+  // Ahora usamos userProfile que viene de la base de datos
+  const username = userProfile?.username || user?.email?.split('@')[0] || 'Usuario';
+  const userLevel = userProfile?.nivel ?? 0;
   const userId = user?.id || '';
 
   const hasAccess = (requiredLevel: number): boolean => {
@@ -47,9 +48,11 @@ export const useAuth = () => {
     // API de Supabase (para funcionalidades avanzadas)
     user,
     session,
+    userProfile,
     isLoading,
     signIn,
     signOut,
     signUp,
+    refreshUserProfile,
   };
 };

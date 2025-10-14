@@ -19,6 +19,26 @@ const DashboardPage: React.FC = () => {
   const { hasAccess, username, userLevel } = useAuth();
 
   const allFeatures: FeatureCard[] = [
+    // Panel Admin - Solo para nivel Dios (999)
+    ...(userLevel === 999 ? [{
+      id: 'admin',
+      title: 'Panel de Administración Dios',
+      description: 'Control total del sistema. Gestiona usuarios, asigna niveles, crea nuevas cuentas con autoconfirmación, resetea contraseñas y visualiza estadísticas globales. Solo accesible para usuarios nivel Dios.',
+      path: '/admin',
+      color: 'red',
+      stats: '👑 Nivel Dios',
+      requiredLevel: 999,
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+          />
+        </svg>
+      ),
+    }] : []),
     {
       id: 'rentabilidad',
       title: 'Calculadora de Rentabilidad',
@@ -139,7 +159,18 @@ const DashboardPage: React.FC = () => {
   const features = allFeatures;
 
   const getColorClasses = (color: string) => {
-    // Paleta simplificada - solo azul como color principal
+    // Colores según tipo de feature
+    if (color === 'red') {
+      return {
+        bg: 'bg-gradient-to-r from-red-600 to-purple-600',
+        hover: 'hover:from-red-700 hover:to-purple-700',
+        text: 'text-red-500',
+        border: 'border-red-500',
+        shadow: 'hover:shadow-red-500/50',
+      };
+    }
+    
+    // Por defecto azul
     return {
       bg: 'bg-blue-600',
       hover: 'hover:bg-blue-700',
@@ -169,6 +200,8 @@ const DashboardPage: React.FC = () => {
                   className={`group bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 sm:p-10 border transition-all duration-300 relative ${
                     isLocked 
                       ? 'border-gray-700/50 opacity-75' 
+                      : feature.color === 'red'
+                      ? 'border-red-500/50 hover:border-red-500 hover:shadow-xl hover:shadow-red-500/20 hover:-translate-y-1 hover:bg-gray-800'
                       : 'border-gray-700/50 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 hover:bg-gray-800'
                   }`}
                 >
@@ -261,10 +294,10 @@ const DashboardPage: React.FC = () => {
                   Tu suite completa de herramientas profesionales para optimizar y escalar tu ecommerce. 
                   Desde análisis financiero hasta automatización de envíos, todo en un solo lugar.
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
-                    <p className="text-blue-400 font-bold">Tu Nivel</p>
-                    <p className="text-white text-lg font-bold">{userLevel === 3 ? 'Pro' : userLevel === 2 ? 'Basic' : userLevel === 1 ? 'Starter' : 'Invitado'}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                  <div className={`${userLevel === 999 ? 'bg-red-900/20 border-red-500/30' : 'bg-blue-900/20 border-blue-500/30'} border rounded-lg p-3`}>
+                    <p className={`${userLevel === 999 ? 'text-red-400' : 'text-blue-400'} font-bold`}>Tu Nivel</p>
+                    <p className="text-white text-lg font-bold">{userLevel === 999 ? '👑 Dios' : userLevel === 3 ? 'Pro' : userLevel === 2 ? 'Basic' : userLevel === 1 ? 'Starter' : 'Invitado'}</p>
                   </div>
                   <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
                     <p className="text-blue-400 font-bold">Herramientas</p>

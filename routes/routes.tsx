@@ -10,6 +10,7 @@ import RentabilidadPage from '../pages/RentabilidadPage';
 import BreakevenROASPage from '../pages/BreakevenROASPage';
 import HistorialPage from '../pages/HistorialPage';
 import InformacionPage from '../pages/InformacionPage';
+import AdminPanelPage from '../pages/AdminPanelPage';
 
 // Configuración centralizada de rutas
 // Para agregar nuevas rutas, simplemente añade un nuevo objeto a este array
@@ -75,6 +76,14 @@ export const routes: RouteObject[] = [
     element: (
       <LevelProtectedRoute requiredLevel={2} sectionName="Información y Estadísticas">
         <InformacionPage />
+      </LevelProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin',
+    element: (
+      <LevelProtectedRoute requiredLevel={999} sectionName="Panel de Administración Dios">
+        <AdminPanelPage />
       </LevelProtectedRoute>
     ),
   },
