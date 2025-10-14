@@ -1194,7 +1194,7 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       'Alto (cm)': 1,
       'Ancho (cm)': 1,
       'Profundidad (cm)': 1,
-      'Valor declarado ($ C/IVA) *': 4500,
+      'Valor declarado ($ C/IVA) *': 6000,
       'Numero Interno': `#${getColumnValue(order, 0)}`, // Número de orden con #
       'Nombre *': nombreNormalizado || '',
       'Apellido *': apellidoNormalizado || '',
@@ -1461,7 +1461,7 @@ export const processVentasOrders = async (csvContent: string): Promise<{
     const codigoPostal = values[21]?.replace(/"/g, '') || '';
     const provincia = values[22]?.replace(/"/g, '') || '';
     const medioEnvio = values[24]?.replace(/"/g, '') || '';
-    const valorDeclarado = values[9]?.replace(/"/g, '') || '4500';
+    const valorDeclarado = values[9]?.replace(/"/g, '') || '6000';
 
     // Separar código de área y número de teléfono
     const telefonoLimpio = telefono.replace(/[^\d]/g, '');

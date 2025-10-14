@@ -161,16 +161,16 @@ const PDFGenerator = () => {
   // Función para extraer número de orden del texto
   const extractOrderNumber = (text: string) => {
     const patterns = [
-      /N°\s*Interno:\s*#?(\d{4})/gi,
-      /N\s*Interno:\s*#?(\d{4})/gi,
-      /Interno:\s*#?(\d{4})/gi,
-      /#(\d{4})/g
+      /N°\s*Interno:\s*#?(\d{3,4})/gi,
+      /N\s*Interno:\s*#?(\d{3,4})/gi,
+      /Interno:\s*#?(\d{3,4})/gi,
+      /#(\d{3,4})/g
     ];
     
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match) {
-        const numberMatch = match[0].match(/(\d{4})/);
+        const numberMatch = match[0].match(/(\d{3,4})/);
         if (numberMatch) {
           return numberMatch[1];
         }
