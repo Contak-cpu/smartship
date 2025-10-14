@@ -1227,10 +1227,15 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     
     const medioEnvioNormalizado = medioEnvio ? normalizeText(medioEnvio) : '';
     
-    if (medioEnvioNormalizado && (
+    // Detectar envíos a domicilio (Andreani o Correo Argentino)
+    const esDomicilio = medioEnvioNormalizado && (
       (medioEnvioNormalizado.includes("andreani estandar") && medioEnvioNormalizado.includes("domicilio")) ||
-      medioEnvioNormalizado.includes("envio a domicilio - andreani")
-    )) {
+      medioEnvioNormalizado.includes("envio a domicilio - andreani") ||
+      medioEnvioNormalizado.includes("correo argentino") && medioEnvioNormalizado.includes("domicilio") ||
+      medioEnvioNormalizado.includes("envio a domicilio")
+    );
+    
+    if (esDomicilio) {
       contadorDomicilios++;
       console.log(`[DOMICILIO ${contadorDomicilios}] Agregando pedido:`, baseData['Numero Interno']);
       
@@ -1313,7 +1318,11 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
         'Departamento': pisoNormalizado, // As per spec, use 'Piso' for both
         'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
       });
-    } else if (medioEnvio && medioEnvio.includes('Punto de retiro')) {
+    } else if (medioEnvioNormalizado && (
+      medioEnvioNormalizado.includes('punto de retiro') || 
+      medioEnvioNormalizado.includes('sucursal') ||
+      medioEnvioNormalizado.includes('andreani') && medioEnvioNormalizado.includes('sucursal')
+    )) {
       contadorSucursales++;
       console.log(`[SUCURSAL ${contadorSucursales}] Agregando pedido:`, baseData['Numero Interno']);
       // Construir dirección completa con TODA la información disponible
@@ -1477,9 +1486,10 @@ export const processVentasOrders = async (csvContent: string): Promise<{
     };
 
     // Determinar si es envío a domicilio o sucursal
-    if (medioEnvio.includes('domicilio')) {
+    const medioEnvioLower = medioEnvio.toLowerCase();
+    if (medioEnvioLower.includes('domicilio') || medioEnvioLower.includes('envio a domicilio')) {
       contadorDomicilios++;
-      console.log(`[DOMICILIO ${contadorDomicilios}] Procesando pedido:`, numeroOrden);
+      console.log(`[DOMICILIO ${contadorDomicilios}] Procesando pedido:`, numeroOrden, '- Medio:', medioEnvio);
       // Procesar envío a domicilio
       const calleNormalizada = direccion.replace(/[áàäâ]/g, 'a')
         .replace(/[éèëê]/g, 'e')
@@ -1595,9 +1605,9 @@ export const processVentasOrders = async (csvContent: string): Promise<{
         'Observaciones\nEj: ': '',
       });
 
-    } else if (medioEnvio.includes('Punto de retiro') || medioEnvio.includes('sucursal')) {
+    } else if (medioEnvioLower.includes('punto de retiro') || medioEnvioLower.includes('sucursal')) {
       contadorSucursales++;
-      console.log(`[SUCURSAL ${contadorSucursales}] Procesando pedido:`, numeroOrden);
+      console.log(`[SUCURSAL ${contadorSucursales}] Procesando pedido:`, numeroOrden, '- Medio:', medioEnvio);
       // Procesar envío a sucursal
       const direccionCompleta = `${direccion} ${numero} ${piso} ${localidad} ${ciudad}`.trim();
       const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales);
