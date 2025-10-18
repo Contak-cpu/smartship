@@ -74,7 +74,6 @@ const RentabilidadCalculator = () => {
 
   // Cargar historial desde localStorage al iniciar (específico por usuario)
   useEffect(() => {
-    const { username } = useAuth();
     const storageKey = username ? `rentabilidad_historial_${username}` : 'rentabilidad_historial';
     const savedHistorial = localStorage.getItem(storageKey);
     if (savedHistorial) {
@@ -84,16 +83,15 @@ const RentabilidadCalculator = () => {
         console.error('Error al cargar historial:', e);
       }
     }
-  }, []);
+  }, [username]);
 
   // Guardar historial en localStorage cuando cambie (específico por usuario)
   useEffect(() => {
-    const { username } = useAuth();
     const storageKey = username ? `rentabilidad_historial_${username}` : 'rentabilidad_historial';
     if (historial.length > 0) {
       localStorage.setItem(storageKey, JSON.stringify(historial));
     }
-  }, [historial]);
+  }, [historial, username]);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     // Permitir solo números y punto decimal
@@ -225,7 +223,6 @@ const RentabilidadCalculator = () => {
 
   const limpiarHistorial = () => {
     if (window.confirm('¿Estás seguro de que deseas eliminar todo el historial?')) {
-      const { username } = useAuth();
       const storageKey = username ? `rentabilidad_historial_${username}` : 'rentabilidad_historial';
       setHistorial([]);
       localStorage.removeItem(storageKey);

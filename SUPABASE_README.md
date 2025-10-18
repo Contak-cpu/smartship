@@ -1,6 +1,6 @@
-# 🚀 Integración de Supabase
+# 🚀 Sistema de Autenticación con Supabase
 
-Este documento describe la integración de Supabase en el proyecto FACIL.UNO para autenticación y gestión de base de datos.
+Este documento describe el sistema de autenticación optimizado de FACIL.UNO que utiliza metadata de Supabase Auth para gestión de usuarios y niveles de acceso.
 
 ## 📦 Instalación
 
@@ -28,55 +28,38 @@ VITE_SUPABASE_ANON_KEY=tu_clave_anon_aqui
 ```
 lib/
   └── supabase.ts              # Cliente de Supabase configurado
-contexts/
-  ├── AuthContext.tsx          # Context de autenticación local (actual)
-  └── SupabaseAuthContext.tsx  # Context de autenticación con Supabase (nuevo)
 hooks/
-  ├── useAuth.ts               # Hook para autenticación local (actual)
-  └── useSupabaseAuth.ts       # Hook para autenticación con Supabase (nuevo)
+  └── useAuth.ts               # Hook principal de autenticación
 components/
-  └── SupabaseTest.tsx         # Componente de prueba de conexión
+  └── debug/
+      └── AuthDebugSimple.tsx  # Componente de debug (opcional)
 docs/
-  └── SUPABASE_SETUP.md        # Documentación detallada
+  ├── SUPABASE_SETUP.md        # Setup inicial
+  ├── SUPABASE_TABLES.md       # Estructura de tablas
+  └── MIGRACION_COMPLETA_USUARIOS.sql # Script de migración
 ```
 
-## 🎯 Uso Básico
+## 🎯 Sistema de Autenticación
 
-### Cliente de Supabase
+### Hook Principal: useAuth
 
-```typescript
-import { supabase } from '../lib/supabase';
-
-// Consultar datos
-const { data, error } = await supabase
-  .from('tabla')
-  .select('*');
-
-// Insertar datos
-const { data, error } = await supabase
-  .from('tabla')
-  .insert({ columna: 'valor' });
-
-// Actualizar datos
-const { data, error } = await supabase
-  .from('tabla')
-  .update({ columna: 'nuevo_valor' })
-  .eq('id', 123);
-
-// Eliminar datos
-const { data, error } = await supabase
-  .from('tabla')
-  .delete()
-  .eq('id', 123);
-```
-
-### Autenticación con Supabase
+El sistema utiliza un solo hook optimizado que maneja autenticación y niveles de usuario:
 
 ```typescript
-import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
+import { useAuth } from '../hooks/useAuth';
 
 function MiComponente() {
-  const { user, signIn, signOut } = useSupabaseAuth();
+  const { 
+    user, 
+    userProfile, 
+    isLoading, 
+    isAuthenticated, 
+    userLevel, 
+    username,
+    signIn, 
+    signOut,
+    hasAccess 
+  } = useAuth();
 
   const handleLogin = async () => {
     const { error } = await signIn('email@example.com', 'password');
@@ -87,10 +70,21 @@ function MiComponente() {
     await signOut();
   };
 
+  // Verificar acceso por nivel
+  const canAccessAdmin = hasAccess(999); // Nivel Dios
+  const canAccessPro = hasAccess(3);     // Nivel Pro
+
   return (
     <div>
-      {user ? (
-        <p>Bienvenido {user.email}</p>
+      {isLoading ? (
+        <p>Cargando...</p>
+      ) : isAuthenticated ? (
+        <div>
+          <p>Bienvenido {username}</p>
+          <p>Nivel: {userLevel}</p>
+          {canAccessAdmin && <p>🔑 Acceso de Administrador</p>}
+          <button onClick={handleLogout}>Cerrar Sesión</button>
+        </div>
       ) : (
         <button onClick={handleLogin}>Iniciar Sesión</button>
       )}
@@ -99,28 +93,70 @@ function MiComponente() {
 }
 ```
 
-## 🔄 Migración del Sistema Actual
+### Niveles de Usuario
 
-El proyecto actualmente usa autenticación local con `localStorage`. Para migrar a Supabase:
+El sistema maneja los siguientes niveles:
 
-### Opción 1: Reemplazar completamente (Recomendado)
+- **0**: Básico (acceso a calculadoras)
+- **1**: Intermedio (acceso a breakeven/ROAS)
+- **2**: Pro (acceso a SmartShip e historial)
+- **3**: Pro+ (acceso completo)
+- **999**: Dios (acceso de administración)
 
-1. En `App.tsx`, reemplazar `AuthProvider` por `SupabaseAuthProvider`
-2. Actualizar los componentes para usar `useSupabaseAuth` en lugar de `useAuth`
-3. Configurar políticas de seguridad (RLS) en Supabase
+## 🔄 Migración de Usuarios
 
-### Opción 2: Mantener ambos sistemas
+### Sistema de Metadata
 
-- Usar `useAuth` para autenticación local (actual)
-- Usar `useSupabaseAuth` para funciones que requieran backend
-- Sincronizar ambos sistemas cuando sea necesario
+El sistema utiliza el metadata de Supabase Auth para almacenar información de usuario:
 
-## 🧪 Prueba de Conexión
+```json
+{
+  "username": "erick",
+  "nivel": 999,
+  "email": "erick@gmail.com",
+  "email_verified": true
+}
+```
 
-El componente `<SupabaseTest />` está disponible en el Dashboard y muestra:
+### Migrar Usuarios Existentes
+
+Para migrar usuarios existentes, ejecuta el script SQL:
+
+```sql
+-- Ver docs/MIGRACION_COMPLETA_USUARIOS.sql
+UPDATE auth.users 
+SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || 
+    jsonb_build_object(
+        'username', up.username,
+        'nivel', up.nivel,
+        'email', up.email
+    )
+FROM user_profiles up 
+WHERE auth.users.id = up.id;
+```
+
+### Sincronización Automática
+
+El sistema incluye un trigger que sincroniza automáticamente cambios en `user_profiles` con el metadata de `auth.users`.
+
+## 🧪 Debug y Diagnóstico
+
+### Componente de Debug
+
+El componente `<AuthDebugSimple />` está disponible para diagnóstico:
+
+```typescript
+import AuthDebugSimple from '../components/debug/AuthDebugSimple';
+
+// En cualquier componente
+<AuthDebugSimple />
+```
+
+Muestra:
 - ✅ Estado de conexión con Supabase
 - 🔑 Verificación de variables de entorno
-- 📊 Diagnóstico de problemas
+- 👤 Información del usuario actual
+- 📊 Metadata del usuario
 
 ## 🔐 Seguridad
 

@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { levelService } from '../../services/levelService';
 import LockedOverlay from '../common/LockedOverlay';
 
 interface LevelProtectedRouteProps {
@@ -9,21 +10,30 @@ interface LevelProtectedRouteProps {
 }
 
 const LevelProtectedRoute: React.FC<LevelProtectedRouteProps> = ({ children, requiredLevel, sectionName }) => {
-  const { isAuthenticated, hasAccess } = useAuth();
+  const { isAuthenticated, hasAccess, isLoading } = useAuth();
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Verificando acceso...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   if (!hasAccess(requiredLevel)) {
-    // Mostrar el overlay de contenido bloqueado con el contenido difuminado de fondo
     return (
       <div className="relative">
-        {/* Contenido difuminado de fondo */}
         <div className="blur-md pointer-events-none select-none opacity-40">
           {children}
         </div>
-        {/* Overlay de candado */}
         <LockedOverlay requiredLevel={requiredLevel} sectionName={sectionName} />
       </div>
     );

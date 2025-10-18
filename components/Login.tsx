@@ -32,8 +32,12 @@ export const Login: React.FC<LoginProps> = ({ onGoBack }) => {
         setError('Email o contraseña incorrectos');
         console.error('Error de autenticación:', signInError);
       } else {
-        // Redireccionar al dashboard
-        navigate('/', { replace: true });
+        console.log('✅ Login exitoso, redirigiendo al dashboard...');
+        // Esperar un momento para que se actualice el estado de autenticación
+        // Usar un timeout más largo para asegurar que el estado se actualice
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 500);
       }
     } catch (err) {
       console.error('Error en login:', err);

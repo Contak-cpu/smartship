@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { levelService, LEVEL_CONFIG, getLevelName, getLevelColor } from '../../services/levelService';
+import AuthStateMonitor from '../debug/AuthStateMonitor';
 
 interface MenuItem {
   id: string;
@@ -15,15 +17,70 @@ interface DashboardLayoutProps {
   children?: React.ReactNode;
 }
 
+// Función para obtener el ícono de cada sección
+const getIconForSection = (sectionKey: string) => {
+  const icons: Record<string, React.ReactNode> = {
+    'rentabilidad': (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    'breakeven-roas': (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+    'smartship': (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+      </svg>
+    ),
+    'pdf-generator': (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+    'historial': (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    'informacion': (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+    'admin': (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+    )
+  };
+  
+  return icons[sectionKey] || (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+};
+
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { username, userLevel, logout, hasAccess } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
+  const handleLogout = async () => {
+    try {
+      console.log('🔄 [DashboardLayout] Iniciando proceso de logout...');
+      await logout();
+      console.log('✅ [DashboardLayout] Logout completado, navegando a login...');
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('❌ [DashboardLayout] Error en logout:', error);
+      // Forzar navegación incluso si hay error
+      navigate('/login', { replace: true });
+    }
   };
 
   const allMenuItems: MenuItem[] = [
@@ -122,7 +179,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   const handleNavigation = (path: string) => {
-    // Navegación inmediata
     navigate(path, { replace: false });
     // En móvil, cerrar el sidebar después de navegar
     if (window.innerWidth < 768) {
@@ -154,9 +210,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <div className="p-6 border-b border-gray-700 flex items-center justify-between">
           {isSidebarOpen && (
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+              onClick={() => {
+                console.log('🔄 [DashboardLayout] Navegando a / desde sidebar');
                 handleNavigation('/');
               }}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
@@ -186,7 +241,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </button>
           )}
           <button
-            onClick={toggleSidebar}
+            onClick={() => {
+              console.log('🔄 [DashboardLayout] Botón toggle sidebar clickeado');
+              toggleSidebar();
+            }}
             className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700 rounded-lg"
           >
             <svg
@@ -224,7 +282,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{username}</p>
                 <p className="text-xs text-gray-400">
-                  Nivel {userLevel} {userLevel === 999 ? '👑 (Dios)' : userLevel === 3 ? '(Admin)' : userLevel === 2 ? '(Avanzado)' : '(Básico)'}
+                  Nivel {userLevel} {getLevelName(userLevel)} {userLevel === 999 ? '👑' : ''}
                 </p>
               </div>
             )}
@@ -308,7 +366,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {/* Footer con botón de logout */}
         <div className="p-4 border-t border-gray-700">
           <button
-            onClick={handleLogout}
+            onClick={() => {
+              console.log('🔄 [DashboardLayout] Botón logout clickeado');
+              handleLogout();
+            }}
             className={`
               w-full flex items-center gap-3 p-3 rounded-lg 
               bg-red-600 hover:bg-red-700 text-white 
@@ -338,7 +399,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {/* Botón flotante para abrir sidebar en móvil */}
       {!isSidebarOpen && (
         <button
-          onClick={() => setIsSidebarOpen(true)}
+          onClick={() => {
+            console.log('🔄 [DashboardLayout] Abriendo sidebar móvil');
+            setIsSidebarOpen(true);
+          }}
           className="fixed bottom-6 left-6 md:hidden bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg z-10 transition-colors"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -356,6 +420,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       <main className="flex-1 overflow-auto">
         {children}
       </main>
+      
+      {/* Monitor de debugging - solo en desarrollo */}
+      <AuthStateMonitor />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { useAuth } from '../hooks/useAuth';
+import { levelService, LEVEL_CONFIG, getLevelName, getLevelColor } from '../services/levelService';
 
 interface FeatureCard {
   id: string;
@@ -14,9 +15,56 @@ interface FeatureCard {
   requiredLevel: number;
 }
 
+// Función para obtener el ícono de cada feature
+const getIconForFeature = (featureKey: string) => {
+  const icons: Record<string, React.ReactNode> = {
+    'rentabilidad': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    'breakeven-roas': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+    'smartship': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+      </svg>
+    ),
+    'pdf-generator': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+    'historial': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    'informacion': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+    'admin': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+    )
+  };
+  
+  return icons[featureKey] || (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+};
+
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { hasAccess, username, userLevel } = useAuth();
+  const { username, userLevel, hasAccess } = useAuth();
 
   const allFeatures: FeatureCard[] = [
     // Panel Admin - Solo para nivel Dios (999)
@@ -192,7 +240,11 @@ const DashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {features.map((feature) => {
               const colors = getColorClasses(feature.color);
-              const isLocked = !hasAccess(feature.requiredLevel);
+              const accessResult = hasAccess(feature.requiredLevel);
+              const isLocked = !accessResult;
+              
+              console.log(`🎯 [DashboardPage] ${feature.id}: accessResult=${accessResult}, isLocked=${isLocked}`);
+              
               
               return (
                 <div
@@ -240,10 +292,15 @@ const DashboardPage: React.FC = () => {
                   </p>
 
                   <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      navigate(feature.path);
+                    type="button"
+                    onClick={() => {
+                      console.log(`🖱️  [DashboardPage] Click en ${feature.id}: isLocked=${isLocked}`);
+                      if (!isLocked) {
+                        console.log(`🚀 [DashboardPage] Navegando a ${feature.path}`);
+                        navigate(feature.path);
+                      } else {
+                        console.log(`❌ [DashboardPage] Botón bloqueado para ${feature.id}`);
+                      }
                     }}
                     className={`w-full font-bold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 ${
                       isLocked
@@ -272,6 +329,8 @@ const DashboardPage: React.FC = () => {
             })}
           </div>
 
+
+
           {/* Info adicional */}
           <div className="mt-10 bg-gradient-to-br from-gray-800/80 to-gray-800/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 shadow-xl">
             <div className="flex items-start gap-5">
@@ -297,7 +356,7 @@ const DashboardPage: React.FC = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                   <div className={`${userLevel === 999 ? 'bg-red-900/20 border-red-500/30' : 'bg-blue-900/20 border-blue-500/30'} border rounded-lg p-3`}>
                     <p className={`${userLevel === 999 ? 'text-red-400' : 'text-blue-400'} font-bold`}>Tu Nivel</p>
-                    <p className="text-white text-lg font-bold">{userLevel === 999 ? '👑 Dios' : userLevel === 3 ? 'Pro' : userLevel === 2 ? 'Basic' : userLevel === 1 ? 'Starter' : 'Invitado'}</p>
+                    <p className="text-white text-lg font-bold">{getLevelName(userLevel)} {userLevel === 999 ? '👑' : ''}</p>
                   </div>
                   <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
                     <p className="text-blue-400 font-bold">Herramientas</p>

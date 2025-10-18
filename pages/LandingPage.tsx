@@ -6,6 +6,7 @@ import { BasicPlanPage } from '../components/BasicPlanPage';
 import { IntermediatePlanPage } from '../components/IntermediatePlanPage';
 import { ProPlanPage } from '../components/ProPlanPage';
 import { useAuth } from '../hooks/useAuth';
+import AuthDebugSimple from '../components/debug/AuthDebugSimple';
 
 const LandingPage = () => {
   const { login } = useAuth();
@@ -44,7 +45,14 @@ const LandingPage = () => {
     );
   }
 
-  return <Login onLogin={handleLogin} onGoBack={() => setShowPricing(true)} />;
+  return (
+    <div>
+      <Login onLogin={handleLogin} onGoBack={() => setShowPricing(true)} />
+      <div className="mt-4">
+        <AuthDebugSimple />
+      </div>
+    </div>
+  );
 };
 
 export default LandingPage;

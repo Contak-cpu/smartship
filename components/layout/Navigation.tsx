@@ -87,7 +87,10 @@ const Navigation = () => {
       {/* Panel Admin - Solo para usuarios Dios */}
       {isDios && location.pathname !== '/admin' && (
         <button
-          onClick={() => navigate('/admin')}
+          onClick={() => {
+            console.log('🔄 [Navigation] Navegando a admin');
+            navigate('/admin');
+          }}
           className="bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 flex items-center shadow-lg border border-red-500/50"
         >
           <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,7 +108,10 @@ const Navigation = () => {
         return (
           <button
             key={link.path}
-            onClick={() => navigate(link.path)}
+            onClick={() => {
+              console.log('🔄 [Navigation] Navegando a:', link.path);
+              navigate(link.path);
+            }}
             className={`${link.color || 'bg-gray-600 hover:bg-gray-700'} text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300 flex items-center`}
           >
             {link.icon}
@@ -115,7 +121,10 @@ const Navigation = () => {
       })}
       
       <button
-        onClick={logout}
+        onClick={() => {
+          console.log('🔄 [Navigation] Cerrando sesión');
+          logout();
+        }}
         className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300 flex items-center"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

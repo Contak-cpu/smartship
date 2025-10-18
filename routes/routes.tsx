@@ -1,4 +1,4 @@
-import { RouteObject } from 'react-router-dom';
+import { RouteObject, useNavigate } from 'react-router-dom';
 import ProtectedRoute from '../components/routing/ProtectedRoute';
 import LevelProtectedRoute from '../components/routing/LevelProtectedRoute';
 import PublicRoute from '../components/routing/PublicRoute';
@@ -11,15 +11,40 @@ import BreakevenROASPage from '../pages/BreakevenROASPage';
 import HistorialPage from '../pages/HistorialPage';
 import InformacionPage from '../pages/InformacionPage';
 import AdminPanelPage from '../pages/AdminPanelPage';
+import { Login } from '../components/Login';
+
+// Componente para página 404 con navegación correcta
+const NotFoundPage = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-6xl font-bold text-white mb-4">404</h1>
+        <p className="text-gray-400 mb-6">Página no encontrada</p>
+        <button
+          onClick={() => navigate('/')}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors inline-block"
+        >
+          Volver al inicio
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // Configuración centralizada de rutas
 // Para agregar nuevas rutas, simplemente añade un nuevo objeto a este array
 export const routes: RouteObject[] = [
   {
+    path: '/landing',
+    element: <LandingPage />,
+  },
+  {
     path: '/login',
     element: (
       <PublicRoute>
-        <LandingPage />
+        <Login />
       </PublicRoute>
     ),
   },
@@ -101,20 +126,7 @@ export const routes: RouteObject[] = [
   // Ruta 404 - debe estar al final
   {
     path: '*',
-    element: (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold text-white mb-4">404</h1>
-          <p className="text-gray-400 mb-6">Página no encontrada</p>
-          <a
-            href="/"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors inline-block"
-          >
-            Volver al inicio
-          </a>
-        </div>
-      </div>
-    ),
+    element: <NotFoundPage />,
   },
 ];
 
