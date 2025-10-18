@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { levelService, LEVEL_CONFIG, getLevelName, getLevelColor } from '../../services/levelService';
-import AuthStateMonitor from '../debug/AuthStateMonitor';
 
 interface MenuItem {
   id: string;
@@ -420,9 +419,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       <main className="flex-1 overflow-auto">
         {children}
       </main>
-      
-      {/* Monitor de debugging - solo en desarrollo */}
-      <AuthStateMonitor />
     </div>
   );
 };
