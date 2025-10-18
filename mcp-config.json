@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "afipsdk": {
+      "command": "node",
+      "args": ["./mcp-afip-server.js"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
