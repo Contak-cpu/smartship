@@ -2,6 +2,7 @@ import { RouteObject, useNavigate } from 'react-router-dom';
 import ProtectedRoute from '../components/routing/ProtectedRoute';
 import LevelProtectedRoute from '../components/routing/LevelProtectedRoute';
 import PublicRoute from '../components/routing/PublicRoute';
+import SmartRedirect from '../components/routing/SmartRedirect';
 import HomePage from '../pages/HomePage';
 import PDFGeneratorPage from '../pages/PDFGeneratorPage';
 import LandingPage from '../pages/LandingPage';
@@ -73,14 +74,12 @@ export const routes: RouteObject[] = [
   {
     path: '/',
     element: (
-      <PublicRoute>
-        <PricingPage 
-          onGoToLogin={() => window.location.href = '/login'}
-          onShowBasicPlan={() => {}}
-          onShowIntermediatePlan={() => {}}
-          onShowProPlan={() => {}}
-        />
-      </PublicRoute>
+      <SmartRedirect 
+        onGoToLogin={() => window.location.href = '/login'}
+        onShowBasicPlan={() => {}}
+        onShowIntermediatePlan={() => {}}
+        onShowProPlan={() => {}}
+      />
     ),
   },
   {
