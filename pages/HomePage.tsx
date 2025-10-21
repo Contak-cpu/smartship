@@ -200,11 +200,21 @@ const HomePage: React.FC = () => {
         
         // Guardar en historial
         try {
+          console.log('🔄 [HomePage] Iniciando guardado en historial...');
           const datosDomicilio = csvToArray(processedData.domicilioCSV);
           const datosSucursal = csvToArray(processedData.sucursalCSV);
-          await guardarEnHistorialSmartShip(selectedFile.name, datosDomicilio, datosSucursal, username);
+          console.log('📊 [HomePage] Datos procesados:', {
+            domicilio: datosDomicilio.length,
+            sucursal: datosSucursal.length,
+            username,
+            userId,
+            fileName: selectedFile.name
+          });
+          
+          await guardarEnHistorialSmartShip(selectedFile.name, datosDomicilio, datosSucursal, username, userId);
+          console.log('✅ [HomePage] Guardado en historial completado');
         } catch (historialError) {
-          console.error('Error al guardar en historial:', historialError);
+          console.error('❌ [HomePage] Error al guardar en historial:', historialError);
           // No interrumpir el flujo si falla el guardado del historial
         }
 

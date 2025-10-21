@@ -139,6 +139,16 @@ export const Login: React.FC<LoginProps> = ({ onGoBack }) => {
           </button>
         </form>
 
+        {/* Botón para ver precios */}
+        <div className="text-center">
+          <button
+            onClick={onGoBack}
+            className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium underline"
+          >
+            Ver planes y precios
+          </button>
+        </div>
+
         {/* Info de acceso temporal (eliminar en producción) */}
         <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 text-xs text-gray-400">
           <p className="text-center">

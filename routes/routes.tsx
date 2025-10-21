@@ -12,6 +12,7 @@ import HistorialPage from '../pages/HistorialPage';
 import InformacionPage from '../pages/InformacionPage';
 import AdminPanelPage from '../pages/AdminPanelPage';
 import { Login } from '../components/Login';
+import { PricingPage } from '../components/PricingPage';
 
 // Componente para página 404 con navegación correcta
 const NotFoundPage = () => {
@@ -22,12 +23,20 @@ const NotFoundPage = () => {
       <div className="text-center">
         <h1 className="text-6xl font-bold text-white mb-4">404</h1>
         <p className="text-gray-400 mb-6">Página no encontrada</p>
-        <button
-          onClick={() => navigate('/')}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors inline-block"
-        >
-          Volver al inicio
-        </button>
+        <div className="space-y-3">
+          <button
+            onClick={() => navigate('/')}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors inline-block mr-3"
+          >
+            Volver al inicio
+          </button>
+          <button
+            onClick={() => navigate('/precios')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors inline-block"
+          >
+            Ver planes y precios
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -41,10 +50,23 @@ export const routes: RouteObject[] = [
     element: <LandingPage />,
   },
   {
+    path: '/precios',
+    element: (
+      <PublicRoute>
+        <PricingPage 
+          onGoToLogin={() => window.location.href = '/login'}
+          onShowBasicPlan={() => {}}
+          onShowIntermediatePlan={() => {}}
+          onShowProPlan={() => {}}
+        />
+      </PublicRoute>
+    ),
+  },
+  {
     path: '/login',
     element: (
       <PublicRoute>
-        <Login />
+        <Login onGoBack={() => window.location.href = '/precios'} />
       </PublicRoute>
     ),
   },
@@ -80,14 +102,15 @@ export const routes: RouteObject[] = [
       </LevelProtectedRoute>
     ),
   },
-  {
-    path: '/breakeven-roas',
-    element: (
-      <LevelProtectedRoute requiredLevel={1} sectionName="Calcula tu Breakeven y ROAS">
-        <BreakevenROASPage />
-      </LevelProtectedRoute>
-    ),
-  },
+  // TEMPORALMENTE OCULTO - Breakeven & ROAS
+  // {
+  //   path: '/breakeven-roas',
+  //   element: (
+  //     <LevelProtectedRoute requiredLevel={1} sectionName="Calcula tu Breakeven y ROAS">
+  //       <BreakevenROASPage />
+  //     </LevelProtectedRoute>
+  //   ),
+  // },
   {
     path: '/historial',
     element: (
@@ -96,22 +119,24 @@ export const routes: RouteObject[] = [
       </LevelProtectedRoute>
     ),
   },
-  {
-    path: '/informacion',
-    element: (
-      <LevelProtectedRoute requiredLevel={2} sectionName="Información y Estadísticas">
-        <InformacionPage />
-      </LevelProtectedRoute>
-    ),
-  },
-  {
-    path: '/admin',
-    element: (
-      <LevelProtectedRoute requiredLevel={999} sectionName="Panel de Administración Dios">
-        <AdminPanelPage />
-      </LevelProtectedRoute>
-    ),
-  },
+  // TEMPORALMENTE OCULTO - Información y Estadísticas
+  // {
+  //   path: '/informacion',
+  //   element: (
+  //     <LevelProtectedRoute requiredLevel={2} sectionName="Información y Estadísticas">
+  //       <InformacionPage />
+  //     </LevelProtectedRoute>
+  //   ),
+  // },
+  // TEMPORALMENTE OCULTO - Panel de administración
+  // {
+  //   path: '/admin',
+  //   element: (
+  //     <LevelProtectedRoute requiredLevel={999} sectionName="Panel de Administración Dios">
+  //       <AdminPanelPage />
+  //     </LevelProtectedRoute>
+  //   ),
+  // },
   // AGREGAR NUEVAS RUTAS AQUÍ
   // Ejemplo de cómo agregar una nueva ruta protegida:
   // {

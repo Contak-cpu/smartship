@@ -41,43 +41,55 @@ export const guardarEnHistorialSmartShip = async (
   nombreArchivo: string,
   datosDomicilio: any[],
   datosSucursal: any[],
-  username: string
+  username: string,
+  userId?: string
 ): Promise<void> => {
   try {
     const now = new Date();
     const nuevoItem = {
-      nombreArchivo,
-      totalRegistros: datosDomicilio.length + datosSucursal.length,
-      domicilioData: JSON.stringify({
+      nombrearchivo: nombreArchivo, // Usar nombre en minúsculas para coincidir con la BD
+      totalregistros: datosDomicilio.length + datosSucursal.length, // Usar nombre en minúsculas
+      domiciliodata: JSON.stringify({
         cantidad: datosDomicilio.length,
         datos: datosDomicilio,
       }),
-      sucursalData: JSON.stringify({
+      sucursaldata: JSON.stringify({
         cantidad: datosSucursal.length,
         datos: datosSucursal,
       }),
       username,
       fecha: now.toLocaleDateString('es-AR'),
       hora: now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      user_id: userId, // Agregar user_id para las políticas RLS
     };
+
+    console.log('🔄 [HistorialStorage] Intentando guardar en Supabase:', {
+      nombreArchivo,
+      totalRegistros: nuevoItem.totalregistros,
+      domicilio: datosDomicilio.length,
+      sucursal: datosSucursal.length,
+      username,
+      userId
+    });
 
     const { error } = await supabase
       .from('historial_smartship')
       .insert([nuevoItem]);
 
     if (error) {
-      console.error('Error al guardar en Supabase:', error);
+      console.error('❌ [HistorialStorage] Error al guardar en Supabase:', error);
       // Fallback a localStorage si falla Supabase
       const storageKey = `historial_smartship_${username}`;
       const historialStr = localStorage.getItem(storageKey);
       const historial = historialStr ? JSON.parse(historialStr) : [];
       historial.unshift({ id: `smartship_${now.getTime()}`, ...nuevoItem });
       localStorage.setItem(storageKey, JSON.stringify(historial.slice(0, 50)));
+      console.log('✅ [HistorialStorage] Guardado en localStorage como fallback');
     } else {
-      console.log(`Archivo guardado en Supabase para ${username}:`, nombreArchivo);
+      console.log('✅ [HistorialStorage] Archivo guardado en Supabase para', username, ':', nombreArchivo);
     }
   } catch (error) {
-    console.error('Error al guardar en historial SmartShip:', error);
+    console.error('❌ [HistorialStorage] Error al guardar en historial SmartShip:', error);
   }
 };
 
@@ -92,36 +104,46 @@ export const guardarEnHistorialSKU = async (
   nombreArchivo: string,
   cantidadRegistros: number,
   pdfBase64: string,
-  username: string
+  username: string,
+  userId?: string
 ): Promise<void> => {
   try {
     const now = new Date();
     const nuevoItem = {
-      nombreArchivo,
-      cantidadRegistros,
-      pdfData: pdfBase64,
+      nombrearchivo: nombreArchivo, // Usar nombre en minúsculas para coincidir con la BD
+      cantidadregistros: cantidadRegistros, // Usar nombre en minúsculas
+      pdfdata: pdfBase64, // Usar nombre en minúsculas
       username,
       fecha: now.toLocaleDateString('es-AR'),
       hora: now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      user_id: userId, // Agregar user_id para las políticas RLS
     };
+
+    console.log('🔄 [HistorialStorage] Intentando guardar PDF en Supabase:', {
+      nombreArchivo,
+      cantidadRegistros,
+      username,
+      userId
+    });
 
     const { error } = await supabase
       .from('historial_sku')
       .insert([nuevoItem]);
 
     if (error) {
-      console.error('Error al guardar PDF en Supabase:', error);
+      console.error('❌ [HistorialStorage] Error al guardar PDF en Supabase:', error);
       // Fallback a localStorage si falla Supabase
       const storageKey = `historial_sku_${username}`;
       const historialStr = localStorage.getItem(storageKey);
       const historial = historialStr ? JSON.parse(historialStr) : [];
       historial.unshift({ id: `sku_${now.getTime()}`, ...nuevoItem });
       localStorage.setItem(storageKey, JSON.stringify(historial.slice(0, 20)));
+      console.log('✅ [HistorialStorage] PDF guardado en localStorage como fallback');
     } else {
-      console.log(`PDF guardado en Supabase para ${username}:`, nombreArchivo);
+      console.log('✅ [HistorialStorage] PDF guardado en Supabase para', username, ':', nombreArchivo);
     }
   } catch (error) {
-    console.error('Error al guardar en historial SKU:', error);
+    console.error('❌ [HistorialStorage] Error al guardar en historial SKU:', error);
   }
 };
 
@@ -152,10 +174,10 @@ export const obtenerHistorialSmartShip = async (username: string): Promise<Histo
       id: item.id.toString(),
       fecha: item.fecha,
       hora: item.hora,
-      nombreArchivo: item.nombreArchivo,
-      totalRegistros: item.totalRegistros,
-      domicilio: JSON.parse(item.domicilioData),
-      sucursal: JSON.parse(item.sucursalData),
+      nombreArchivo: item.nombrearchivo, // Mapear desde minúsculas a camelCase
+      totalRegistros: item.totalregistros, // Mapear desde minúsculas a camelCase
+      domicilio: JSON.parse(item.domiciliodata), // Mapear desde minúsculas a camelCase
+      sucursal: JSON.parse(item.sucursaldata), // Mapear desde minúsculas a camelCase
     }));
   } catch (error) {
     console.error('Error al obtener historial SmartShip:', error);
@@ -190,9 +212,9 @@ export const obtenerHistorialSKU = async (username: string): Promise<HistorialSK
       id: item.id.toString(),
       fecha: item.fecha,
       hora: item.hora,
-      nombreArchivo: item.nombreArchivo,
-      cantidadRegistros: item.cantidadRegistros,
-      pdfData: item.pdfData,
+      nombreArchivo: item.nombrearchivo, // Mapear desde minúsculas a camelCase
+      cantidadRegistros: item.cantidadregistros, // Mapear desde minúsculas a camelCase
+      pdfData: item.pdfdata, // Mapear desde minúsculas a camelCase
     }));
   } catch (error) {
     console.error('Error al obtener historial SKU:', error);

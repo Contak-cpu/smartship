@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import * as ExcelJS from 'exceljs';
+import { obtenerHistorialSmartShip, obtenerHistorialSKU, HistorialSmartShip as HistorialSmartShipType, HistorialSKU as HistorialSKUType } from '../src/utils/historialStorage';
+import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 
 interface HistorialItem {
   id: string;
@@ -354,28 +357,76 @@ const HistorialPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('smartship');
   const [historialSmartShip, setHistorialSmartShip] = useState<HistorialSmartShip[]>([]);
   const [historialSKU, setHistorialSKU] = useState<HistorialSKU[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const { username, isAuthenticated } = useAuth();
 
-  // Cargar historial desde localStorage al iniciar
+  // Cargar historial desde Supabase/localStorage al iniciar
   useEffect(() => {
-    const loadHistorial = () => {
+    const loadHistorial = async () => {
+      // Solo cargar si hay usuario autenticado y no se ha cargado antes
+      if (!username || !isAuthenticated || hasLoaded) {
+        if (!isAuthenticated) {
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
-        const smartshipData = localStorage.getItem('historial_smartship');
-        const skuData = localStorage.getItem('historial_sku');
+        setLoading(true);
+        console.log('🔄 [HistorialPage] Cargando historial para usuario:', username);
         
-        if (smartshipData) {
-          setHistorialSmartShip(JSON.parse(smartshipData));
-        }
+        const [smartshipData, skuData] = await Promise.all([
+          obtenerHistorialSmartShip(username),
+          obtenerHistorialSKU(username)
+        ]);
         
-        if (skuData) {
-          setHistorialSKU(JSON.parse(skuData));
-        }
+        console.log('✅ [HistorialPage] Historial cargado:', {
+          smartship: smartshipData.length,
+          sku: skuData.length
+        });
+        
+        setHistorialSmartShip(smartshipData);
+        setHistorialSKU(skuData);
+        setHasLoaded(true);
       } catch (error) {
-        console.error('Error al cargar historial:', error);
+        console.error('❌ [HistorialPage] Error al cargar historial:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     loadHistorial();
-  }, []);
+  }, [username, isAuthenticated, hasLoaded]);
+
+  // Función para recargar el historial manualmente
+  const recargarHistorial = async () => {
+    if (!username || !isAuthenticated) return;
+    
+    try {
+      setLoading(true);
+      setHasLoaded(false); // Resetear para permitir recarga
+      console.log('🔄 [HistorialPage] Recargando historial manualmente...');
+      
+      const [smartshipData, skuData] = await Promise.all([
+        obtenerHistorialSmartShip(username),
+        obtenerHistorialSKU(username)
+      ]);
+      
+      console.log('✅ [HistorialPage] Historial recargado:', {
+        smartship: smartshipData.length,
+        sku: skuData.length
+      });
+      
+      setHistorialSmartShip(smartshipData);
+      setHistorialSKU(skuData);
+      setHasLoaded(true);
+    } catch (error) {
+      console.error('❌ [HistorialPage] Error al recargar historial:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDescargarExcel = async (item: HistorialSmartShip) => {
     try {
@@ -429,30 +480,112 @@ const HistorialPage: React.FC = () => {
     }
   };
 
-  const handleEliminarSmartShip = (id: string) => {
+  const handleEliminarSmartShip = async (id: string) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este elemento del historial?')) {
-      const nuevoHistorial = historialSmartShip.filter(item => item.id !== id);
-      setHistorialSmartShip(nuevoHistorial);
-      localStorage.setItem('historial_smartship', JSON.stringify(nuevoHistorial));
+      try {
+        // Intentar eliminar de Supabase primero
+        const { error } = await supabase
+          .from('historial_smartship')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          console.warn('No se pudo eliminar de Supabase, eliminando solo del estado local:', error);
+        }
+
+        // Actualizar estado local
+        const nuevoHistorial = historialSmartShip.filter(item => item.id !== id);
+        setHistorialSmartShip(nuevoHistorial);
+        
+        // También actualizar localStorage como fallback
+        if (username) {
+          localStorage.setItem(`historial_smartship_${username}`, JSON.stringify(nuevoHistorial));
+        }
+      } catch (error) {
+        console.error('Error al eliminar elemento:', error);
+        // Fallback: solo actualizar estado local
+        const nuevoHistorial = historialSmartShip.filter(item => item.id !== id);
+        setHistorialSmartShip(nuevoHistorial);
+      }
     }
   };
 
-  const handleEliminarSKU = (id: string) => {
+  const handleEliminarSKU = async (id: string) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este elemento del historial?')) {
-      const nuevoHistorial = historialSKU.filter(item => item.id !== id);
-      setHistorialSKU(nuevoHistorial);
-      localStorage.setItem('historial_sku', JSON.stringify(nuevoHistorial));
+      try {
+        // Intentar eliminar de Supabase primero
+        const { error } = await supabase
+          .from('historial_sku')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          console.warn('No se pudo eliminar de Supabase, eliminando solo del estado local:', error);
+        }
+
+        // Actualizar estado local
+        const nuevoHistorial = historialSKU.filter(item => item.id !== id);
+        setHistorialSKU(nuevoHistorial);
+        
+        // También actualizar localStorage como fallback
+        if (username) {
+          localStorage.setItem(`historial_sku_${username}`, JSON.stringify(nuevoHistorial));
+        }
+      } catch (error) {
+        console.error('Error al eliminar elemento:', error);
+        // Fallback: solo actualizar estado local
+        const nuevoHistorial = historialSKU.filter(item => item.id !== id);
+        setHistorialSKU(nuevoHistorial);
+      }
     }
   };
 
-  const handleLimpiarHistorial = () => {
+  const handleLimpiarHistorial = async () => {
     if (window.confirm(`¿Estás seguro de que deseas eliminar todo el historial de ${activeTab === 'smartship' ? 'SmartShip' : 'SKU en Rótulos'}?`)) {
-      if (activeTab === 'smartship') {
-        setHistorialSmartShip([]);
-        localStorage.removeItem('historial_smartship');
-      } else {
-        setHistorialSKU([]);
-        localStorage.removeItem('historial_sku');
+      try {
+        if (activeTab === 'smartship') {
+          // Intentar eliminar de Supabase
+          if (username) {
+            const { error } = await supabase
+              .from('historial_smartship')
+              .delete()
+              .eq('username', username);
+            
+            if (error) {
+              console.warn('No se pudo limpiar historial de Supabase:', error);
+            }
+          }
+          
+          setHistorialSmartShip([]);
+          if (username) {
+            localStorage.removeItem(`historial_smartship_${username}`);
+          }
+        } else {
+          // Intentar eliminar de Supabase
+          if (username) {
+            const { error } = await supabase
+              .from('historial_sku')
+              .delete()
+              .eq('username', username);
+            
+            if (error) {
+              console.warn('No se pudo limpiar historial de Supabase:', error);
+            }
+          }
+          
+          setHistorialSKU([]);
+          if (username) {
+            localStorage.removeItem(`historial_sku_${username}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error al limpiar historial:', error);
+        // Fallback: solo limpiar estado local
+        if (activeTab === 'smartship') {
+          setHistorialSmartShip([]);
+        } else {
+          setHistorialSKU([]);
+        }
       }
     }
   };
@@ -467,15 +600,32 @@ const HistorialPage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="text-blue-500">
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="text-blue-500">
+                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white">
+                  Historial de Archivos
+                </h1>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white">
-                Historial de Archivos
-              </h1>
+              <button
+                onClick={recargarHistorial}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-300"
+              >
+                <svg 
+                  className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {loading ? 'Cargando...' : 'Recargar'}
+              </button>
             </div>
             <p className="text-gray-400 text-sm sm:text-base">
               Accede a todos tus archivos procesados sin necesidad de volver a cargarlos
@@ -526,10 +676,25 @@ const HistorialPage: React.FC = () => {
 
             {/* Content */}
             <div className="p-6">
-              {/* SmartShip Content */}
-              {activeTab === 'smartship' && (
-                <div className="space-y-4">
-                  {historialSmartShip.length === 0 ? (
+              {loading && !hasLoaded ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-400">Cargando historial...</p>
+                </div>
+              ) : (
+                <>
+                  {/* SmartShip Content */}
+                  {activeTab === 'smartship' && (
+                    <div className="space-y-4">
+                      {loading && hasLoaded && (
+                        <div className="text-center py-2">
+                          <div className="inline-flex items-center gap-2 text-blue-400 text-sm">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+                            Actualizando historial...
+                          </div>
+                        </div>
+                      )}
+                      {historialSmartShip.length === 0 ? (
                     <div className="text-center py-12">
                       <div className="text-gray-500 mb-4">
                         <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -641,6 +806,14 @@ const HistorialPage: React.FC = () => {
               {/* SKU Content */}
               {activeTab === 'sku' && (
                 <div className="space-y-4">
+                  {loading && hasLoaded && (
+                    <div className="text-center py-2">
+                      <div className="inline-flex items-center gap-2 text-blue-400 text-sm">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+                        Actualizando historial...
+                      </div>
+                    </div>
+                  )}
                   {historialSKU.length === 0 ? (
                     <div className="text-center py-12">
                       <div className="text-gray-500 mb-4">
@@ -720,6 +893,8 @@ const HistorialPage: React.FC = () => {
                     </>
                   )}
                 </div>
+              )}
+                </>
               )}
             </div>
           </div>

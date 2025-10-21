@@ -67,26 +67,26 @@ const DashboardPage: React.FC = () => {
   const { username, userLevel, hasAccess } = useAuth();
 
   const allFeatures: FeatureCard[] = [
-    // Panel Admin - Solo para nivel Dios (999)
-    ...(userLevel === 999 ? [{
-      id: 'admin',
-      title: 'Panel de Administración Dios',
-      description: 'Control total del sistema. Gestiona usuarios, asigna niveles, crea nuevas cuentas con autoconfirmación, resetea contraseñas y visualiza estadísticas globales. Solo accesible para usuarios nivel Dios.',
-      path: '/admin',
-      color: 'red',
-      stats: '👑 Nivel Dios',
-      requiredLevel: 999,
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      ),
-    }] : []),
+    // TEMPORALMENTE OCULTO - Panel Admin - Solo para nivel Dios (999)
+    // ...(userLevel === 999 ? [{
+    //   id: 'admin',
+    //   title: 'Panel de Administración Dios',
+    //   description: 'Control total del sistema. Gestiona usuarios, asigna niveles, crea nuevas cuentas con autoconfirmación, resetea contraseñas y visualiza estadísticas globales. Solo accesible para usuarios nivel Dios.',
+    //   path: '/admin',
+    //   color: 'red',
+    //   stats: '👑 Nivel Dios',
+    //   requiredLevel: 999,
+    //   icon: (
+    //     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //       <path
+    //         strokeLinecap="round"
+    //         strokeLinejoin="round"
+    //         strokeWidth={2}
+    //         d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+    //       />
+    //     </svg>
+    //   ),
+    // }] : []),
     {
       id: 'rentabilidad',
       title: 'Calculadora de Rentabilidad',
@@ -106,25 +106,26 @@ const DashboardPage: React.FC = () => {
         </svg>
       ),
     },
-    {
-      id: 'breakeven-roas',
-      title: 'Calcula tu Breakeven y ROAS',
-      description: 'Determina tu punto de equilibrio y ROAS objetivo. Calcula el CPA máximo, comisiones, costos totales y el retorno de inversión necesario en publicidad.',
-      path: '/breakeven-roas',
-      color: 'blue',
-      stats: 'Análisis de Inversión',
-      requiredLevel: 1, // Plan Starter
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
-        </svg>
-      ),
-    },
+    // TEMPORALMENTE OCULTO - Breakeven & ROAS
+    // {
+    //   id: 'breakeven-roas',
+    //   title: 'Calcula tu Breakeven y ROAS',
+    //   description: 'Determina tu punto de equilibrio y ROAS objetivo. Calcula el CPA máximo, comisiones, costos totales y el retorno de inversión necesario en publicidad.',
+    //   path: '/breakeven-roas',
+    //   color: 'blue',
+    //   stats: 'Análisis de Inversión',
+    //   requiredLevel: 1, // Plan Starter
+    //   icon: (
+    //     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //       <path
+    //         strokeLinecap="round"
+    //         strokeLinejoin="round"
+    //         strokeWidth={2}
+    //         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+    //       />
+    //     </svg>
+    //   ),
+    // },
     {
       id: 'smartship',
       title: 'SmartShip',
@@ -182,25 +183,26 @@ const DashboardPage: React.FC = () => {
         </svg>
       ),
     },
-    {
-      id: 'informacion',
-      title: 'Información y Estadísticas',
-      description: 'Panel de control completo con estadísticas de pedidos, clientes recurrentes, stock despachado y análisis de tu operación. Control automático de duplicados y seguimiento de inventario.',
-      path: '/informacion',
-      color: 'blue',
-      stats: 'Análisis Inteligente',
-      requiredLevel: 2,
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
-        </svg>
-      ),
-    },
+    // TEMPORALMENTE OCULTO - Información y Estadísticas
+    // {
+    //   id: 'informacion',
+    //   title: 'Información y Estadísticas',
+    //   description: 'Panel de control completo con estadísticas de pedidos, clientes recurrentes, stock despachado y análisis de tu operación. Control automático de duplicados y seguimiento de inventario.',
+    //   path: '/informacion',
+    //   color: 'blue',
+    //   stats: 'Análisis Inteligente',
+    //   requiredLevel: 2,
+    //   icon: (
+    //     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //       <path
+    //         strokeLinecap="round"
+    //         strokeLinejoin="round"
+    //         strokeWidth={2}
+    //         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+    //       />
+    //     </svg>
+    //   ),
+    // },
   ];
 
   // NO filtrar - mostrar todas pero marcar las bloqueadas
@@ -361,6 +363,15 @@ const DashboardPage: React.FC = () => {
                   <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
                     <p className="text-blue-400 font-bold">Herramientas</p>
                     <p className="text-white text-lg font-bold">{features.filter(f => hasAccess(f.requiredLevel)).length}/{features.length}</p>
+                  </div>
+                  <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
+                    <p className="text-green-400 font-bold">Planes</p>
+                    <button
+                      onClick={() => navigate('/precios')}
+                      className="text-white text-sm font-medium hover:text-green-300 transition-colors underline"
+                    >
+                      Ver planes
+                    </button>
                   </div>
                   <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 col-span-2 sm:col-span-1">
                     <p className="text-blue-400 font-bold">Estado</p>

@@ -140,8 +140,8 @@ const InformacionPage: React.FC = () => {
                     <p className="text-xs text-gray-500 mt-2">Productos despachados</p>
                   </div>
 
-                  {/* Stock Despachado */}
-                  <div className="bg-gradient-to-br from-orange-900/50 to-orange-800/30 rounded-2xl p-6 border border-orange-500/30">
+                  {/* Stock Despachado - OCULTO */}
+                  {/* <div className="bg-gradient-to-br from-orange-900/50 to-orange-800/30 rounded-2xl p-6 border border-orange-500/30">
                     <div className="flex items-center justify-between mb-4">
                       <div className="text-orange-400">
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,7 +152,7 @@ const InformacionPage: React.FC = () => {
                     <h3 className="text-gray-400 text-sm font-medium mb-1">Stock Despachado</h3>
                     <p className="text-3xl font-bold text-white">{formatNumber(estadisticas.stock_total_despachado)}</p>
                     <p className="text-xs text-gray-500 mt-2">Unidades totales</p>
-                  </div>
+                  </div> */}
                 </div>
               )}
 
@@ -219,7 +219,7 @@ const InformacionPage: React.FC = () => {
                   >
                     📦 Pedidos ({pedidos.length})
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => setActiveTab('stock')}
                     className={`flex-1 px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${
                       activeTab === 'stock'
@@ -228,7 +228,7 @@ const InformacionPage: React.FC = () => {
                     }`}
                   >
                     📦 Stock ({stockPorSKU.length})
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => setActiveTab('clientes')}
                     className={`flex-1 px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${
@@ -340,7 +340,8 @@ const InformacionPage: React.FC = () => {
                   )}
 
                   {/* Tab: Stock */}
-                  {activeTab === 'stock' && (
+                  {/* Tab: Stock - OCULTO */}
+                  {/* {activeTab === 'stock' && (
                     <div className="space-y-4">
                       {stockPorSKU.length === 0 ? (
                         <div className="text-center py-12">
@@ -385,7 +386,7 @@ const InformacionPage: React.FC = () => {
                         </>
                       )}
                     </div>
-                  )}
+                  )} */}
 
                   {/* Tab: Clientes */}
                   {activeTab === 'clientes' && (

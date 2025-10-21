@@ -237,11 +237,11 @@ const PDFGenerator = () => {
                   user_id: userId,
                   username,
                   sku: skuPart,
-                  nombreProducto: skuPart,
+                  nombreproducto: skuPart, // Usar nombre en minúsculas para coincidir con la BD
                   cantidad: cantidadNumerica,
-                  numeroPedido: orderNumber || '',
-                  fechaDespacho: hoy,
-                  archivoRotulo: csvFileName || 'documento',
+                  numeropedido: orderNumber || '', // Usar nombre en minúsculas
+                  fechadespacho: hoy, // Usar nombre en minúsculas
+                  archivorotulo: csvFileName || 'documento', // Usar nombre en minúsculas
                 });
               }
             });
@@ -297,7 +297,15 @@ const PDFGenerator = () => {
 
       // Guardar en historial
       try {
-        console.log('Iniciando guardado en historial SKU...');
+        console.log('🔄 [PDFGenerator] Iniciando guardado en historial SKU...');
+        console.log('📊 [PDFGenerator] Datos del PDF:', {
+          nombreArchivo: csvFileName || 'documento',
+          cantidadRegistros: csvData.length - 1,
+          username,
+          userId,
+          pdfSize: pdfBytes.length
+        });
+        
         console.log('Tamaño del PDF:', pdfBytes.length, 'bytes');
         
         // Convertir pdfBytes a base64 en chunks para evitar problemas con PDFs grandes
@@ -316,11 +324,11 @@ const PDFGenerator = () => {
         const nombreArchivo = csvFileName || 'documento';
         const cantidadRegistros = csvData.length - 1; // -1 para no contar el header
         
-        await guardarEnHistorialSKU(nombreArchivo, cantidadRegistros, base64, username);
-        console.log('PDF guardado exitosamente en historial');
+        await guardarEnHistorialSKU(nombreArchivo, cantidadRegistros, base64, username, userId);
+        console.log('✅ [PDFGenerator] PDF guardado exitosamente en historial');
         showMessage('success', `PDF guardado en historial`);
       } catch (historialError) {
-        console.error('Error al guardar en historial:', historialError);
+        console.error('❌ [PDFGenerator] Error al guardar en historial:', historialError);
         if (historialError instanceof Error) {
           console.error('Detalle del error:', historialError.message);
           if (historialError.name === 'QuotaExceededError') {
@@ -328,6 +336,8 @@ const PDFGenerator = () => {
           } else {
             showMessage('error', `No se pudo guardar en historial: ${historialError.message}`);
           }
+        } else {
+          showMessage('error', 'Error desconocido al guardar en historial');
         }
         // No interrumpir el flujo si falla el guardado del historial
       }

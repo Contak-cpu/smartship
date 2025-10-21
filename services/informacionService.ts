@@ -35,11 +35,11 @@ export interface StockDespachado {
   user_id: string;
   username?: string;
   sku: string;
-  nombreProducto?: string;
+  nombreproducto?: string; // Cambiar a minúsculas para coincidir con la BD
   cantidad: number;
-  numeroPedido?: string;
-  fechaDespacho: string;
-  archivoRotulo?: string;
+  numeropedido?: string; // Cambiar a minúsculas para coincidir con la BD
+  fechadespacho: string; // Cambiar a minúsculas para coincidir con la BD
+  archivorotulo?: string; // Cambiar a minúsculas para coincidir con la BD
 }
 
 export interface EstadisticasUsuario {
@@ -180,19 +180,35 @@ export const guardarStockDespachado = async (
   stock: StockDespachado[]
 ): Promise<boolean> => {
   try {
+    console.log('🔄 [InformacionService] Guardando stock despachado:', {
+      cantidad: stock.length,
+      primerItem: stock[0] ? {
+        sku: stock[0].sku,
+        cantidad: stock[0].cantidad,
+        numeropedido: stock[0].numeropedido,
+        fechadespacho: stock[0].fechadespacho
+      } : null
+    });
+
     const { error } = await supabase
       .from('stock_despachado')
       .insert(stock);
 
     if (error) {
-      console.error('Error guardando stock despachado:', error);
+      console.error('❌ [InformacionService] Error guardando stock despachado:', error);
+      console.error('Detalles del error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return false;
     }
 
-    console.log(`Stock despachado guardado: ${stock.length} items`);
+    console.log(`✅ [InformacionService] Stock despachado guardado: ${stock.length} items`);
     return true;
   } catch (error) {
-    console.error('Error en guardarStockDespachado:', error);
+    console.error('❌ [InformacionService] Error en guardarStockDespachado:', error);
     return false;
   }
 };
