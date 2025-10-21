@@ -28,7 +28,7 @@ const NotFoundPage = () => {
             onClick={() => navigate('/')}
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors inline-block mr-3"
           >
-            Volver al inicio
+            Volver a Precios
           </button>
           <button
             onClick={() => navigate('/precios')}
@@ -72,6 +72,19 @@ export const routes: RouteObject[] = [
   },
   {
     path: '/',
+    element: (
+      <PublicRoute>
+        <PricingPage 
+          onGoToLogin={() => window.location.href = '/login'}
+          onShowBasicPlan={() => {}}
+          onShowIntermediatePlan={() => {}}
+          onShowProPlan={() => {}}
+        />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: '/dashboard',
     element: (
       <ProtectedRoute>
         <DashboardPage />

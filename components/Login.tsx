@@ -36,7 +36,7 @@ export const Login: React.FC<LoginProps> = ({ onGoBack }) => {
         // Esperar un momento para que se actualice el estado de autenticación
         // Usar un timeout más largo para asegurar que el estado se actualice
         setTimeout(() => {
-          navigate('/', { replace: true });
+          navigate('/dashboard', { replace: true });
         }, 500);
       }
     } catch (err) {
