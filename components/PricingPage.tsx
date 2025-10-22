@@ -137,11 +137,6 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
               <span className="sm:hidden">Invitado</span>
             </button>
             
-            {/* Nombre centrado */}
-            <h2 className="absolute left-1/2 transform -translate-x-1/2 text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
-              FACIL.UNO
-            </h2>
-            
             {/* Botón Ya tengo un plan */}
             <button
               onClick={onGoToLogin}
@@ -158,7 +153,15 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
       <main className="flex-grow">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24">
           <div className="text-center mb-8 sm:mb-12">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+            {/* Logo arriba del título */}
+            <div className="flex justify-center -mt-16 sm:-mt-20 lg:-mt-24 mb-0">
+              <img 
+                src="/facil-uno.png" 
+                alt="FACIL.UNO Logo" 
+                className="w-96 h-96 sm:w-[28rem] sm:h-[28rem] lg:w-[32rem] lg:h-[32rem] drop-shadow-lg"
+              />
+            </div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white -mt-12">
               Elige tu plan
             </h1>
             <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg text-gray-600 dark:text-gray-400 px-4">

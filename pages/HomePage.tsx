@@ -355,18 +355,6 @@ const HomePage: React.FC = () => {
         <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
           <div className="text-center mb-4">
             <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="text-green-500 size-8 sm:size-10">
-                <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                  <g clipPath="url(#clip0_6_535)">
-                    <path clipRule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fillRule="evenodd"></path>
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_6_535">
-                      <rect fill="white" height="48" width="48"></rect>
-                    </clipPath>
-                  </defs>
-                </svg>
-              </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-white">SmartShip</h1>
             </div>
             <p className="text-green-400 font-medium text-sm sm:text-base">Transformador de Pedidos Andreani</p>

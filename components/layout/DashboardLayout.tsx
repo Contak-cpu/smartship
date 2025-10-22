@@ -202,7 +202,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           fixed md:sticky top-0 left-0 h-screen border-r border-gray-700 
           transition-all duration-300 z-30 flex flex-col
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          ${isSidebarOpen ? 'w-72' : 'md:w-20'}
+          ${isSidebarOpen ? 'w-96' : 'md:w-20'}
         `}
         style={{ backgroundColor: '#202020' }}
       >
@@ -214,14 +214,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 console.log('🔄 [DashboardLayout] Navegando a / desde sidebar');
                 handleNavigation('/');
               }}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-4 hover:opacity-80 transition-opacity w-full"
             >
-              <svg className="w-20 h-20 flex-shrink-0 text-blue-500 drop-shadow-lg transition-transform duration-300 hover:scale-110" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
-              </svg>
-              <div className="text-left">
-                <h2 className="text-xl font-bold text-white">FACIL.UNO</h2>
-                <p className="text-xs text-gray-400">Panel de Control</p>
+              <img 
+                src="/facil-uno.png" 
+                alt="FACIL.UNO Logo" 
+                className="w-32 h-32 flex-shrink-0 drop-shadow-lg transition-transform duration-300 hover:scale-110"
+              />
+              <div className="text-left flex-1">
+                <h2 className="text-2xl font-bold text-white">FACIL.UNO</h2>
+                <p className="text-sm text-gray-400">Panel de Control</p>
               </div>
             </button>
           )}
@@ -235,9 +237,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               className="hover:opacity-80 transition-opacity"
               title="Ir al inicio"
             >
-              <svg className="w-20 h-20 text-blue-500 drop-shadow-lg transition-transform duration-300 hover:scale-110" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
-              </svg>
+              <img 
+                src="/facil-uno.png" 
+                alt="FACIL.UNO Logo" 
+                className="w-24 h-24 drop-shadow-lg transition-transform duration-300 hover:scale-110"
+              />
             </button>
           )}
           <button

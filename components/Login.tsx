@@ -67,11 +67,12 @@ export const Login: React.FC<LoginProps> = ({ onGoBack }) => {
         
         <div className="text-center">
           <div className="flex justify-center mb-3">
-            <svg className="w-16 h-16 text-blue-500 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20.5 11.5c0-2.5-1.5-4.5-3.5-5.5-.5-2-2-3.5-4-4-2.5-.5-5 .5-6.5 2.5C4 5 2.5 7 2.5 9.5c0 1.5.5 3 1.5 4 0 .5 0 1 .5 1.5.5 1.5 1.5 2.5 3 3 .5.5 1 .5 1.5.5h.5c.5.5 1 1 1.5 1 1 .5 2 .5 3 0 .5-.5 1-.5 1.5-1h.5c.5 0 1 0 1.5-.5 1.5-.5 2.5-1.5 3-3 .5-.5.5-1 .5-1.5 1-1 1.5-2.5 1.5-4zm-11 5c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1zm5 0c-.5 0-1-.5-1-1s.5-1 1-1 1 .5 1 1-.5 1-1 1z"/>
-            </svg>
+            <img 
+              src="/facil-uno.png" 
+              alt="FACIL.UNO Logo" 
+              className="w-80 h-80 drop-shadow-lg"
+            />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">FACIL.UNO</h1>
           <p className="text-blue-400 font-medium text-sm sm:text-base">Herramientas para Ecommerce</p>
           <p className="text-gray-500 text-xs sm:text-sm mt-2">Inicia sesión para continuar</p>
         </div>
