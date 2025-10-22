@@ -24,7 +24,7 @@ const ExcelIcon = () => (
 );
 
 // Función independiente para exportar a Excel con desplegables correctos (una opción por fila)
-const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
+const exportToExcel = async (domicilioCSV: string, sucursalCSV: string, includeLlegaHoy: boolean = false) => {
     try {
         const workbook = new ExcelJS.Workbook();
         
@@ -389,6 +389,66 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
             }
         }
         
+        // Crear hoja "Llega hoy" si está seleccionada (idéntica a "A Domicilio" pero solo con encabezados)
+        if (includeLlegaHoy) {
+            const ws = workbook.addWorksheet('Llega hoy');
+            
+            // FILA 1: Encabezados combinados (idénticos a "A Domicilio")
+            ws.getCell('A1').value = 'Características';
+            ws.getCell('H1').value = 'Destinatario';
+            ws.getCell('N1').value = 'Domicilio destino';
+            
+            // Combinar celdas de la fila 1
+            ws.mergeCells('A1:G1');
+            ws.mergeCells('H1:M1');
+            ws.mergeCells('N1:S1');
+            
+            // FILA 2: Encabezados detallados (idénticos a "A Domicilio")
+            const headers = [
+                'Paquete Guardado Ej: Mistery',
+                'Peso (grs) Ej: ',
+                'Alto (cm) Ej: ',
+                'Ancho (cm) Ej: ',
+                'Profundidad (cm) Ej: ',
+                'Valor declarado ($ C/IVA) * Ej: ',
+                'Numero Interno Ej: ',
+                'Nombre * Ej: ',
+                'Apellido * Ej: ',
+                'DNI * Ej: ',
+                'Email * Ej: ',
+                'Celular código * Ej: ',
+                'Celular número * Ej: ',
+                'Calle * Ej: ',
+                'Número * Ej: ',
+                'Piso Ej: ',
+                'Departamento Ej: ',
+                'Provincia/Localidad/Códigos Postales * Ej: ',
+                'Código Postal * Ej: '
+            ];
+            
+            ws.getRow(2).values = headers;
+            
+            // Aplicar formato a los encabezados (fila 1 y 2)
+            ws.getRow(1).font = { bold: true, size: 12 };
+            ws.getRow(2).font = { bold: true, size: 11 };
+            
+            // Centrar y colorear encabezados de la fila 1
+            ws.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+            ws.getCell('H1').alignment = { horizontal: 'center', vertical: 'middle' };
+            ws.getCell('N1').alignment = { horizontal: 'center', vertical: 'middle' };
+            
+            ws.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
+            ws.getCell('H1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
+            ws.getCell('N1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
+            
+            // Ajustar ancho de columnas
+            ws.columns.forEach(column => {
+                column.width = 15;
+            });
+            
+            console.log('✅ Hoja "Llega hoy" creada con encabezados idénticos a "A Domicilio"');
+        }
+        
         // Crear hoja de Configuración con datos reales de Andreani
         const configSheet = workbook.addWorksheet('Configuracion');
         
@@ -452,6 +512,8 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string) => {
 
 
 export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, sucursalCSV, onDownload, onDownloadCombined, onDownloadExcel }) => {
+  const [includeLlegaHoy, setIncludeLlegaHoy] = useState(false);
+  
   return (
     <div className="bg-gray-900/50 p-4 sm:p-6 rounded-lg animate-fade-in border border-gray-700/50 shadow-xl">
         <h3 className="text-lg sm:text-xl font-bold text-center text-white mb-4 sm:mb-6">📥 Descargar Archivos Procesados</h3>
@@ -494,13 +556,26 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
                     </button>
                 )}
                 <button
-                    onClick={() => exportToExcel(domicilioCSV, sucursalCSV)}
+                    onClick={() => exportToExcel(domicilioCSV, sucursalCSV, includeLlegaHoy)}
                     disabled={!domicilioCSV && !sucursalCSV}
                     className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 disabled:hover:scale-100 text-sm sm:text-base"
                 >
                     <ExcelIcon />
                     <span className="ml-2">Excel.xlsx</span>
                 </button>
+                
+                {/* Checkbox para incluir hoja "Llega hoy" */}
+                <div className="col-span-1 sm:col-span-2 flex items-center justify-center mt-3">
+                    <label className="flex items-center space-x-3 text-sm text-gray-300 cursor-pointer hover:text-gray-200 transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={includeLlegaHoy}
+                            onChange={(e) => setIncludeLlegaHoy(e.target.checked)}
+                            className="w-4 h-4 text-orange-600 bg-gray-700 border-gray-600 rounded focus:ring-orange-500 focus:ring-2"
+                        />
+                        <span>Incluir hoja "Llega hoy" (solo encabezados)</span>
+                    </label>
+                </div>
             </div>
         </div>
 
