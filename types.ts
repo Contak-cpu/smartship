@@ -13,6 +13,12 @@ export interface ProcessingInfo {
   sucursalesProcessed: number;
   noProcessed: number;
   processingLogs: string[];
+  // Información detallada para el nuevo resumen
+  totalRowsWithData?: number;
+  actualSalesProcessed?: number;
+  shipmentsToDomicilio?: number;
+  shipmentsToSucursal?: number;
+  noProcessedReason?: string;
 }
 
 // Represents a row from the input Tiendanube CSV

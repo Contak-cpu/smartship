@@ -1452,6 +1452,33 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
   processingLogs.push(`No procesados: ${contadorNoProcesados}`);
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
 
+  // Calcular información detallada para el nuevo resumen
+  const totalRowsWithData = tiendanubeOrders.length;
+  const actualSalesProcessed = contadorDomicilios + contadorSucursales;
+  const shipmentsToDomicilio = contadorDomicilios;
+  const shipmentsToSucursal = contadorSucursales;
+  
+  // Determinar la razón de los no procesados
+  let noProcessedReason = '';
+  if (contadorNoProcesados > 0) {
+    // Verificar si hay clientes duplicados (esto es normal)
+    const clientesUnicos = new Set();
+    tiendanubeOrders.forEach(order => {
+      const numeroOrden = getColumnValue(order, 0);
+      const email = getColumnValue(order, 1);
+      clientesUnicos.add(numeroOrden || email);
+    });
+    
+    const totalClientes = clientesUnicos.size;
+    const diferencia = tiendanubeOrders.length - totalClientes;
+    
+    if (diferencia > 0) {
+      noProcessedReason = `Incluye ${diferencia} productos de clientes con múltiples pedidos (esto es normal)`;
+    } else {
+      noProcessedReason = 'Medio de envío no reconocido';
+    }
+  }
+
   return {
     domicilioCSV: unparseCSV(domicilios),
     sucursalCSV: unparseCSV(sucursalesOutput),
@@ -1460,7 +1487,13 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       domiciliosProcessed: contadorDomicilios,
       sucursalesProcessed: contadorSucursales,
       noProcessed: contadorNoProcesados,
-      processingLogs: processingLogs
+      processingLogs: processingLogs,
+      // Nueva información detallada
+      totalRowsWithData: totalRowsWithData,
+      actualSalesProcessed: actualSalesProcessed,
+      shipmentsToDomicilio: shipmentsToDomicilio,
+      shipmentsToSucursal: shipmentsToSucursal,
+      noProcessedReason: noProcessedReason
     }
   };
 };
@@ -1800,6 +1833,19 @@ export const processVentasOrders = async (csvContent: string): Promise<{
   processingLogs.push(`No procesados: ${contadorNoProcesados}`);
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
 
+  // Calcular información detallada para el nuevo resumen
+  const totalRowsWithData = lines.length - 1;
+  const actualSalesProcessed = contadorDomicilios + contadorSucursales;
+  const shipmentsToDomicilio = contadorDomicilios;
+  const shipmentsToSucursal = contadorSucursales;
+  
+  // Determinar la razón de los no procesados
+  let noProcessedReason = '';
+  if (contadorNoProcesados > 0) {
+    // Si hay no procesados, asumimos que es por medio de envío incorrecto
+    noProcessedReason = 'Medio de envío no reconocido';
+  }
+
   return {
     domicilioCSV: unparseCSV(domicilios),
     sucursalCSV: unparseCSV(sucursalesOutput),
@@ -1808,7 +1854,13 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       domiciliosProcessed: contadorDomicilios,
       sucursalesProcessed: contadorSucursales,
       noProcessed: contadorNoProcesados,
-      processingLogs: processingLogs
+      processingLogs: processingLogs,
+      // Nueva información detallada
+      totalRowsWithData: totalRowsWithData,
+      actualSalesProcessed: actualSalesProcessed,
+      shipmentsToDomicilio: shipmentsToDomicilio,
+      shipmentsToSucursal: shipmentsToSucursal,
+      noProcessedReason: noProcessedReason
     }
   };
 };
