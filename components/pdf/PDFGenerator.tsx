@@ -286,6 +286,123 @@ const PDFGenerator = () => {
         }
       }
 
+      // Agregar página de resumen al final
+      const summaryPage = finalPdfDoc.addPage([595, 842]); // A4 size
+      const { width, height } = summaryPage.getSize();
+      
+      // Título del resumen
+      summaryPage.drawText('RESUMEN DE PRODUCTOS DESPACHADOS', {
+        x: 50,
+        y: height - 50,
+        size: 16,
+        color: rgb(0, 0, 0),
+      });
+      
+      // Información general
+      const fechaActual = new Date().toLocaleDateString('es-ES');
+      summaryPage.drawText(`Fecha: ${fechaActual}`, {
+        x: 50,
+        y: height - 80,
+        size: 12,
+        color: rgb(0, 0, 0),
+      });
+      
+      summaryPage.drawText(`Total de productos únicos: ${stockDespachado.length}`, {
+        x: 50,
+        y: height - 100,
+        size: 12,
+        color: rgb(0, 0, 0),
+      });
+      
+      // Crear resumen por SKU
+      const skuSummary = new Map<string, number>();
+      
+      stockDespachado.forEach(item => {
+        if (skuSummary.has(item.sku)) {
+          skuSummary.set(item.sku, skuSummary.get(item.sku)! + item.cantidad);
+        } else {
+          skuSummary.set(item.sku, item.cantidad);
+        }
+      });
+      
+      // Ordenar SKUs por cantidad descendente
+      const sortedSkus = Array.from(skuSummary.entries())
+        .sort((a, b) => b[1] - a[1]);
+      
+      // Dibujar tabla de resumen
+      let yPosition = height - 140;
+      const lineHeight = 20;
+      
+      // Encabezados de la tabla
+      summaryPage.drawText('SKU', {
+        x: 50,
+        y: yPosition,
+        size: 10,
+        color: rgb(0, 0, 0),
+      });
+      
+      summaryPage.drawText('Cantidad Total', {
+        x: 300,
+        y: yPosition,
+        size: 10,
+        color: rgb(0, 0, 0),
+      });
+      
+      yPosition -= lineHeight;
+      
+      // Línea separadora
+      summaryPage.drawLine({
+        start: { x: 50, y: yPosition },
+        end: { x: width - 50, y: yPosition },
+        thickness: 1,
+        color: rgb(0, 0, 0),
+      });
+      
+      yPosition -= 10;
+      
+      // Datos de la tabla
+      sortedSkus.forEach(([sku, cantidad]) => {
+        if (yPosition < 100) {
+          // Si no hay espacio, crear nueva página
+          const newPage = finalPdfDoc.addPage([595, 842]);
+          yPosition = newPage.getSize().height - 50;
+        }
+        
+        // SKU
+        summaryPage.drawText(sku, {
+          x: 50,
+          y: yPosition,
+          size: 9,
+          color: rgb(0, 0, 0),
+        });
+        
+        // Cantidad
+        summaryPage.drawText(cantidad.toString(), {
+          x: 300,
+          y: yPosition,
+          size: 9,
+          color: rgb(0, 0, 0),
+        });
+        
+        yPosition -= lineHeight;
+      });
+      
+      // Pie de página
+      const finalY = Math.max(yPosition - 20, 50);
+      summaryPage.drawText(`Generado por: ${username || 'Usuario'}`, {
+        x: 50,
+        y: finalY,
+        size: 8,
+        color: rgb(0.5, 0.5, 0.5),
+      });
+      
+      summaryPage.drawText(`Archivo fuente: ${csvFileName || 'documento'}`, {
+        x: 50,
+        y: finalY - 15,
+        size: 8,
+        color: rgb(0.5, 0.5, 0.5),
+      });
+
       const pdfBytes = await finalPdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -354,7 +471,7 @@ const PDFGenerator = () => {
         }
       }
 
-      showMessage('success', `PDF generado con ${finalPdfDoc.getPageCount()} páginas`);
+      showMessage('success', `PDF generado con ${finalPdfDoc.getPageCount()} páginas (incluye resumen de productos)`);
     } catch (error) {
       console.error('Error al generar PDF:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
