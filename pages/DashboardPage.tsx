@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { useAuth } from '../hooks/useAuth';
 import { levelService, LEVEL_CONFIG, getLevelName, getLevelColor } from '../services/levelService';
+import { TrialStatus } from '../components/common/TrialStatus';
 
 interface FeatureCard {
   id: string;
@@ -239,6 +240,11 @@ const DashboardPage: React.FC = () => {
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-8 px-2">
             Buenos días <span className="text-blue-400">{username}</span>, ¿en qué vas a trabajar hoy?
           </h2>
+          
+          {/* Trial Status */}
+          <div className="mb-8 px-2">
+            <TrialStatus />
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {features.map((feature) => {
               const colors = getColorClasses(feature.color);

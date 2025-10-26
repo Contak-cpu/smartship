@@ -177,11 +177,23 @@ export const useAuth = () => {
   };
 
   const signUp = async (email: string, password: string, username: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { username } },
+      options: { 
+        data: { 
+          username,
+          nivel: 3, // Nivel 3 por defecto para modo test
+          trial_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 días
+        } 
+      },
     });
+    
+    // Si el registro fue exitoso, el trigger automáticamente creará el perfil
+    if (!error && data.user) {
+      console.log('✅ Usuario registrado exitosamente con nivel 3 y 7 días de prueba');
+    }
+    
     return { error };
   };
 
