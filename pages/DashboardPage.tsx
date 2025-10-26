@@ -4,6 +4,7 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import { useAuth } from '../hooks/useAuth';
 import { levelService, LEVEL_CONFIG, getLevelName, getLevelColor } from '../services/levelService';
 import { TrialStatus } from '../components/common/TrialStatus';
+import { PaymentRequest } from '../components/common/PaymentRequest';
 
 interface FeatureCard {
   id: string;
@@ -295,6 +296,13 @@ const DashboardPage: React.FC = () => {
           <div className="mb-8 px-2">
             <TrialStatus />
           </div>
+
+          {/* Payment Request (solo para usuarios que no pagaron) */}
+          {userPaidStatus !== true && (
+            <div className="mb-8 px-2">
+              <PaymentRequest currentPlan="Trial" onPaymentRequested={(plan) => console.log('Solicitud de pago:', plan)} />
+            </div>
+          )}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {features.map((feature) => {
               const colors = getColorClasses(feature.color);

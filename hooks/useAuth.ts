@@ -189,11 +189,17 @@ export const useAuth = () => {
   };
 
   // Función de registro
-  const signUp = async (email: string, password: string, username: string, plan: string = 'Starter') => {
+  const signUp = async (
+    email: string, 
+    password: string, 
+    username: string, 
+    plan: string = 'Starter',
+    paymentStatus?: 'pending' | 'approved'
+  ) => {
     console.log('📝 [useAuth] signUp llamado para:', email);
     
     try {
-      const result = await authService.signUp(email, password, username, plan);
+      const result = await authService.signUp(email, password, username, plan, paymentStatus);
       
       if (!result.success) {
         console.error('❌ [useAuth] Registro fallido');

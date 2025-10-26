@@ -101,7 +101,8 @@ class AuthService {
     email: string,
     password: string,
     username: string,
-    plan: string = 'Starter'
+    plan: string = 'Starter',
+    paymentStatus?: 'pending' | 'approved'
   ): Promise<SignUpResponse> {
     try {
       console.log('🔐 [AuthService] Registrando usuario:', email, 'Plan:', plan);
@@ -119,7 +120,8 @@ class AuthService {
             plan,
             nivel: 3, // Nivel VIP por defecto
             trial_expires_at: trialExpiresAt.toISOString(),
-            is_paid: false, // Por defecto los usuarios nuevos no han pagado (están en trial)
+            is_paid: paymentStatus === 'approved', // Solo true si fue aprobado
+            payment_status: paymentStatus || undefined, // Estado del pago
           },
           emailRedirectTo: undefined, // No requerir confirmación de email
         },

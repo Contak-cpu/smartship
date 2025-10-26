@@ -12,6 +12,7 @@ export interface UserMetadata {
   trial_expires_at?: string;
   email?: string;
   is_paid?: boolean;
+  payment_status?: 'pending' | 'approved' | 'rejected';
 }
 
 /**

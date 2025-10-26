@@ -9,10 +9,11 @@ interface TrialInfo {
 export const TrialStatus: React.FC = () => {
   const { user, userProfile } = useAuth();
   const [trialInfo, setTrialInfo] = useState<TrialInfo | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTrialInfo = async () => {
+    const fetchStatus = async () => {
       if (!user) {
         setIsLoading(false);
         return;
@@ -21,6 +22,12 @@ export const TrialStatus: React.FC = () => {
       try {
         // Leer directamente de user_metadata (sin consultas a DB)
         const metadata = user.user_metadata || {};
+        
+        // Verificar estado de pago
+        if (metadata.payment_status) {
+          setPaymentStatus(metadata.payment_status);
+        }
+        
         if (metadata.trial_expires_at) {
           setTrialInfo({
             trial_expires_at: metadata.trial_expires_at,
@@ -28,13 +35,13 @@ export const TrialStatus: React.FC = () => {
           });
         }
       } catch (error) {
-        console.error('Error obteniendo información del trial:', error);
+        console.error('Error obteniendo información del estado:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchTrialInfo();
+    fetchStatus();
   }, [user]);
 
   if (isLoading) {
@@ -43,6 +50,32 @@ export const TrialStatus: React.FC = () => {
         <div className="animate-pulse flex items-center gap-3">
           <div className="w-6 h-6 bg-blue-500/30 rounded-full"></div>
           <div className="h-4 bg-blue-500/30 rounded w-32"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar estado de pago pendiente si existe
+  if (paymentStatus === 'pending') {
+    return (
+      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
+        <div className="flex items-center gap-3">
+          <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-sm text-yellow-300">
+                Pago en proceso de aprobación
+              </p>
+              <span className="text-xs opacity-75">
+                Nivel {userProfile?.nivel || 3}
+              </span>
+            </div>
+            <p className="text-xs text-yellow-400 opacity-75 mt-1">
+              Estamos verificando tu pago. Te notificaremos por email cuando se complete la aprobación.
+            </p>
+          </div>
         </div>
       </div>
     );

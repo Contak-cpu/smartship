@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { RegisterModal } from './RegisterModal';
+import { PaymentModal } from './PaymentModal';
 
 interface PricingPageProps {
   onGoToLogin: () => void;
@@ -11,6 +12,7 @@ interface PricingPageProps {
 
 export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBasicPlan, onShowIntermediatePlan, onShowProPlan, onRegisterSuccess }) => {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('');
 
   const handlePlanSelection = (planName: string) => {
@@ -22,6 +24,20 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
   const handleAccessClick = (planName: string) => {
     setSelectedPlan(planName);
     setShowRegisterModal(true);
+  };
+
+  const handlePaymentClick = (planName: string) => {
+    setSelectedPlan(planName);
+    setShowPaymentModal(true);
+  };
+
+  const getPlanPrice = (planName: string): number => {
+    switch(planName) {
+      case 'Starter': return 1;
+      case 'Basic': return 49;
+      case 'Pro': return 99;
+      default: return 49;
+    }
   };
 
   const handleRegisterSuccess = (username: string, level: number) => {
@@ -100,12 +116,20 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
               <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                 Ideal para emprendedores que necesitan controlar la rentabilidad.
               </p>
-              <button 
-                onClick={() => handleAccessClick('Starter')}
-                className="mt-6 sm:mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
-              >
-                Acceder Gratis
-              </button>
+              <div className="mt-6 sm:mt-8 space-y-3">
+                <button 
+                  onClick={() => handlePaymentClick('Starter')}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
+                >
+                  💳 Quiero pagar el plan
+                </button>
+                <button 
+                  onClick={() => handleAccessClick('Starter')}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
+                >
+                  🎁 Acceder Gratis
+                </button>
+              </div>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -144,12 +168,20 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
               <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                 Para empresas en crecimiento que necesitan automatización completa.
               </p>
-              <button 
-                onClick={() => handleAccessClick('Basic')}
-                className="mt-6 sm:mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
-              >
-                Acceder Gratis
-              </button>
+              <div className="mt-6 sm:mt-8 space-y-3">
+                <button 
+                  onClick={() => handlePaymentClick('Basic')}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
+                >
+                  💳 Quiero pagar el plan
+                </button>
+                <button 
+                  onClick={() => handleAccessClick('Basic')}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
+                >
+                  🎁 Acceder Gratis
+                </button>
+              </div>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -193,12 +225,20 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
               <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                 Acceso completo para administradores y funciones exclusivas.
               </p>
-              <button 
-                onClick={() => handleAccessClick('Pro')}
-                className="mt-6 sm:mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
-              >
-                Acceder Gratis
-              </button>
+              <div className="mt-6 sm:mt-8 space-y-3">
+                <button 
+                  onClick={() => handlePaymentClick('Pro')}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
+                >
+                  💳 Quiero pagar el plan
+                </button>
+                <button 
+                  onClick={() => handleAccessClick('Pro')}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
+                >
+                  🎁 Acceder Gratis
+                </button>
+              </div>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -254,6 +294,15 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}
         selectedPlan={selectedPlan}
+        onSuccess={handleRegisterSuccess}
+      />
+
+      {/* Modal de Pago */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        selectedPlan={selectedPlan}
+        planPrice={getPlanPrice(selectedPlan)}
         onSuccess={handleRegisterSuccess}
       />
     </div>
