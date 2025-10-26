@@ -30,14 +30,14 @@ const CuponesPage: React.FC = () => {
     {
       id: '3',
       codigo: 'ANDREANI20',
-      descripcion: 'Cupón para envío de pallets',
+      descripcion: 'Cupón general de descuento Andreani',
       descuento: '20% OFF',
       activo: true,
     },
     {
       id: '4',
       codigo: '20PORPALLET',
-      descripcion: 'Descuento especial por pallet',
+      descripcion: 'Descuento especial para envío de pallets',
       descuento: '20% OFF',
       activo: true,
     },
