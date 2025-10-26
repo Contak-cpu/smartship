@@ -49,9 +49,14 @@ const getIconForFeature = (featureKey: string) => {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
       </svg>
     ),
-    'admin': (
+      'admin': (
       <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+    ),
+    'cupones': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4m-6 4h6a2 2 0 002-2v-3a2 2 0 00-2-2h-6v7m-6 0h6a2 2 0 002-2V9a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z" />
       </svg>
     )
   };
@@ -65,7 +70,23 @@ const getIconForFeature = (featureKey: string) => {
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { username, userLevel, hasAccess } = useAuth();
+  const { username, userLevel, hasAccess, isPaid } = useAuth();
+  const [userPaidStatus, setUserPaidStatus] = React.useState<boolean | null>(null);
+
+  // Verificar si el usuario pagó
+  React.useEffect(() => {
+    const checkPaidStatus = async () => {
+      try {
+        const paid = await isPaid();
+        setUserPaidStatus(paid);
+      } catch (error) {
+        console.error('Error verificando estado de pago:', error);
+        setUserPaidStatus(false);
+      }
+    };
+    
+    checkPaidStatus();
+  }, [isPaid]);
 
   const allFeatures: FeatureCard[] = [
     // TEMPORALMENTE OCULTO - Panel Admin - Solo para nivel Dios (999)
@@ -184,6 +205,25 @@ const DashboardPage: React.FC = () => {
         </svg>
       ),
     },
+    {
+      id: 'cupones',
+      title: 'Cupones de Descuento',
+      description: 'Obtén descuentos exclusivos para Andreani. Copia tus códigos activos y utilízalos al cargar tus rótulos en Andreani para obtener desde un 20% hasta un 40% de descuento.',
+      path: '/cupones',
+      color: 'green',
+      stats: 'Promociones Exclusivas',
+      requiredLevel: -1, // Usamos -1 para indicar que requiere pago, no nivel
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4m-6 4h6a2 2 0 002-2v-3a2 2 0 00-2-2h-6v7m-6 0h6a2 2 0 002-2V9a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z"
+          />
+        </svg>
+      ),
+    },
     // TEMPORALMENTE OCULTO - Información y Estadísticas
     // {
     //   id: 'informacion',
@@ -221,6 +261,16 @@ const DashboardPage: React.FC = () => {
       };
     }
     
+    if (color === 'green') {
+      return {
+        bg: 'bg-gradient-to-r from-green-600 to-green-700',
+        hover: 'hover:from-green-700 hover:to-green-800',
+        text: 'text-green-500',
+        border: 'border-green-500',
+        shadow: 'hover:shadow-green-500/50',
+      };
+    }
+    
     // Por defecto azul
     return {
       bg: 'bg-blue-600',
@@ -248,8 +298,19 @@ const DashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {features.map((feature) => {
               const colors = getColorClasses(feature.color);
-              const accessResult = hasAccess(feature.requiredLevel);
-              const isLocked = !accessResult;
+              
+              // Si requiredLevel es -1, verificar pago en lugar de nivel
+              let accessResult = true;
+              let isLocked = false;
+              
+              if (feature.requiredLevel === -1) {
+                // Requiere pago, no nivel
+                accessResult = userPaidStatus === true;
+                isLocked = !accessResult;
+              } else {
+                accessResult = hasAccess(feature.requiredLevel);
+                isLocked = !accessResult;
+              }
               
               console.log(`🎯 [DashboardPage] ${feature.id}: accessResult=${accessResult}, isLocked=${isLocked}`);
               
@@ -262,6 +323,8 @@ const DashboardPage: React.FC = () => {
                       ? 'border-gray-700/50 opacity-75' 
                       : feature.color === 'red'
                       ? 'border-red-500/50 hover:border-red-500 hover:shadow-xl hover:shadow-red-500/20 hover:-translate-y-1 hover:bg-gray-800'
+                      : feature.color === 'green'
+                      ? 'border-gray-700/50 hover:border-green-500/50 hover:shadow-xl hover:shadow-green-500/10 hover:-translate-y-1 hover:bg-gray-800'
                       : 'border-gray-700/50 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 hover:bg-gray-800'
                   }`}
                 >
@@ -271,7 +334,7 @@ const DashboardPage: React.FC = () => {
                       <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                       </svg>
-                      Nivel {feature.requiredLevel}
+                      {feature.requiredLevel === -1 ? 'Requiere Pago' : `Nivel ${feature.requiredLevel}`}
                     </div>
                   )}
 
@@ -313,7 +376,7 @@ const DashboardPage: React.FC = () => {
                     className={`w-full font-bold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 ${
                       isLocked
                         ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 hover:shadow-yellow-500/50 text-gray-900'
-                        : `${colors.bg} ${colors.hover} text-white hover:shadow-2xl hover:shadow-blue-500/20`
+                        : `${colors.bg} ${colors.hover} text-white hover:shadow-2xl hover:shadow-${colors.bg.includes('green') ? 'green' : 'blue'}-500/20`
                     }`}
                   >
                     {isLocked ? (
@@ -321,7 +384,7 @@ const DashboardPage: React.FC = () => {
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                         </svg>
-                        Ver Detalles del Upgrade
+                        {feature.requiredLevel === -1 ? 'Ver Planes' : 'Ver Detalles del Upgrade'}
                       </>
                     ) : (
                       <>

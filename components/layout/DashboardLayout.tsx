@@ -9,7 +9,7 @@ interface MenuItem {
   path: string;
   icon: React.ReactNode;
   description: string;
-  requiredLevel: number;
+  requiredLevel: number; // -1 indica que requiere pago, no nivel
 }
 
 interface DashboardLayoutProps {
@@ -53,6 +53,11 @@ const getIconForSection = (sectionKey: string) => {
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
       </svg>
+    ),
+    'cupones': (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4m-6 4h6a2 2 0 002-2v-3a2 2 0 00-2-2h-6v7m-6 0h6a2 2 0 002-2V9a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z" />
+      </svg>
     )
   };
   
@@ -67,7 +72,23 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const { username, userLevel, logout, hasAccess } = useAuth();
+  const { username, userLevel, logout, hasAccess, isPaid } = useAuth();
+  const [userPaidStatus, setUserPaidStatus] = React.useState<boolean | null>(null);
+
+  // Verificar si el usuario pagó al cargar
+  React.useEffect(() => {
+    const checkPaidStatus = async () => {
+      try {
+        const paid = await isPaid();
+        setUserPaidStatus(paid);
+      } catch (error) {
+        console.error('Error verificando estado de pago:', error);
+        setUserPaidStatus(false);
+      }
+    };
+    
+    checkPaidStatus();
+  }, [isPaid]);
 
   const handleLogout = async () => {
     try {
@@ -166,6 +187,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
+      id: 'cupones',
+      label: 'Cupones',
+      path: '/cupones',
+      description: 'Descuentos para Andreani',
+      requiredLevel: -1, // -1 indica que requiere pago, no nivel
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4m-6 4h6a2 2 0 002-2v-3a2 2 0 00-2-2h-6v7m-6 0h6a2 2 0 002-2V9a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z" />
         </svg>
       ),
     },
@@ -297,7 +330,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
-            const isLocked = !hasAccess(item.requiredLevel);
+            
+            // Si requiredLevel es -1, verificar pago en lugar de nivel
+            let isLocked = false;
+            if (item.requiredLevel === -1) {
+              isLocked = userPaidStatus !== true;
+            } else {
+              isLocked = !hasAccess(item.requiredLevel);
+            }
             
             return (
               <button
@@ -324,7 +364,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   active:scale-95
                   ${isLocked && 'relative'}
                 `}
-                title={!isSidebarOpen ? (isLocked ? `${item.label} - Requiere Nivel ${item.requiredLevel}` : item.label) : undefined}
+                title={!isSidebarOpen ? (isLocked ? `${item.label} - ${item.requiredLevel === -1 ? 'Requiere Pago' : `Requiere Nivel ${item.requiredLevel}`}` : item.label) : undefined}
               >
                 <div className="flex-shrink-0 relative transition-transform duration-300 group-hover/menuitem:scale-110">
                   {item.icon}
@@ -348,7 +388,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       <p className="font-semibold truncate">{item.label}</p>
                       {isLocked && (
                         <span className="text-xs bg-gradient-to-r from-yellow-500/30 to-yellow-600/30 text-yellow-400 px-2 py-1 rounded-full border border-yellow-500/40 flex-shrink-0 shadow-sm">
-                          Nivel {item.requiredLevel}
+                          {item.requiredLevel === -1 ? 'Requiere Pago' : `Nivel ${item.requiredLevel}`}
                         </span>
                       )}
                       {!isLocked && userLevel === 0 && item.id === 'rentabilidad' && (

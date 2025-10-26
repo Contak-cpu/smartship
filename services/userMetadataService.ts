@@ -11,6 +11,7 @@ export interface UserMetadata {
   nivel: number;
   trial_expires_at?: string;
   email?: string;
+  is_paid?: boolean;
 }
 
 /**
@@ -193,5 +194,36 @@ export async function checkAndUpdateExpiredTrial(): Promise<void> {
   } catch (error) {
     console.error('❌ [UserMetadataService] Error verificando trial:', error);
   }
+}
+
+/**
+ * Verifica si un usuario ha pagado (no está en trial)
+ * Un usuario ha pagado si:
+ * - Tiene el campo is_paid explícitamente en true
+ * - O tiene trial_expires_at, el trial expiró Y sigue con nivel > 0 (probablemente pagó)
+ * - NOTA: Los admins deben marcar manualmente si un usuario pagó usando is_paid = true
+ */
+export function isPaidUser(metadata: UserMetadata | null): boolean {
+  if (!metadata) return false;
+  
+  // Si tiene el campo is_paid explícitamente marcado como true, es pagado
+  if (metadata.is_paid === true) {
+    return true;
+  }
+  
+  // Si is_paid es false explícitamente, el usuario NO pagó
+  if (metadata.is_paid === false) {
+    return false;
+  }
+  
+  // Si is_paid es null/undefined, verificar si tiene trial activo
+  if (!metadata.trial_expires_at) {
+    // Usuario antiguo o sin trial configurado - NO pagó
+    return false;
+  }
+  
+  // Si tiene trial_expires_at pero ya expiró y sigue con nivel > 0, asumimos que pagó
+  const expired = hasTrialExpired(metadata);
+  return expired && metadata.nivel > 0;
 }
 

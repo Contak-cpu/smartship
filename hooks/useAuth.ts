@@ -6,6 +6,7 @@ import {
   getTrialInfo, 
   hasTrialExpired,
   setUserLevel,
+  isPaidUser,
   UserMetadata 
 } from '../services/userMetadataService';
 
@@ -34,6 +35,7 @@ export const useAuth = () => {
         nivel: currentUser.user_metadata?.nivel ?? 0,
         trial_expires_at: currentUser.user_metadata?.trial_expires_at,
         email: currentUser.email,
+        is_paid: currentUser.user_metadata?.is_paid,
       };
 
       const userLevel: UserLevel = {
@@ -59,6 +61,7 @@ export const useAuth = () => {
         nivel: currentUser.user_metadata?.nivel ?? 0,
         trial_expires_at: currentUser.user_metadata?.trial_expires_at,
         email: currentUser.email,
+        is_paid: currentUser.user_metadata?.is_paid,
       };
 
       const expired = hasTrialExpired(metadata);
@@ -249,6 +252,43 @@ export const useAuth = () => {
     return result;
   };
 
+  // Función para verificar si el usuario ha pagado (no está en trial)
+  const isPaid = async (): Promise<boolean> => {
+    if (!user) return false;
+    
+    // Primero intentar obtener los metadatos actualizados del servidor
+    try {
+      const { data: { user: currentUser } } = await authService.getCurrentUser();
+      if (currentUser) {
+        const metadata: UserMetadata = {
+          username: currentUser.user_metadata?.username || '',
+          nivel: currentUser.user_metadata?.nivel ?? 0,
+          trial_expires_at: currentUser.user_metadata?.trial_expires_at,
+          email: currentUser.email,
+          is_paid: currentUser.user_metadata?.is_paid,
+        };
+        
+        console.log('🔍 [isPaid] Verificando estado de pago:', metadata.is_paid, 'para', metadata.email);
+        const result = isPaidUser(metadata);
+        console.log('🔍 [isPaid] Resultado:', result);
+        return result;
+      }
+    } catch (error) {
+      console.error('❌ [isPaid] Error obteniendo usuario actualizado:', error);
+    }
+    
+    // Fallback a metadata local si falla
+    const metadata: UserMetadata = {
+      username: user.user_metadata?.username || '',
+      nivel: user.user_metadata?.nivel ?? 0,
+      trial_expires_at: user.user_metadata?.trial_expires_at,
+      email: user.email,
+      is_paid: user.user_metadata?.is_paid,
+    };
+    
+    return isPaidUser(metadata);
+  };
+
   // Función de compatibilidad para refresh
   const refreshUserProfile = async () => {
     if (user) {
@@ -296,6 +336,7 @@ export const useAuth = () => {
     signUp,
     signOut,
     hasAccess,
+    isPaid,
     
     // Funciones de compatibilidad
     login: signIn,

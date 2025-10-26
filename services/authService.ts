@@ -119,6 +119,7 @@ class AuthService {
             plan,
             nivel: 3, // Nivel VIP por defecto
             trial_expires_at: trialExpiresAt.toISOString(),
+            is_paid: false, // Por defecto los usuarios nuevos no han pagado (están en trial)
           },
           emailRedirectTo: undefined, // No requerir confirmación de email
         },

@@ -1,6 +1,7 @@
 import { RouteObject, useNavigate } from 'react-router-dom';
 import ProtectedRoute from '../components/routing/ProtectedRoute';
 import LevelProtectedRoute from '../components/routing/LevelProtectedRoute';
+import PaidProtectedRoute from '../components/routing/PaidProtectedRoute';
 import PublicRoute from '../components/routing/PublicRoute';
 import SmartRedirect from '../components/routing/SmartRedirect';
 import HomePage from '../pages/HomePage';
@@ -13,6 +14,7 @@ import HistorialPage from '../pages/HistorialPage';
 import InformacionPage from '../pages/InformacionPage';
 import AdminPanelPage from '../pages/AdminPanelPage';
 import EmailConfirmationPage from '../pages/EmailConfirmationPage';
+import CuponesPage from '../pages/CuponesPage';
 import { Login } from '../components/Login';
 import { PricingPage } from '../components/PricingPage';
 
@@ -130,6 +132,14 @@ export const routes: RouteObject[] = [
       <LevelProtectedRoute requiredLevel={2} sectionName="Historial de Archivos">
         <HistorialPage />
       </LevelProtectedRoute>
+    ),
+  },
+  {
+    path: '/cupones',
+    element: (
+      <PaidProtectedRoute sectionName="Cupones de Descuento">
+        <CuponesPage />
+      </PaidProtectedRoute>
     ),
   },
   // TEMPORALMENTE OCULTO - Información y Estadísticas
