@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 
 interface LoginProps {
   onGoBack?: () => void;
+  onLogin?: (username: string, level: number) => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onGoBack }) => {
-  const { signIn } = useAuth();
+export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
+  console.log('🔍 [Login] Componente renderizado');
+  const { signIn, userProfile } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,6 +17,7 @@ export const Login: React.FC<LoginProps> = ({ onGoBack }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('🔍 [Login] handleSubmit llamado');
     e.preventDefault();
     setError('');
     setIsLoading(true);
@@ -26,23 +29,31 @@ export const Login: React.FC<LoginProps> = ({ onGoBack }) => {
     }
 
     try {
-      const { error: signInError } = await signIn(email, password);
+      console.log('🔍 [Login] Iniciando login para:', email);
+      const result = await signIn(email, password);
       
-      if (signInError) {
+      if (result.error) {
+        console.error('❌ [Login] Error de autenticación:', result.error);
         setError('Email o contraseña incorrectos');
-        console.error('Error de autenticación:', signInError);
+        setIsLoading(false);
       } else {
-        console.log('✅ Login exitoso, redirigiendo al dashboard...');
+        console.log('✅ [Login] Login exitoso');
+        
         // Esperar un momento para que se actualice el estado de autenticación
-        // Usar un timeout más largo para asegurar que el estado se actualice
         setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 500);
+          console.log('🔍 [Login] Estado actualizado');
+          if (onLogin && userProfile) {
+            console.log('✅ [Login] Llamando onLogin con:', userProfile.username, userProfile.nivel);
+            onLogin(userProfile.username, userProfile.nivel);
+          } else {
+            console.log('⚠️ [Login] Redirigiendo a dashboard');
+            navigate('/dashboard', { replace: true });
+          }
+        }, 1000);
       }
     } catch (err) {
-      console.error('Error en login:', err);
+      console.error('❌ [Login] Error en login:', err);
       setError('Error al iniciar sesión. Intenta nuevamente.');
-    } finally {
       setIsLoading(false);
     }
   };

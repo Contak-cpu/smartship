@@ -12,6 +12,7 @@ import BreakevenROASPage from '../pages/BreakevenROASPage';
 import HistorialPage from '../pages/HistorialPage';
 import InformacionPage from '../pages/InformacionPage';
 import AdminPanelPage from '../pages/AdminPanelPage';
+import EmailConfirmationPage from '../pages/EmailConfirmationPage';
 import { Login } from '../components/Login';
 import { PricingPage } from '../components/PricingPage';
 

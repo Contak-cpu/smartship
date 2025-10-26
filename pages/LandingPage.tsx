@@ -9,7 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import AuthDebugSimple from '../components/debug/AuthDebugSimple';
 
 const LandingPage = () => {
-  const { login } = useAuth();
+  const { setUserState } = useAuth();
   const navigate = useNavigate();
   const [showPricing, setShowPricing] = useState(true);
   const [showBasicPlan, setShowBasicPlan] = useState(false);
@@ -17,8 +17,16 @@ const LandingPage = () => {
   const [showProPlan, setShowProPlan] = useState(false);
 
   const handleLogin = (username: string, level: number) => {
-    login(username, level);
+    setUserState(username, level);
     // Redirigir inmediatamente al dashboard después del login
+    navigate('/', { replace: true });
+  };
+
+  const handleRegisterSuccess = async (username: string, level: number) => {
+    // El usuario ya está autenticado después del registro
+    // Solo necesitamos actualizar el estado local
+    setUserState(username, level);
+    // Redirigir inmediatamente al dashboard después del registro
     navigate('/', { replace: true });
   };
 
@@ -41,6 +49,7 @@ const LandingPage = () => {
         onShowBasicPlan={() => setShowBasicPlan(true)}
         onShowIntermediatePlan={() => setShowIntermediatePlan(true)}
         onShowProPlan={() => setShowProPlan(true)}
+        onRegisterSuccess={handleRegisterSuccess}
       />
     );
   }

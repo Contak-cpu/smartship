@@ -1,33 +1,17 @@
 import React, { useState } from 'react';
+import { RegisterModal } from './RegisterModal';
 
 interface PricingPageProps {
   onGoToLogin: () => void;
   onShowBasicPlan: () => void;
   onShowIntermediatePlan: () => void;
   onShowProPlan: () => void;
+  onRegisterSuccess?: (username: string, level: number) => void;
 }
 
-export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBasicPlan, onShowIntermediatePlan, onShowProPlan }) => {
-  const [showModal, setShowModal] = useState(false);
+export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBasicPlan, onShowIntermediatePlan, onShowProPlan, onRegisterSuccess }) => {
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('');
-  const [invitationCode, setInvitationCode] = useState('');
-  const [codeError, setCodeError] = useState('');
-  const [isValidated, setIsValidated] = useState(false);
-  const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [paymentStep, setPaymentStep] = useState<'code' | 'payment' | 'success'>('code');
-
-  const VALID_CODES = ['2310']; // Códigos de activación válidos
-  
-  // Montos según el plan seleccionado
-  const getPlanAmount = (plan: string) => {
-    switch (plan) {
-      case 'Starter': return '$1 USD';
-      case 'Basic': return '$49 USD';
-      case 'Pro': return '$99 USD';
-      default: return '$0 USD';
-    }
-  };
 
   const handlePlanSelection = (planName: string) => {
     const message = `Hola! Me interesa el plan ${planName} de FACIL.UNO. ¿Podrías darme más información?`;
@@ -37,81 +21,12 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
 
   const handleAccessClick = (planName: string) => {
     setSelectedPlan(planName);
-    setShowModal(true);
-    setInvitationCode('');
-    setCodeError('');
-    setIsValidated(false);
-    setEmail('');
-    setEmailError('');
-    setPaymentStep('payment'); // Ir directamente al paso de pago
+    setShowRegisterModal(true);
   };
 
-  const handleInvitationCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-    setInvitationCode(value);
-    setCodeError(''); // Limpiar error al escribir
-  };
-
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
-    setEmailError('');
-  };
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handlePaymentSubmit = () => {
-    if (!email) {
-      setEmailError('Por favor, ingresa tu email');
-      return;
-    }
-    
-    if (!validateEmail(email)) {
-      setEmailError('Por favor, ingresa un email válido');
-      return;
-    }
-
-    setPaymentStep('success');
-    
-    // Esperar 3 segundos antes de abrir WhatsApp
-    setTimeout(() => {
-      const message = `Hola! He realizado el pago de ${getPlanAmount(selectedPlan)} para el plan ${selectedPlan} de FACIL.UNO. Mi email es: ${email}. ¿Podrías confirmar mi acceso?`;
-      const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
-      
-      // Cerrar el modal después de abrir WhatsApp
-      setTimeout(() => {
-        setShowModal(false);
-        setPaymentStep('payment');
-        setEmail('');
-      }, 1000);
-    }, 3000);
-  };
-
-  const handleValidateCode = () => {
-    if (invitationCode.length === 4) {
-      // Validar si el código es correcto
-      if (VALID_CODES.includes(invitationCode)) {
-        setIsValidated(true);
-        setCodeError('');
-        
-        // Esperar 2 segundos antes de abrir WhatsApp
-        setTimeout(() => {
-          const message = `Hola! Tengo el código de invitación ${invitationCode} y me interesa el plan ${selectedPlan} de FACIL.UNO. ¿Podrías darme más información?`;
-          const whatsappUrl = `https://wa.me/5493541289228?text=${encodeURIComponent(message)}`;
-          window.open(whatsappUrl, '_blank');
-          
-          // Cerrar el modal después de abrir WhatsApp
-          setTimeout(() => {
-            setShowModal(false);
-            setIsValidated(false);
-          }, 500);
-        }, 2000);
-      } else {
-        setCodeError('Código inválido. Verifica tu código de invitación.');
-      }
+  const handleRegisterSuccess = (username: string, level: number) => {
+    if (onRegisterSuccess) {
+      onRegisterSuccess(username, level);
     }
   };
 
@@ -189,7 +104,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
                 onClick={() => handleAccessClick('Starter')}
                 className="mt-6 sm:mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
               >
-                Conseguir acceso
+                Acceder Gratis
               </button>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
@@ -233,7 +148,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
                 onClick={() => handleAccessClick('Basic')}
                 className="mt-6 sm:mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
               >
-                Conseguir acceso
+                Acceder Gratis
               </button>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
@@ -282,7 +197,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
                 onClick={() => handleAccessClick('Pro')}
                 className="mt-6 sm:mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
               >
-                Conseguir acceso
+                Acceder Gratis
               </button>
               <ul className="mt-8 space-y-4 text-sm flex-grow">
                 <li className="flex items-center gap-3">
@@ -334,165 +249,13 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
         </div>
       </main>
 
-      {/* Modal de Pago */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
-          {/* Backdrop con blur */}
-          <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            onClick={() => setShowModal(false)}
-          />
-          
-          {/* Modal */}
-          <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black border-2 border-blue-500/30 rounded-2xl shadow-2xl max-w-lg w-full p-8 animate-scaleIn">
-            {/* Efectos de brillo */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-2xl" />
-            
-            {/* Botón de cierre X */}
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* Contenido del modal según el paso */}
-            {paymentStep === 'payment' && (
-              <>
-                {/* Icono de pago */}
-                <div className="relative flex justify-center mb-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
-                    <div className="relative bg-gradient-to-br from-blue-600 to-blue-800 p-4 rounded-full">
-                      <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Título */}
-                <h3 className="relative text-2xl sm:text-3xl font-bold text-center text-white mb-3">
-                  Completar Pago
-                </h3>
-                
-                {/* Badge del plan */}
-                <div className="flex justify-center mb-6">
-                  <span className="bg-blue-500/20 text-blue-400 px-4 py-2 rounded-full text-sm font-semibold border border-blue-500/30">
-                    Plan {selectedPlan} - {getPlanAmount(selectedPlan)}
-                  </span>
-                </div>
-
-                {/* QR Code */}
-                <div className="bg-white rounded-xl p-4 mb-6 mx-auto w-fit">
-                  <img 
-                    src="/binance-qr.png" 
-                    alt="QR Code Binance" 
-                    className="w-48 h-48 mx-auto rounded-lg"
-                  />
-                </div>
-
-                {/* Instrucciones */}
-                <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mb-6">
-                  <h4 className="text-blue-400 font-semibold mb-3 flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                    Instrucciones de Pago
-                  </h4>
-                  <ol className="text-gray-300 text-sm space-y-2 list-decimal list-inside">
-                    <li>Escanea el código QR con tu app de Binance</li>
-                    <li>Transfiere exactamente <span className="text-blue-400 font-bold">{getPlanAmount(selectedPlan)}</span></li>
-                    <li>Ingresa tu email abajo para confirmar el pago</li>
-                    <li>Te contactaremos por WhatsApp para activar tu acceso</li>
-                  </ol>
-                </div>
-
-                {/* Campo de email */}
-                <div className="space-y-3 mb-6">
-                  <label className="block text-sm font-medium text-gray-300">
-                    Email para confirmación
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={handleEmailChange}
-                    placeholder="tu@email.com"
-                    className={`w-full bg-gray-800 border-2 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none transition-colors ${
-                      emailError 
-                        ? 'border-red-500/70 focus:border-red-400' 
-                        : 'border-blue-500/50 focus:border-blue-400'
-                    }`}
-                  />
-                  
-                  {/* Mensaje de error */}
-                  {emailError && (
-                    <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-2 animate-fadeIn">
-                      <p className="text-red-400 text-xs font-semibold flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                        {emailError}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Botón de confirmación */}
-                <button
-                  onClick={handlePaymentSubmit}
-                  disabled={!email}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-300 ${
-                    email
-                      ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg hover:shadow-green-500/50'
-                      : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {email ? '✅ Confirmar Pago' : '📧 Ingresa tu email'}
-                </button>
-              </>
-            )}
-
-            {paymentStep === 'success' && (
-              <div className="animate-scaleIn">
-                <div className="bg-gradient-to-br from-green-900/40 to-green-800/40 border-2 border-green-500/60 rounded-2xl p-8">
-                  {/* Checkmark animado */}
-                  <div className="flex justify-center mb-6">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-green-500/30 rounded-full blur-xl animate-pulse" />
-                      <div className="relative bg-gradient-to-br from-green-500 to-green-600 rounded-full p-4 shadow-xl">
-                        <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Mensaje de éxito */}
-                  <h4 className="text-2xl font-bold text-white mb-2 text-center">
-                    ¡Pago Confirmado!
-                  </h4>
-                  <p className="text-green-400 text-lg font-semibold mb-4 text-center">
-                    Plan {selectedPlan} - {getPlanAmount(selectedPlan)}
-                  </p>
-                  <p className="text-gray-300 text-sm mb-6 text-center">
-                    Serás redirigido a WhatsApp para completar tu activación...
-                  </p>
-
-                  {/* Barra de progreso */}
-                  <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                    <div className="bg-gradient-to-r from-green-500 to-green-400 h-full rounded-full" 
-                         style={{ animation: 'progressBar 3s ease-in-out forwards' }} />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Modal de Registro */}
+      <RegisterModal
+        isOpen={showRegisterModal}
+        onClose={() => setShowRegisterModal(false)}
+        selectedPlan={selectedPlan}
+        onSuccess={handleRegisterSuccess}
+      />
     </div>
   );
 };

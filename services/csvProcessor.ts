@@ -590,6 +590,155 @@ const normalizarNombre = (nombre: string): string => {
     .trim();
 };
 
+// Función NUEVA para limpiar campos de texto de caracteres inválidos para Andreani
+const limpiarCampoTexto = (texto: string): string => {
+  if (!texto) return '';
+  
+  // Primero normalizar caracteres especiales
+  let textoLimpio = texto
+    // Normalizar acentos minúsculas
+    .replace(/[áàäâ]/g, 'a')
+    .replace(/[éèëê]/g, 'e')
+    .replace(/[íìïî]/g, 'i')
+    .replace(/[óòöô]/g, 'o')
+    .replace(/[úùüû]/g, 'u')
+    .replace(/[ñ]/g, 'n')
+    // Normalizar acentos mayúsculas
+    .replace(/[ÁÀÄÂ]/g, 'A')
+    .replace(/[ÉÈËÊ]/g, 'E')
+    .replace(/[ÍÌÏÎ]/g, 'I')
+    .replace(/[ÓÒÖÔ]/g, 'O')
+    .replace(/[ÚÙÜÛ]/g, 'U')
+    .replace(/[Ñ]/g, 'N')
+    // Caracteres especiales
+    .replace(/[ç]/g, 'c')
+    .replace(/[Ç]/g, 'C');
+  
+  // CRÍTICO: Remover caracteres que pueden causar problemas en CSVs de Andreani
+  // Remover puntos, barras, guiones y otros caracteres especiales problemáticos
+  textoLimpio = textoLimpio
+    .replace(/\./g, ' ')  // Punto -> espacio
+    .replace(/\//g, ' ')  // Barra -> espacio
+    .replace(/\\/g, ' ')  // Barra invertida -> espacio
+    .replace(/\|/g, ' ')  // Pipe -> espacio
+    .replace(/:/g, ' ')   // Dos puntos -> espacio
+    .replace(/;/g, ' ')   // Punto y coma -> espacio (crítico para CSV)
+    .replace(/"/g, '')    // Comillas dobles -> vacío
+    .replace(/'/g, '')    // Comillas simples -> vacío
+    .replace(/`/g, '')    // Comilla invertida -> vacío
+    .replace(/\*/g, '')   // Asterisco -> vacío
+    .replace(/\?/g, '')   // Interrogación -> vacío
+    .replace(/!/g, '')    // Exclamación -> vacío
+    .replace(/@/g, ' ')   // Arroba -> espacio (excepto en emails)
+    .replace(/#/g, '')    // Numeral -> vacío
+    .replace(/\$/g, '')   // Dólar -> vacío
+    .replace(/%/g, '')    // Porcentaje -> vacío
+    .replace(/&/g, ' y ') // Ampersand -> 'y'
+    .replace(/\+/g, ' ')  // Más -> espacio
+    .replace(/=/g, ' ')   // Igual -> espacio
+    .replace(/\[/g, '')   // Corchete izq -> vacío
+    .replace(/\]/g, '')   // Corchete der -> vacío
+    .replace(/\{/g, '')   // Llave izq -> vacío
+    .replace(/\}/g, '')   // Llave der -> vacío
+    .replace(/\(/g, '')   // Paréntesis izq -> vacío
+    .replace(/\)/g, '')   // Paréntesis der -> vacío
+    .replace(/<</g, '')   // Menor que -> vacío
+    .replace(/>>/g, '')   // Mayor que -> vacío
+    .replace(/~/g, '')    // Tilde -> vacío
+    .replace(/\^/g, '')   // Acento circunflejo -> vacío
+    .replace(/_/g, ' ')   // Guión bajo -> espacio
+    .replace(/[–—]/g, ' ') // Guiones largos -> espacio
+    .replace(/-/g, ' ')   // Guión normal -> espacio
+    .replace(/,/g, ' ')   // Coma -> espacio
+    .replace(/\r?\n/g, ' ') // Saltos de línea -> espacio
+    .replace(/\t/g, ' ')  // Tabulaciones -> espacio
+    .replace(/\s+/g, ' ') // Múltiples espacios -> un espacio
+    .trim();
+  
+  // Remover cualquier carácter no ASCII que quede
+  textoLimpio = textoLimpio.replace(/[^\x00-\x7F]/g, '');
+  
+  return textoLimpio;
+};
+
+// Función para validar y reportar datos inválidos
+const validarDatos = (data: any[], tipo: string): void => {
+  console.log(`\n=== 🔍 VALIDACIÓN DE DATOS ${tipo.toUpperCase()} ===`);
+  
+  let erroresEncontrados = 0;
+  const caracteresProblematicos = /[\.\/\\\|:;"'`\*\?!@#\$%&\+\=\[\]\{\}\(\)<>~\^_\-,\r\n\t]/g;
+  
+  data.forEach((registro, index) => {
+    const numInterno = registro['Numero Interno'] || registro['Numero Interno\nEj: '] || `Registro ${index + 1}`;
+    
+    // Validar cada campo de texto
+    const camposTexto = tipo === 'DOMICILIOS' 
+      ? ['Nombre *', 'Apellido *', 'Calle *', 'Piso', 'Departamento', 'Provincia / Localidad / CP *']
+      : ['Nombre *', 'Apellido *', 'Sucursal *'];
+    
+    // También considerar variantes con saltos de línea
+    const camposTextoConNL = tipo === 'DOMICILIOS'
+      ? ['Nombre *\nEj: ', 'Apellido *\nEj: ', 'Calle *\nEj: ', 'Piso\nEj: ', 'Departamento\nEj: ', 'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657']
+      : ['Nombre *\nEj: ', 'Apellido *\nEj: ', 'Sucursal * \nEj: 9 DE JULIO'];
+    
+    camposTexto.forEach((campo, idx) => {
+      const campoConNL = camposTextoConNL[idx];
+      const valor = registro[campo] || registro[campoConNL] || '';
+      
+      if (valor && typeof valor === 'string') {
+        const match = valor.match(caracteresProblematicos);
+        if (match) {
+          erroresEncontrados++;
+          console.warn(`⚠️  ${numInterno} - Campo "${campo}": caracteres inválidos encontrados: ${[...new Set(match)].join(', ')}`);
+          console.warn(`    Valor original: "${valor}"`);
+          console.warn(`    Valor limpio debería ser: "${limpiarCampoTexto(valor)}"`);
+        }
+        
+        // Verificar caracteres no-ASCII
+        const nonAscii = valor.match(/[^\x00-\x7F]/g);
+        if (nonAscii) {
+          erroresEncontrados++;
+          console.warn(`⚠️  ${numInterno} - Campo "${campo}": caracteres no-ASCII encontrados`);
+          console.warn(`    Caracteres problemáticos: ${[...new Set(nonAscii)].join(', ')}`);
+        }
+      }
+    });
+    
+    // Validar número de calle (solo para domicilios)
+    if (tipo === 'DOMICILIOS') {
+      const numero = registro['Número *'] || registro['Número *\nEj: '] || '';
+      if (numero && !/^\d+$/.test(numero)) {
+        erroresEncontrados++;
+        console.warn(`⚠️  ${numInterno} - Número de calle inválido: "${numero}" (debe contener solo dígitos)`);
+      }
+    }
+    
+    // Validar DNI
+    const dni = registro['DNI *'] || registro['DNI *\nEj: '] || '';
+    if (dni && !/^\d{7,8}$/.test(dni)) {
+      erroresEncontrados++;
+      console.warn(`⚠️  ${numInterno} - DNI inválido: "${dni}" (debe tener 7-8 dígitos)`);
+    }
+    
+    // Validar teléfono
+    const codigo = registro['Celular código *'] || registro['Celular código *\nEj: '] || '';
+    const numero = registro['Celular número *'] || registro['Celular número *\nEj: '] || '';
+    if ((codigo && !/^\d{2,4}$/.test(codigo)) || (numero && !/^\d{6,8}$/.test(numero))) {
+      erroresEncontrados++;
+      console.warn(`⚠️  ${numInterno} - Teléfono inválido: Código "${codigo}" / Número "${numero}"`);
+    }
+  });
+  
+  if (erroresEncontrados === 0) {
+    console.log(`✅ No se encontraron errores en ${data.length} registros de ${tipo}`);
+  } else {
+    console.log(`❌ Se encontraron ${erroresEncontrados} errores en ${data.length} registros de ${tipo}`);
+    console.log(`⚠️  ADVERTENCIA: Andreani puede rechazar el archivo si hay caracteres inválidos`);
+  }
+  
+  console.log(`=== FIN VALIDACIÓN ${tipo.toUpperCase()} ===\n`);
+};
+
 // Función para normalizar direcciones (remover acentos, caracteres especiales, etc.)
 const normalizarDireccion = (direccion: string): string => {
   return direccion
@@ -981,8 +1130,8 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     const apellido = apellidoParts.join(' ');
     
     // Normalizar nombres y apellidos para evitar caracteres inválidos
-    const nombreNormalizado = normalizarNombre(nombre);
-    const apellidoNormalizado = normalizarNombre(apellido);
+    const nombreNormalizado = limpiarCampoTexto(nombre);
+    const apellidoNormalizado = limpiarCampoTexto(apellido);
 
     // Helper function to split phone number based on province and phone number
     const telefono = getColumnValue(order, 13); // Teléfono
@@ -1255,7 +1404,10 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       medioEnvioNormalizado.includes("domicilio") ||
       medioEnvioNormalizado.includes("andreani") && medioEnvioNormalizado.includes("estandar") ||
       medioEnvioNormalizado.includes("envio a domicilio") ||
-      medioEnvioNormalizado.includes("a domicilio")
+      medioEnvioNormalizado.includes("a domicilio") ||
+      medioEnvioNormalizado.includes("correo argentino") ||
+      medioEnvioNormalizado.includes("envio clasico") ||
+      medioEnvioNormalizado.includes("envio express")
     );
     
     // Detectar envío a sucursal
@@ -1339,8 +1491,8 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       }
       
       // Normalizar campos de dirección para evitar caracteres inválidos
-      const calleNormalizada = normalizarNombre(getColumnValue(order, 16));
-      const pisoNormalizado = normalizarNombre(getColumnValue(order, 18));
+      const calleNormalizada = limpiarCampoTexto(getColumnValue(order, 16));
+      const pisoNormalizado = limpiarCampoTexto(getColumnValue(order, 18));
       
       // Procesar número de calle - debe ser SOLO números
       let numeroCalle = getColumnValue(order, 17).trim();
@@ -1432,7 +1584,7 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       console.error(`   Medio de envío original: "${medioEnvio}"`);
       console.error(`   Medio de envío normalizado: "${medioEnvioNormalizado}"`);
       console.error(`   ⚠️ El medio de envío no coincide con ningún patrón conocido`);
-      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar"`);
+      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar", "correo argentino", "envio clasico", "envio express"`);
       console.error(`   ✅ Patrones de SUCURSAL: "punto de retiro", "sucursal", "retiro"`);
     }
   }
@@ -1443,6 +1595,14 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
   console.log(`- Sucursales: ${contadorSucursales}`);
   console.log(`- No procesados: ${contadorNoProcesados}`);
   console.log('Final results - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
+
+  // 🔍 VALIDAR DATOS ANTES DE GENERAR CSV
+  if (domicilios.length > 0) {
+    validarDatos(domicilios, 'DOMICILIOS');
+  }
+  if (sucursalesOutput.length > 0) {
+    validarDatos(sucursalesOutput, 'SUCURSALES');
+  }
 
   // Recopilar logs de procesamiento
   const processingLogs: string[] = [];
@@ -1614,7 +1774,7 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       console.warn(`Formato de DNI/CUIT no reconocido: ${dniCuitLimpio} (${dniCuitLimpio.length} dígitos)`);
     }
 
-    // Datos base para ambos tipos
+    // Datos base para ambos tipos - con limpieza de campos de texto
     const baseData = {
       'Paquete Guardado \nEj: 1': '',
       'Peso (grs)\nEj: ': '400',
@@ -1623,8 +1783,8 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       'Profundidad (cm)\nEj: ': '10',
       'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado,
       'Numero Interno\nEj: ': `#${numeroOrden}`,
-      'Nombre *\nEj: ': nombreCompleto,
-      'Apellido *\nEj: ': apellidoComprador,
+      'Nombre *\nEj: ': limpiarCampoTexto(nombreCompleto),
+      'Apellido *\nEj: ': limpiarCampoTexto(apellidoComprador),
       'DNI *\nEj: ': dniProcesado,
       'Email *\nEj: ': email,
       'Celular código *\nEj: ': codigoArea,
@@ -1647,7 +1807,10 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       medioEnvioNorm.includes("domicilio") ||
       medioEnvioNorm.includes("andreani") && medioEnvioNorm.includes("estandar") ||
       medioEnvioNorm.includes("envio a domicilio") ||
-      medioEnvioNorm.includes("a domicilio")
+      medioEnvioNorm.includes("a domicilio") ||
+      medioEnvioNorm.includes("correo argentino") ||
+      medioEnvioNorm.includes("envio clasico") ||
+      medioEnvioNorm.includes("envio express")
     );
     
     // Detectar envío a sucursal
@@ -1663,46 +1826,9 @@ export const processVentasOrders = async (csvContent: string): Promise<{
     if (esDomicilioVentas && !esSucursalVentas) {
       contadorDomicilios++;
       console.log(`[DOMICILIO ${contadorDomicilios}] Procesando pedido:`, numeroOrden);
-      // Procesar envío a domicilio
-      const calleNormalizada = direccion.replace(/[áàäâ]/g, 'a')
-        .replace(/[éèëê]/g, 'e')
-        .replace(/[íìïî]/g, 'i')
-        .replace(/[óòöô]/g, 'o')
-        .replace(/[úùüû]/g, 'u')
-        .replace(/[ñ]/g, 'n')
-        .replace(/[ÁÀÄÂ]/g, 'A')
-        .replace(/[ÉÈËÊ]/g, 'E')
-        .replace(/[ÍÌÏÎ]/g, 'I')
-        .replace(/[ÓÒÖÔ]/g, 'O')
-        .replace(/[ÚÙÜÛ]/g, 'U')
-        .replace(/[Ñ]/g, 'N')
-        .replace(/[ç]/g, 'c')
-        .replace(/[Ç]/g, 'C')
-        .replace(/['']/g, '')
-        .replace(/[""]/g, '"')
-        .replace(/[–—]/g, '-')
-        .replace(/[…]/g, '...')
-        .replace(/[]/g, '');
-
-      const pisoNormalizado = piso.replace(/[áàäâ]/g, 'a')
-        .replace(/[éèëê]/g, 'e')
-        .replace(/[íìïî]/g, 'i')
-        .replace(/[óòöô]/g, 'o')
-        .replace(/[úùüû]/g, 'u')
-        .replace(/[ñ]/g, 'n')
-        .replace(/[ÁÀÄÂ]/g, 'A')
-        .replace(/[ÉÈËÊ]/g, 'E')
-        .replace(/[ÍÌÏÎ]/g, 'I')
-        .replace(/[ÓÒÖÔ]/g, 'O')
-        .replace(/[ÚÙÜÛ]/g, 'U')
-        .replace(/[Ñ]/g, 'N')
-        .replace(/[ç]/g, 'c')
-        .replace(/[Ç]/g, 'C')
-        .replace(/['']/g, '')
-        .replace(/[""]/g, '"')
-        .replace(/[–—]/g, '-')
-        .replace(/[…]/g, '...')
-        .replace(/[]/g, '');
+      // Procesar envío a domicilio - usando función de limpieza mejorada
+      const calleNormalizada = limpiarCampoTexto(direccion);
+      const pisoNormalizado = limpiarCampoTexto(piso);
 
       // Procesar número de calle - debe ser SOLO números
       let numeroCalleVentas = numero.trim();
@@ -1813,7 +1939,7 @@ export const processVentasOrders = async (csvContent: string): Promise<{
       console.error(`   Medio de envío original: "${medioEnvio}"`);
       console.error(`   Medio de envío normalizado: "${medioEnvioNorm}"`);
       console.error(`   ⚠️ El medio de envío no coincide con ningún patrón conocido`);
-      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar"`);
+      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar", "correo argentino", "envio clasico", "envio express"`);
       console.error(`   ✅ Patrones de SUCURSAL: "punto de retiro", "sucursal", "retiro"`);
     }
   }
@@ -1824,6 +1950,14 @@ export const processVentasOrders = async (csvContent: string): Promise<{
   console.log(`- Sucursales: ${contadorSucursales}`);
   console.log(`- No procesados: ${contadorNoProcesados}`);
   console.log('Resultados finales - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
+
+  // 🔍 VALIDAR DATOS ANTES DE GENERAR CSV
+  if (domicilios.length > 0) {
+    validarDatos(domicilios, 'DOMICILIOS');
+  }
+  if (sucursalesOutput.length > 0) {
+    validarDatos(sucursalesOutput, 'SUCURSALES');
+  }
 
   // Recopilar logs de procesamiento
   const processingLogs: string[] = [];

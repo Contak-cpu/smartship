@@ -21,6 +21,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     // Configuraciones adicionales para evitar problemas de sincronización
     flowType: 'pkce',
     debug: false,
+    // Desactivar confirmación de email temporalmente
+    confirmEmailChange: false,
   },
   // Configuraciones adicionales del cliente
   global: {

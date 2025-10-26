@@ -66,7 +66,7 @@ export const LEVEL_NAMES: Record<number, string> = {
   0: 'Invitado',
   1: 'Starter',
   2: 'Basic',
-  3: 'Admin',
+  3: 'Cliente VIP',
   999: 'Dios'
 };
 
@@ -75,7 +75,7 @@ export const LEVEL_COLORS: Record<number, string> = {
   0: 'gray',
   1: 'green',
   2: 'blue',
-  3: 'purple',
+  3: 'purple', // Cliente VIP - color púrpura elegante
   999: 'red'
 };
 
