@@ -72,7 +72,7 @@ const getIconForFeature = (featureKey: string) => {
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { username, userLevel, hasAccess, isPaid, user } = useAuth();
-  const [userPaidStatus, setUserPaidStatus] = React.useState<boolean | null>(null);
+  const [userPaidStatus, setUserPaidStatus] = React.useState<boolean>(false);
   const [paymentStatus, setPaymentStatus] = React.useState<string | null>(null);
 
   // Verificar si el usuario pagó y estado de pago
@@ -83,9 +83,18 @@ const DashboardPage: React.FC = () => {
         setUserPaidStatus(paid);
         
         // Verificar payment_status
-        if (user?.user_metadata?.payment_status) {
-          setPaymentStatus(user.user_metadata.payment_status);
+        const paymentStatusValue = user?.user_metadata?.payment_status;
+        if (paymentStatusValue) {
+          setPaymentStatus(paymentStatusValue);
         }
+        
+        console.log('🔍 [DashboardPage] Estado de pago:', {
+          isPaid: paid,
+          paymentStatus: paymentStatusValue,
+          userId: user?.id,
+          email: user?.email,
+          metadata: user?.user_metadata
+        });
       } catch (error) {
         console.error('Error verificando estado de pago:', error);
         setUserPaidStatus(false);
@@ -304,7 +313,7 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Payment Request (solo para usuarios que no pagaron Y no tienen solicitud pendiente) */}
-          {userPaidStatus !== true && paymentStatus !== 'pending' && (
+          {!userPaidStatus && paymentStatus !== 'pending' && (
             <div className="mb-8 px-2">
               <PaymentRequest currentPlan="Trial" onPaymentRequested={(plan) => console.log('Solicitud de pago:', plan)} />
             </div>
