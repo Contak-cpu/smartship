@@ -27,6 +27,20 @@ const CuponesPage: React.FC = () => {
       descuento: '30% OFF',
       activo: true,
     },
+    {
+      id: '3',
+      codigo: 'ANDREANI20',
+      descripcion: 'Cupón para envío de pallets',
+      descuento: '20% OFF',
+      activo: true,
+    },
+    {
+      id: '4',
+      codigo: '20PORPALLET',
+      descripcion: 'Descuento especial por pallet',
+      descuento: '20% OFF',
+      activo: true,
+    },
   ];
 
   const copyToClipboard = async (codigo: string, index: number) => {
@@ -58,7 +72,7 @@ const CuponesPage: React.FC = () => {
           </div>
 
           {/* Cupones Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
             {cupones.map((cupon, index) => (
               <div
                 key={cupon.id}
