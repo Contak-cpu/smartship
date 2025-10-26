@@ -48,17 +48,39 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange }) => 
 
   return (
     <>
-      {/* Botón para abrir configuración */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="absolute top-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 shadow-lg"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        Configurar Valores
-      </button>
+      {/* Botón para abrir configuración con ícono de información */}
+      <div className="absolute top-4 right-4 flex items-center gap-3">
+        {/* Ícono de información */}
+        <div className="group relative">
+          <div className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-all duration-300 cursor-help shadow-lg">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+            </svg>
+          </div>
+          {/* Tooltip */}
+          <div className="hidden group-hover:block absolute right-0 top-10 z-50 w-80 bg-gray-900 text-white text-sm rounded-lg shadow-xl p-4 border border-gray-700">
+            <strong className="text-blue-400">ℹ️ Configuración de Valores Predeterminados</strong>
+            <div className="mt-3 space-y-2 text-gray-300">
+              <p><strong>Valor Declarado:</strong> Valor asegurado del paquete que Andreani usará para calcular el costo del seguro (incluye IVA).</p>
+              <p><strong>Peso:</strong> Peso total del paquete en gramos. Andreani cobra según el peso del paquete.</p>
+              <p><strong>Dimensiones:</strong> Alto, ancho y profundidad del paquete en centímetros. Importantes para calcular el volumen del envío.</p>
+              <p className="text-xs text-gray-400 mt-2">Estos valores se aplicarán automáticamente a todos los paquetes procesados.</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Botón de configuración */}
+        <button
+          onClick={() => setIsOpen(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 shadow-lg"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Configurar Valores
+        </button>
+      </div>
 
       {/* Modal de configuración */}
       {isOpen && (
