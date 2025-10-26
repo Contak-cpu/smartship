@@ -163,3 +163,5 @@ ORDER BY up.nivel DESC, u.created_at DESC;
 -- ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 -- CREATE POLICY "Users can view own profile" ON user_profiles FOR SELECT USING (auth.uid() = id);
 -- CREATE POLICY "Users can update own profile" ON user_profiles FOR UPDATE USING (auth.uid() = id);
+
+

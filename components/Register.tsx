@@ -49,7 +49,13 @@ export const Register: React.FC<RegisterProps> = ({ onGoBack }) => {
     }
 
     try {
-      const { error: signUpError } = await signUp(email, password, username);
+      // Delay mínimo para mejorar la percepción del usuario
+      const signUpResult = await Promise.all([
+        signUp(email, password, username),
+        new Promise(resolve => setTimeout(resolve, 1000)) // Delay mínimo de 1s
+      ]);
+      
+      const { error: signUpError } = signUpResult[0];
       
       if (signUpError) {
         if (signUpError.message.includes('already registered')) {
@@ -64,10 +70,10 @@ export const Register: React.FC<RegisterProps> = ({ onGoBack }) => {
         setSuccess('¡Cuenta creada exitosamente! Redirigiendo al dashboard...');
         console.log('✅ Registro exitoso, redirigiendo al dashboard...');
         
-        // Esperar un momento y redirigir
+        // Pequeño delay para mostrar el mensaje de éxito
         setTimeout(() => {
           navigate('/dashboard', { replace: true });
-        }, 1500);
+        }, 800);
       }
     } catch (err) {
       console.error('Error en registro:', err);
@@ -203,24 +209,29 @@ export const Register: React.FC<RegisterProps> = ({ onGoBack }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 disabled:transform-none flex items-center justify-center text-sm sm:text-base relative overflow-hidden"
           >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Creando cuenta...
-              </>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
-                Crear Cuenta Gratis
-              </>
+            {isLoading && (
+              <div className="absolute inset-0 bg-blue-700 animate-pulse" />
             )}
+            <span className="relative flex items-center">
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creando cuenta...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  Crear Cuenta Gratis
+                </>
+              )}
+            </span>
           </button>
         </form>
 
@@ -244,3 +255,5 @@ export const Register: React.FC<RegisterProps> = ({ onGoBack }) => {
     </div>
   );
 };
+
+

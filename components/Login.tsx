@@ -29,8 +29,13 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
     }
 
     try {
+      // Delay mínimo para mejorar la percepción del usuario (simula procesamiento)
+      const [result] = await Promise.all([
+        signIn(email, password),
+        new Promise(resolve => setTimeout(resolve, 800)) // Delay mínimo de 800ms
+      ]);
+      
       console.log('🔍 [Login] Iniciando login para:', email);
-      const result = await signIn(email, password);
       
       if (result.error) {
         console.error('❌ [Login] Error de autenticación:', result.error);
@@ -39,17 +44,20 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
       } else {
         console.log('✅ [Login] Login exitoso');
         
-        // Esperar un momento para que se actualice el estado de autenticación
-        setTimeout(() => {
-          console.log('🔍 [Login] Estado actualizado');
-          if (onLogin && userProfile) {
-            console.log('✅ [Login] Llamando onLogin con:', userProfile.username, userProfile.nivel);
+        // Mensaje de éxito visual
+        console.log('🔍 [Login] Estado actualizado');
+        if (onLogin && userProfile) {
+          console.log('✅ [Login] Llamando onLogin con:', userProfile.username, userProfile.nivel);
+          // Pequeño delay para mostrar el éxito antes de redirigir
+          setTimeout(() => {
             onLogin(userProfile.username, userProfile.nivel);
-          } else {
-            console.log('⚠️ [Login] Redirigiendo a dashboard');
+          }, 500);
+        } else {
+          console.log('⚠️ [Login] Redirigiendo a dashboard');
+          setTimeout(() => {
             navigate('/dashboard', { replace: true });
-          }
-        }, 1000);
+          }, 500);
+        }
       }
     } catch (err) {
       console.error('❌ [Login] Error en login:', err);
@@ -130,24 +138,29 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 disabled:transform-none flex items-center justify-center text-sm sm:text-base relative overflow-hidden"
           >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Iniciando sesión...
-              </>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
-                Iniciar Sesión
-              </>
+            {isLoading && (
+              <div className="absolute inset-0 bg-blue-700 animate-pulse" />
             )}
+            <span className="relative flex items-center">
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Iniciando sesión...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                  Iniciar Sesión
+                </>
+              )}
+            </span>
           </button>
         </form>
 

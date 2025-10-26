@@ -1076,7 +1076,17 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
   return mejorCoincidencia;
 };
 
-export const processOrders = async (tiendanubeCsvText: string): Promise<{ domicilioCSV: string; sucursalCSV: string; }> => {
+export const processOrders = async (tiendanubeCsvText: string, config?: { peso: number; alto: number; ancho: number; profundidad: number; valorDeclarado: number }): Promise<{ domicilioCSV: string; sucursalCSV: string; }> => {
+  // Valores por defecto
+  const defaultConfig = {
+    peso: 400,
+    alto: 10,
+    ancho: 10,
+    profundidad: 10,
+    valorDeclarado: 6000,
+  };
+  
+  const finalConfig = config || defaultConfig;
   const [sucursales, codigosPostales, tiendanubeOrders] = await Promise.all([
     fetchSucursales(),
     fetchCodigosPostales(),
@@ -1361,11 +1371,11 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     
     const baseData = {
       'Paquete Guardado Ej:': '', // Siempre vacío
-      'Peso (grs)': 400,
-      'Alto (cm)': 10,
-      'Ancho (cm)': 10,
-      'Profundidad (cm)': 10,
-      'Valor declarado ($ C/IVA) *': 6000,
+      'Peso (grs)': finalConfig.peso,
+      'Alto (cm)': finalConfig.alto,
+      'Ancho (cm)': finalConfig.ancho,
+      'Profundidad (cm)': finalConfig.profundidad,
+      'Valor declarado ($ C/IVA) *': finalConfig.valorDeclarado,
       'Numero Interno': `#${getColumnValue(order, 0)}`, // Número de orden con #
       'Nombre *': nombreNormalizado || '',
       'Apellido *': apellidoNormalizado || '',
@@ -1659,10 +1669,20 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
 };
 
 // Nueva función para procesar el formato de ventas específico
-export const processVentasOrders = async (csvContent: string): Promise<{
+export const processVentasOrders = async (csvContent: string, config?: { peso: number; alto: number; ancho: number; profundidad: number; valorDeclarado: number }): Promise<{
   domicilioCSV: string;
   sucursalCSV: string;
 }> => {
+  // Valores por defecto
+  const defaultConfig = {
+    peso: 400,
+    alto: 10,
+    ancho: 10,
+    profundidad: 10,
+    valorDeclarado: 6000,
+  };
+  
+  const finalConfig = config || defaultConfig;
   console.log('Procesando archivo de ventas...');
   
   // Cargar datos necesarios
@@ -1777,11 +1797,11 @@ export const processVentasOrders = async (csvContent: string): Promise<{
     // Datos base para ambos tipos - con limpieza de campos de texto
     const baseData = {
       'Paquete Guardado \nEj: 1': '',
-      'Peso (grs)\nEj: ': '400',
-      'Alto (cm)\nEj: ': '10',
-      'Ancho (cm)\nEj: ': '10',
-      'Profundidad (cm)\nEj: ': '10',
-      'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado,
+      'Peso (grs)\nEj: ': String(finalConfig.peso),
+      'Alto (cm)\nEj: ': String(finalConfig.alto),
+      'Ancho (cm)\nEj: ': String(finalConfig.ancho),
+      'Profundidad (cm)\nEj: ': String(finalConfig.profundidad),
+      'Valor declarado ($ C/IVA) *\nEj: ': String(finalConfig.valorDeclarado),
       'Numero Interno\nEj: ': `#${numeroOrden}`,
       'Nombre *\nEj: ': limpiarCampoTexto(nombreCompleto),
       'Apellido *\nEj: ': limpiarCampoTexto(apellidoComprador),

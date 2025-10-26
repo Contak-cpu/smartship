@@ -216,3 +216,5 @@ SELECT '5. Validar acceso a todas las secciones del dashboard';
 -- Si ves muchos ✅, la configuración está correcta.
 -- Si ves ❌, revisa la sección correspondiente en el script de configuración.
 -- Si ves ⚠️, es normal en algunos casos (ej: no hay usuarios aún).
+
+

@@ -1,0 +1,190 @@
+import React, { useState, useEffect } from 'react';
+
+export interface SmartShipConfigValues {
+  peso: number;
+  alto: number;
+  ancho: number;
+  profundidad: number;
+  valorDeclarado: number;
+}
+
+interface SmartShipConfigProps {
+  onConfigChange: (config: SmartShipConfigValues) => void;
+}
+
+const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [config, setConfig] = useState<SmartShipConfigValues>({
+    peso: 400,
+    alto: 10,
+    ancho: 10,
+    profundidad: 10,
+    valorDeclarado: 6000,
+  });
+
+  // Cargar configuración guardada al iniciar
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('smartship-config');
+    if (savedConfig) {
+      try {
+        const parsedConfig = JSON.parse(savedConfig);
+        setConfig(parsedConfig);
+        onConfigChange(parsedConfig);
+      } catch (error) {
+        console.error('Error al cargar configuración:', error);
+      }
+    } else {
+      onConfigChange(config);
+    }
+  }, []);
+
+  // Guardar configuración cuando cambie
+  const handleConfigChange = (field: keyof SmartShipConfigValues, value: number) => {
+    const newConfig = { ...config, [field]: value };
+    setConfig(newConfig);
+    localStorage.setItem('smartship-config', JSON.stringify(newConfig));
+    onConfigChange(newConfig);
+  };
+
+  return (
+    <>
+      {/* Botón para abrir configuración */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="absolute top-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 shadow-lg"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        Configurar Valores
+      </button>
+
+      {/* Modal de configuración */}
+      {isOpen && (
+        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 space-y-6">
+            {/* Encabezado */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Configuración de Valores</h2>
+                <p className="text-gray-400 text-sm mt-1">Define los valores predeterminados para el procesamiento</p>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Contenido */}
+            <div className="space-y-4">
+              {/* Valor Declarado */}
+              <div className="bg-gray-700/50 rounded-lg p-4">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Valor Declarado ($ C/IVA) *
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={config.valorDeclarado}
+                    onChange={(e) => handleConfigChange('valorDeclarado', parseInt(e.target.value) || 6000)}
+                    className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    min="0"
+                  />
+                  <span className="text-gray-400 text-sm">$</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Valor asegurado del paquete</p>
+              </div>
+
+              {/* Peso */}
+              <div className="bg-gray-700/50 rounded-lg p-4">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Peso (gramos)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={config.peso}
+                    onChange={(e) => handleConfigChange('peso', parseInt(e.target.value) || 400)}
+                    className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    min="0"
+                  />
+                  <span className="text-gray-400 text-sm">g</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Peso del paquete en gramos</p>
+              </div>
+
+              {/* Medidas */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Alto (cm)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      value={config.alto}
+                      onChange={(e) => handleConfigChange('alto', parseInt(e.target.value) || 10)}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      min="0"
+                    />
+                    <span className="text-gray-400 text-sm">cm</span>
+                  </div>
+                </div>
+
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Ancho (cm)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      value={config.ancho}
+                      onChange={(e) => handleConfigChange('ancho', parseInt(e.target.value) || 10)}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      min="0"
+                    />
+                    <span className="text-gray-400 text-sm">cm</span>
+                  </div>
+                </div>
+
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Profundidad (cm)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      value={config.profundidad}
+                      onChange={(e) => handleConfigChange('profundidad', parseInt(e.target.value) || 10)}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      min="0"
+                    />
+                    <span className="text-gray-400 text-sm">cm</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Botones */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+              >
+                Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default SmartShipConfig;
+
