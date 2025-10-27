@@ -1025,24 +1025,57 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
   let mejorCoincidencia = '';
   let mejorPuntuacion = 0;
   
-  for (const sucursal of coincidenciasExactas) {
+  // Primero filtrar por provincia si está disponible
+  let coincidenciasFiltradas = coincidenciasExactas;
+  if (provincia) {
+    coincidenciasFiltradas = coincidenciasExactas.filter(sucursal => {
+      const direccionSucursal = sucursal.direccion.toLowerCase().trim();
+      const nombreSucursal = sucursal.nombre_sucursal.toLowerCase();
+      
+      // Verificar que la sucursal coincida con la provincia del pedido
+      const coincideProvincia = direccionSucursal.includes(provincia) || 
+                                nombreSucursal.includes(provincia) ||
+                                direccionSucursal.includes(provincia.replace('provincia de ', '')) ||
+                                nombreSucursal.includes(provincia.replace('provincia de ', ''));
+      
+      return coincideProvincia;
+    });
+    
+    console.log(`Coincidencias después de filtrar por provincia ${provincia}:`, coincidenciasFiltradas.length);
+    if (coincidenciasFiltradas.length === 0) {
+      console.log('No hay coincidencias para la provincia, usando todas las coincidencias originales');
+      coincidenciasFiltradas = coincidenciasExactas;
+    }
+  }
+  
+  for (const sucursal of coincidenciasFiltradas) {
     const direccionSucursal = sucursal.direccion.toLowerCase().trim();
     const nombreSucursal = sucursal.nombre_sucursal.toLowerCase();
     let puntuacion = 0;
     
-    // Desempate por código postal (más específico)
+    // Desempate por código postal (más específico) - PESO AUMENTADO
     if (codigoPostal && direccionSucursal.includes(codigoPostal)) {
-      puntuacion += 10;
+      puntuacion += 15;
       console.log(`Desempate por código postal ${codigoPostal} en: ${sucursal.nombre_sucursal}`);
+    }
+    
+    // Desempate por provincia - PESO AUMENTADO SIGNIFICATIVAMENTE
+    if (provincia && direccionSucursal.includes(provincia)) {
+      puntuacion += 20;
+      console.log(`Desempate por provincia ${provincia} en: ${sucursal.nombre_sucursal}`);
+    }
+    if (provincia && nombreSucursal.includes(provincia)) {
+      puntuacion += 15;
+      console.log(`Desempate por provincia en nombre ${provincia} en: ${sucursal.nombre_sucursal}`);
     }
     
     // Desempate por localidad
     if (localidad && direccionSucursal.includes(localidad)) {
-      puntuacion += 8;
+      puntuacion += 10;
       console.log(`Desempate por localidad ${localidad} en: ${sucursal.nombre_sucursal}`);
     }
     if (localidad && nombreSucursal.includes(localidad)) {
-      puntuacion += 6;
+      puntuacion += 8;
     }
     
     // Desempate por ciudad
@@ -1054,12 +1087,6 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
       puntuacion += 4;
     }
     
-    // Desempate por provincia
-    if (provincia && direccionSucursal.includes(provincia)) {
-      puntuacion += 4;
-      console.log(`Desempate por provincia ${provincia} en: ${sucursal.nombre_sucursal}`);
-    }
-    
     if (puntuacion > mejorPuntuacion) {
       mejorPuntuacion = puntuacion;
       mejorCoincidencia = sucursal.nombre_sucursal;
@@ -1068,7 +1095,12 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
   
   // Si no se pudo desempatar, devolver la primera coincidencia
   if (mejorPuntuacion === 0) {
-    console.log('No se pudo desempatar, devolviendo primera coincidencia:', coincidenciasExactas[0].nombre_sucursal);
+    console.log('No se pudo desempatar, devolviendo primera coincidencia de las filtradas:', coincidenciasFiltradas[0]?.nombre_sucursal);
+    // Si teníamos coincidencias filtradas y no encontramos una con puntuación, usar la primera filtrada
+    if (coincidenciasFiltradas.length > 0) {
+      return coincidenciasFiltradas[0].nombre_sucursal;
+    }
+    // Si no, usar la primera de todas las coincidencias
     return coincidenciasExactas[0].nombre_sucursal;
   }
   
