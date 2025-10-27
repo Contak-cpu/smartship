@@ -512,7 +512,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string, includeL
 
 
 export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, sucursalCSV, onDownload, onDownloadCombined, onDownloadExcel }) => {
-  const [includeLlegaHoy, setIncludeLlegaHoy] = useState(false);
+  const [includeLlegaHoy, setIncludeLlegaHoy] = useState(true);
   
   return (
     <div className="bg-gray-900/50 p-4 sm:p-6 rounded-lg animate-fade-in border border-gray-700/50 shadow-xl">
