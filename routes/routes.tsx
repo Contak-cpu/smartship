@@ -15,6 +15,7 @@ import InformacionPage from '../pages/InformacionPage';
 import AdminPanelPage from '../pages/AdminPanelPage';
 import EmailConfirmationPage from '../pages/EmailConfirmationPage';
 import CuponesPage from '../pages/CuponesPage';
+import StockPage from '../pages/StockPage';
 import { Login } from '../components/Login';
 import { PricingPage } from '../components/PricingPage';
 
@@ -140,6 +141,14 @@ export const routes: RouteObject[] = [
       <PaidProtectedRoute sectionName="Cupones de Descuento">
         <CuponesPage />
       </PaidProtectedRoute>
+    ),
+  },
+  {
+    path: '/stock',
+    element: (
+      <LevelProtectedRoute requiredLevel={3} sectionName="Gestión de Stock">
+        <StockPage />
+      </LevelProtectedRoute>
     ),
   },
   // TEMPORALMENTE OCULTO - Información y Estadísticas

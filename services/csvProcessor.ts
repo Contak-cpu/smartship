@@ -7,6 +7,7 @@ import {
 } from '../types';
 import { getDomiciliosMapping } from './domiciliosData';
 import { getSucursalesData } from './sucursalesData';
+import { validarEnvioAntesDeProcesar, generarReporteValidacion, PedidoParaValidar, ValidacionResult } from './validacionEnvios';
 
 // PapaParse is loaded from a CDN and available as a global variable.
 declare const Papa: any;
@@ -816,13 +817,245 @@ const calcularSimilitud = (str1: string, str2: string): number => {
   return maxLength === 0 ? 1 : 1 - (distancia / maxLength);
 };
 
-// Función para encontrar la sucursal correcta basándose en la dirección
+// 🚀 ALGORITMO INTELIGENTE DE SELECCIÓN DE SUCURSALES
+const findSucursalByAddressImproved = (direccionPedido: string, sucursales: AndreaniSucursalInfo[]): string => {
+  console.log('=== 🎯 NUEVO ALGORITMO INTELIGENTE ===');
+  console.log('📍 Procesando dirección:', direccionPedido);
+  
+  // 1️⃣ EXTRAER INFORMACIÓN GEOGRÁFICA
+  const { calle, ciudad, provincia, codigoPostal } = extraerDatosGeograficos(direccionPedido);
+  
+  console.log('🗺️  Datos extraídos:');
+  console.log('   Calle:', calle);
+  console.log('   Ciudad:', ciudad); 
+  console.log('   Provincia:', provincia);
+  console.log('   CP:', codigoPostal);
+  
+  // 2️⃣ VALIDACIÓN CRÍTICA: FILTRAR POR PROVINCIA OBLIGATORIO
+  const sucursalesProvincia = filtrarPorProvincia(sucursales, provincia);
+  
+  if (sucursalesProvincia.length === 0) {
+    console.log('🚨 ALERTA CRÍTICA: No hay sucursales en la provincia:', provincia);
+    return generarAlertaSinSucursal(provincia, sucursales);
+  }
+  
+  console.log(`✅ Sucursales en ${provincia}:`, sucursalesProvincia.length);
+  
+  // 3️⃣ BÚSQUEDA POR CIUDAD EXACTA
+  const sucursalesCiudad = filtrarPorCiudad(sucursalesProvincia, ciudad);
+  
+  if (sucursalesCiudad.length > 0) {
+    console.log(`🎯 Encontradas ${sucursalesCiudad.length} sucursales en ${ciudad}, ${provincia}`);
+    return seleccionarMejorSucursalEnCiudad(sucursalesCiudad, calle, codigoPostal);
+  }
+  
+  // 4️⃣ FALLBACK: SUCURSAL MÁS IMPORTANTE EN LA PROVINCIA
+  console.log(`⚠️  No hay sucursal en ${ciudad}, buscando alternativa en ${provincia}`);
+  return seleccionarSucursalAlternativa(sucursalesProvincia, ciudad);
+};
+
+// 🔧 FUNCIÓN AUXILIAR: Extraer datos geográficos de la dirección
+const extraerDatosGeograficos = (direccion: string) => {
+  const componentes = direccion.split(',').map(c => c.trim());
+  
+  let calle = componentes[0] || '';
+  let ciudad = '';
+  let provincia = '';
+  let codigoPostal = '';
+  
+  // Identificar provincia, ciudad y CP por patrones
+  for (let i = 1; i < componentes.length; i++) {
+    const comp = componentes[i].toLowerCase().trim();
+    
+    // Detectar código postal (números de 4-5 dígitos)
+    if (/^\d{4,5}$/.test(comp)) {
+      codigoPostal = comp;
+      continue;
+    }
+    
+    // Detectar provincias argentinas
+    if (esProvinciaArgentina(comp)) {
+      provincia = comp;
+      continue;
+    }
+    
+    // Si no es CP ni provincia, probablemente es ciudad/localidad
+    if (!ciudad && comp.length > 2) {
+      ciudad = comp;
+    }
+  }
+  
+  return { calle, ciudad, provincia, codigoPostal };
+};
+
+// 🌍 VALIDADOR DE PROVINCIAS ARGENTINAS
+const esProvinciaArgentina = (texto: string): boolean => {
+  const provincias = [
+    'buenos aires', 'catamarca', 'chaco', 'chubut', 'córdoba', 'corrientes',
+    'entre ríos', 'formosa', 'jujuy', 'la pampa', 'la rioja', 'mendoza',
+    'misiones', 'neuquén', 'río negro', 'salta', 'san juan', 'san luis',
+    'santa cruz', 'santa fe', 'santiago del estero', 'tierra del fuego',
+    'tucumán', 'capital federal', 'caba', 'gran buenos aires'
+  ];
+  
+  return provincias.some(prov => texto.includes(prov) || prov.includes(texto));
+};
+
+// 🏛️ FILTRAR SUCURSALES POR PROVINCIA
+const filtrarPorProvincia = (sucursales: AndreaniSucursalInfo[], provincia: string): AndreaniSucursalInfo[] => {
+  if (!provincia) return sucursales;
+  
+  const provNorm = provincia.toLowerCase();
+  
+  return sucursales.filter(sucursal => {
+    const dirSuc = sucursal.direccion.toLowerCase();
+    const nomSuc = sucursal.nombre_sucursal.toLowerCase();
+    
+    // Mapeos específicos de provincias
+    const mapeoProvincias: { [key: string]: string[] } = {
+      'tucumán': ['tucumán', 'san miguel de tucumán', 'tucuman'],
+      'san juan': ['san juan'],
+      'misiones': ['misiones', 'posadas', 'oberá', 'eldorado'],
+      'chubut': ['chubut', 'comodoro rivadavia', 'puerto madryn', 'trelew', 'esquel'],
+      'santa fe': ['santa fe', 'rosario', 'santo tomé', 'santo tome'],
+      'buenos aires': ['buenos aires', 'provincia de buenos aires', 'gran buenos aires'],
+      'formosa': ['formosa', 'clorinda'],
+      'catamarca': ['catamarca', 'san fernando del valle de catamarca']
+    };
+    
+    // Buscar coincidencias directas o por mapeo
+    for (const [prov, variantes] of Object.entries(mapeoProvincias)) {
+      if (provNorm.includes(prov) || prov.includes(provNorm)) {
+        return variantes.some(var_ => dirSuc.includes(var_) || nomSuc.includes(var_));
+      }
+    }
+    
+    // Fallback: búsqueda directa
+    return dirSuc.includes(provNorm) || nomSuc.includes(provNorm);
+  });
+};
+
+// 🏙️ FILTRAR SUCURSALES POR CIUDAD
+const filtrarPorCiudad = (sucursales: AndreaniSucursalInfo[], ciudad: string): AndreaniSucursalInfo[] => {
+  if (!ciudad) return sucursales;
+  
+  const ciudadNorm = ciudad.toLowerCase().trim();
+  
+  return sucursales.filter(sucursal => {
+    const dirSuc = sucursal.direccion.toLowerCase();
+    const nomSuc = sucursal.nombre_sucursal.toLowerCase();
+    
+    return dirSuc.includes(ciudadNorm) || nomSuc.includes(ciudadNorm);
+  });
+};
+
+// 🎯 SELECCIONAR MEJOR SUCURSAL EN LA CIUDAD
+const seleccionarMejorSucursalEnCiudad = (sucursales: AndreaniSucursalInfo[], calle: string, codigoPostal: string): string => {
+  if (sucursales.length === 1) {
+    console.log('✅ Una sola sucursal en la ciudad:', sucursales[0].nombre_sucursal);
+    return sucursales[0].nombre_sucursal;
+  }
+  
+  // Intentar match por calle/dirección exacta
+  const calleNorm = calle.toLowerCase();
+  let mejorMatch = sucursales.find(suc => 
+    suc.direccion.toLowerCase().includes(calleNorm) ||
+    suc.nombre_sucursal.toLowerCase().includes(calleNorm)
+  );
+  
+  if (mejorMatch) {
+    console.log('✅ Match por calle:', mejorMatch.nombre_sucursal);
+    return mejorMatch.nombre_sucursal;
+  }
+  
+  // Si no hay match por calle, priorizar sucursales principales (no PUNTO HOP)
+  const sucursalesPrincipales = sucursales.filter(suc => 
+    !suc.nombre_sucursal.toLowerCase().includes('punto andreani hop')
+  );
+  
+  if (sucursalesPrincipales.length > 0) {
+    console.log('✅ Seleccionando sucursal principal:', sucursalesPrincipales[0].nombre_sucursal);
+    return sucursalesPrincipales[0].nombre_sucursal;
+  }
+  
+  // Fallback: primera sucursal
+  console.log('✅ Fallback - primera sucursal:', sucursales[0].nombre_sucursal);
+  return sucursales[0].nombre_sucursal;
+};
+
+// 🚨 GENERAR ALERTA CUANDO NO HAY SUCURSAL EN LA PROVINCIA
+const generarAlertaSinSucursal = (provincia: string, todasSucursales: AndreaniSucursalInfo[]): string => {
+  console.log('🚨🚨🚨 ALERTA CRÍTICA 🚨🚨🚨');
+  console.log(`❌ NO EXISTE SUCURSAL EN: ${provincia}`);
+  console.log('📋 Provincias disponibles:', obtenerProvinciasDisponibles(todasSucursales));
+  
+  // Retornar un identificador de error claro
+  return `❌ SIN SUCURSAL EN ${provincia.toUpperCase()}`;
+};
+
+// 🗺️ OBTENER PROVINCIAS DISPONIBLES
+const obtenerProvinciasDisponibles = (sucursales: AndreaniSucursalInfo[]): string[] => {
+  const provincias = new Set<string>();
+  
+  sucursales.forEach(suc => {
+    const dir = suc.direccion.toLowerCase();
+    
+    if (dir.includes('buenos aires')) provincias.add('Buenos Aires');
+    if (dir.includes('córdoba') || dir.includes('cordoba')) provincias.add('Córdoba');
+    if (dir.includes('santa fe')) provincias.add('Santa Fe');
+    if (dir.includes('tucumán') || dir.includes('tucuman')) provincias.add('Tucumán');
+    if (dir.includes('mendoza')) provincias.add('Mendoza');
+    if (dir.includes('misiones')) provincias.add('Misiones');
+    if (dir.includes('chubut')) provincias.add('Chubut');
+    if (dir.includes('san juan')) provincias.add('San Juan');
+    // ... agregar más según sea necesario
+  });
+  
+  return Array.from(provincias);
+};
+
+// 🔄 SELECCIONAR SUCURSAL ALTERNATIVA EN LA PROVINCIA
+const seleccionarSucursalAlternativa = (sucursalesProvincia: AndreaniSucursalInfo[], ciudadOriginal: string): string => {
+  // Priorizar sucursales principales de la capital/ciudad más importante
+  const sucursalesPrincipales = sucursalesProvincia.filter(suc => 
+    !suc.nombre_sucursal.toLowerCase().includes('punto andreani hop') &&
+    (suc.nombre_sucursal.toLowerCase().includes('centro') || 
+     suc.nombre_sucursal.toLowerCase().includes('capital'))
+  );
+  
+  if (sucursalesPrincipales.length > 0) {
+    const seleccionada = sucursalesPrincipales[0];
+    console.log(`⚠️  ENVIANDO A SUCURSAL ALTERNATIVA: ${seleccionada.nombre_sucursal}`);
+    console.log(`   (No hay sucursal en ${ciudadOriginal})`);
+    return seleccionada.nombre_sucursal;
+  }
+  
+  // Fallback: primera sucursal de la provincia
+  const seleccionada = sucursalesProvincia[0];
+  console.log(`⚠️  ENVIANDO A SUCURSAL ALTERNATIVA: ${seleccionada.nombre_sucursal}`);
+  return seleccionada.nombre_sucursal;
+};
+
+// 📞 MANTENER FUNCIÓN ORIGINAL COMO FALLBACK
 const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucursalInfo[]): string => {
+  // Usar el nuevo algoritmo mejorado
+  const resultado = findSucursalByAddressImproved(direccionPedido, sucursales);
+  
+  // Si el nuevo algoritmo falla, usar el original como último recurso
+  if (resultado.includes('❌') || resultado === 'SUCURSAL NO ENCONTRADA') {
+    console.log('🔄 Usando algoritmo fallback...');
+    return findSucursalByAddressLegacy(direccionPedido, sucursales);
+  }
+  
+  return resultado;
+};
+
+// 🔧 FUNCIÓN LEGACY (algoritmo anterior renombrado)
+const findSucursalByAddressLegacy = (direccionPedido: string, sucursales: AndreaniSucursalInfo[]): string => {
   const direccionNormalizada = direccionPedido.toLowerCase().trim();
-  console.log('=== DEBUG SUCURSAL ===');
-  console.log('Buscando sucursal para dirección:', direccionNormalizada);
-  console.log('Total sucursales disponibles:', sucursales.length);
-  console.log('Primeras 3 sucursales:', sucursales.slice(0, 3));
+  console.log('=== DEBUG SUCURSAL LEGACY ===');
+  console.log('🔍 Buscando sucursal para dirección:', direccionNormalizada);
+  console.log('📊 Total sucursales disponibles:', sucursales.length);
   
   // Extraer componentes específicos de la dirección del pedido
   const componentes = direccionPedido.split(',').map(c => c.trim());
@@ -1980,6 +2213,31 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
       // Procesar envío a sucursal
       const direccionCompleta = `${direccion} ${numero} ${piso} ${localidad} ${ciudad}`.trim();
       const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales);
+
+      // 🔍 NUEVA VALIDACIÓN DE SEGURIDAD
+      const pedidoValidacion: PedidoParaValidar = {
+        numeroOrden: numeroOrden,
+        direccion: direccionCompleta,
+        sucursalSeleccionada: nombreSucursal,
+        tipoEnvio: 'sucursal',
+        provincia: provincia || '',
+        ciudad: ciudad || localidad || ''
+      };
+      
+      const validacion = validarEnvioAntesDeProcesar(pedidoValidacion);
+      
+      if (!validacion.esValido) {
+        console.log(`🚨 PEDIDO ${numeroOrden} - ERRORES DETECTADOS:`);
+        validacion.errores.forEach(error => console.log(`   ${error}`));
+        if (validacion.accionRequerida) {
+          console.log(`💡 ACCIÓN REQUERIDA: ${validacion.accionRequerida}`);
+        }
+      }
+      
+      if (validacion.advertencias.length > 0) {
+        console.log(`⚠️ PEDIDO ${numeroOrden} - ADVERTENCIAS:`);
+        validacion.advertencias.forEach(adv => console.log(`   ${adv}`));
+      }
 
       sucursalesOutput.push({
         ...baseData,

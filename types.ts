@@ -83,3 +83,22 @@ export interface AndreaniSucursalOutput {
   'Celular número *': string;
   'Sucursal *': string;
 }
+
+// Stock interface
+export interface Stock {
+  id: string;
+  user_id: string;
+  username: string;
+  sku: string;
+  nombreproducto: string | null;
+  cantidad: number;
+  fecha_actualizacion: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockInput {
+  sku: string;
+  nombreproducto?: string;
+  cantidad: number;
+}
