@@ -29802,10 +29802,26 @@ export const getDomiciliosMapping = (): Map<string, string> => {
     if (cpMatch) {
       const codigoPostal = cpMatch[1];
       if (/^\d{4,5}$/.test(codigoPostal)) {
-        // Solo guardar la primera ocurrencia para cada código postal
-        // (esto evita sobrescribir con múltiples localidades)
+        // LÓGICA INTELIGENTE: Detectar automáticamente formatos problemáticos con guiones "-"
         if (!mapping.has(codigoPostal)) {
+          // Primer formato encontrado para este CP - comportamiento normal
           mapping.set(codigoPostal, domicilio);
+        } else {
+          // Ya existe un formato, aplicar lógica inteligente
+          const formatoActual = mapping.get(codigoPostal)!;
+          const formatoNuevo = domicilio;
+          
+          // DETECCIÓN AUTOMÁTICA: Si el actual tiene guiones "-" (barrios problemáticos)
+          // y el nuevo no tiene guiones, reemplazar por el formato básico
+          const actualTieneGuiones = formatoActual.includes(' - ');
+          const nuevoTieneGuiones = formatoNuevo.includes(' - ');
+          
+          if (actualTieneGuiones && !nuevoTieneGuiones) {
+            // Formato actual problemático (con guiones) → Reemplazar por formato básico
+            mapping.set(codigoPostal, domicilio);
+            console.log(`🔄 REEMPLAZADO CP ${codigoPostal}: "${formatoActual}" → "${formatoNuevo}" (formato básico sin guiones)`);
+          }
+          // Si el formato actual NO tiene guiones → Mantener comportamiento original (no reemplazar)
         }
       }
     }

@@ -2141,60 +2141,12 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
       
       if (codigosPostales.has(codigoPostal)) {
         formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
-        console.log(`✅ Código postal ${codigoPostal} encontrado TAL CUAL en domiciliosData.ts: ${formatoProvinciaLocalidadCP}`);
+        console.log(`✅ Código postal ${codigoPostal} encontrado en domiciliosData.ts: ${formatoProvinciaLocalidadCP}`);
       } else {
         console.log(`❌ Código postal ${codigoPostal} NO encontrado en domiciliosData.ts`);
-        
-        // FALLBACK: Buscar por PROVINCIA + LOCALIDAD
-        const provinciaPedido = provincia.toUpperCase();
-        const localidadPedido = localidad.toUpperCase();
-        
-        console.log(`🔍 Buscando por PROVINCIA + LOCALIDAD: "${provinciaPedido} / ${localidadPedido}"`);
-        
-        let encontradoPorProvinciaLocalidad = false;
-        for (const [cp, formato] of codigosPostales.entries()) {
-          // Normalizar para comparar (quitar acentos y convertir a mayúsculas)
-          const formatoNormalizado = formato
-            .replace(/[áàäâ]/g, 'A')
-            .replace(/[éèëê]/g, 'E')
-            .replace(/[íìïî]/g, 'I')
-            .replace(/[óòöô]/g, 'O')
-            .replace(/[úùüû]/g, 'U')
-            .replace(/[ñ]/g, 'N')
-            .toUpperCase();
-          
-          const provinciaNormalizada = provinciaPedido
-            .replace(/[áàäâ]/g, 'A')
-            .replace(/[éèëê]/g, 'E')
-            .replace(/[íìïî]/g, 'I')
-            .replace(/[óòöô]/g, 'O')
-            .replace(/[úùüû]/g, 'U')
-            .replace(/[ñ]/g, 'N');
-          
-          const localidadNormalizada = localidadPedido
-            .replace(/[áàäâ]/g, 'A')
-            .replace(/[éèëê]/g, 'E')
-            .replace(/[íìïî]/g, 'I')
-            .replace(/[óòöô]/g, 'O')
-            .replace(/[úùüû]/g, 'U')
-            .replace(/[ñ]/g, 'N');
-          
-          const patronBusqueda = `${provinciaNormalizada} / ${localidadNormalizada}`;
-          
-          if (formatoNormalizado.includes(patronBusqueda)) {
-            formatoProvinciaLocalidadCP = formato;
-            encontradoPorProvinciaLocalidad = true;
-            console.log(`✅ Encontrado por PROVINCIA + LOCALIDAD: ${formato}`);
-            break;
-          }
-        }
-        
-        if (!encontradoPorProvinciaLocalidad) {
-          console.log(`❌ No encontrado por PROVINCIA + LOCALIDAD tampoco`);
-          // Último fallback: formato por defecto
-          formatoProvinciaLocalidadCP = `${provinciaPedido} / ${localidadPedido} / ${codigoPostal}`;
-          console.log('Usando formato de fallback final:', formatoProvinciaLocalidadCP);
-        }
+        // Fallback: crear formato estándar
+        formatoProvinciaLocalidadCP = `${provincia.toUpperCase()} / ${localidad.toUpperCase()} / ${codigoPostal}`;
+        console.log('Usando formato de fallback:', formatoProvinciaLocalidadCP);
       }
 
       domicilios.push({
