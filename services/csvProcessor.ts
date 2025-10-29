@@ -817,46 +817,305 @@ const calcularSimilitud = (str1: string, str2: string): number => {
   return maxLength === 0 ? 1 : 1 - (distancia / maxLength);
 };
 
-// 🚀 ALGORITMO INTELIGENTE DE SELECCIÓN DE SUCURSALES
+// 🔧 FUNCIÓN AUXILIAR: Normalizar dirección para búsqueda (más agresiva)
+const normalizarDireccionParaBusqueda = (texto: string): string => {
+  return texto.toLowerCase()
+    .replace(/[áàäâ]/g, 'a')
+    .replace(/[éèëê]/g, 'e')
+    .replace(/[íìïî]/g, 'i')
+    .replace(/[óòöô]/g, 'o')
+    .replace(/[úùüû]/g, 'u')
+    .replace(/[ñ]/g, 'n')
+    .replace(/[\.]/g, '')
+    .replace(/[\s]+/g, ' ')
+    .trim();
+};
+
+// 🚀 ALGORITMO ROBUSTO: MATCH EXACTO PRIMERO, GEOLOCALIZACIÓN DESPUÉS
 const findSucursalByAddressImproved = (direccionPedido: string, sucursales: AndreaniSucursalInfo[]): string => {
-  console.log('=== 🎯 NUEVO ALGORITMO INTELIGENTE ===');
-  console.log('📍 Procesando dirección:', direccionPedido);
+  console.log('=== 🎯 ALGORITMO ROBUSTO DE SELECCIÓN ===');
+  console.log('📍 Dirección del pedido:', direccionPedido);
   
-  // 1️⃣ EXTRAER INFORMACIÓN GEOGRÁFICA
+  // Normalizar dirección del pedido para búsqueda
+  const direccionPedidoNorm = normalizarDireccionParaBusqueda(direccionPedido);
+  
+  // 1️⃣ PRIORIDAD MÁXIMA: BÚSQUEDA DIRECTA DE MATCH EXACTO CON VALIDACIÓN DE CÓDIGO POSTAL
+  // El pedido contiene la dirección exacta de la sucursal, busquémosla directamente
+  console.log('🔍 Paso 1: Buscando match exacto de dirección con validación de código postal...');
+  
+  // Extraer datos geográficos PRIMERO para tener el código postal
   const { calle, ciudad, provincia, codigoPostal } = extraerDatosGeograficos(direccionPedido);
   
-  console.log('🗺️  Datos extraídos:');
+  // Extraer calle y número del pedido - MEJORADO para manejar casos donde están separados
+  const componentesPedido = direccionPedido.split(',').map(c => c.trim());
+  let calleYNumero = componentesPedido[0] || '';
+  
+  // Si la calle no incluye números, el número puede estar en el segundo componente
+  // Solo si el segundo componente es SOLO números (no tiene letras)
+  if (!/\d/.test(calleYNumero) && componentesPedido.length > 1) {
+    const segundoComponente = componentesPedido[1];
+    if (/^\d+$/.test(segundoComponente)) {
+      calleYNumero = `${calleYNumero} ${segundoComponente}`.trim();
+    }
+  }
+  
+  const calleYNumeroNorm = normalizarDireccionParaBusqueda(calleYNumero);
+  
+  console.log(`   Dirección clave del pedido (original): "${componentesPedido[0]}"`);
+  console.log(`   Dirección clave del pedido (con número): "${calleYNumero}"`);
+  console.log(`   Dirección clave normalizada: "${calleYNumeroNorm}"`);
+  console.log(`   Código postal del pedido: "${codigoPostal}"`);
+  console.log(`   Provincia del pedido: "${provincia}"`);
+  
+  // Buscar matches exactos o muy precisos - PRIMERO sin validar CP para ver TODOS los posibles matches
+  const todosLosMatches = sucursales.filter(sucursal => {
+    const nombreNorm = normalizarDireccionParaBusqueda(sucursal.nombre_sucursal);
+    const direccionNorm = normalizarDireccionParaBusqueda(sucursal.direccion || '');
+    
+    // Extraer la parte relevante del nombre (después de "PUNTO ANDREANI HOP" si existe)
+    let direccionRealSucursal = direccionNorm;
+    if (nombreNorm.includes('punto andreani hop')) {
+      // La dirección real está en el nombre después de "punto andreani hop"
+      const partes = nombreNorm.split('punto andreani hop');
+      if (partes.length > 1) {
+        direccionRealSucursal = normalizarDireccionParaBusqueda(partes[1].trim());
+      }
+    }
+    
+    // Verificar match de dirección
+    let tieneMatchDireccion = false;
+    
+    // Match 1: Dirección del pedido contiene dirección de la sucursal completa
+    if (direccionPedidoNorm.includes(direccionRealSucursal) && direccionRealSucursal.length > 5) {
+      tieneMatchDireccion = true;
+    }
+    // Match 2: Dirección de sucursal contiene calle y número del pedido
+    else if (direccionRealSucursal.includes(calleYNumeroNorm) && calleYNumeroNorm.length > 3) {
+      tieneMatchDireccion = true;
+    }
+    // Match 3: Nombre de sucursal contiene dirección del pedido
+    else if (nombreNorm.includes(calleYNumeroNorm) && calleYNumeroNorm.length > 3) {
+      tieneMatchDireccion = true;
+    }
+    // Match 3b: Para PUNTO HOP, buscar dirección directa en el nombre (después de extraer la parte relevante)
+    else if (nombreNorm.includes('punto andreani hop')) {
+      // Extraer solo la parte de dirección del nombre PUNTO HOP
+      const partesNombre = nombreNorm.split('punto andreani hop');
+      if (partesNombre.length > 1) {
+        const dirEnNombre = normalizarDireccionParaBusqueda(partesNombre[1].trim());
+        // Buscar si la dirección del pedido está contenida en la dirección del nombre
+        if (dirEnNombre.includes(calleYNumeroNorm) || calleYNumeroNorm.includes(dirEnNombre)) {
+          tieneMatchDireccion = true;
+        }
+      }
+    }
+    // Match 4: Match exacto palabra por palabra
+    else {
+      const palabrasPedido = calleYNumeroNorm.split(/\s+/).filter(p => p.length > 2);
+      if (palabrasPedido.length > 0) {
+        const todasLasPalabras = palabrasPedido.every(palabra => 
+          direccionRealSucursal.includes(palabra) || nombreNorm.includes(palabra)
+        );
+        if (todasLasPalabras && palabrasPedido.length >= 2) {
+          tieneMatchDireccion = true;
+        }
+      }
+    }
+    
+    // Si no hay match de dirección, descartar
+    if (!tieneMatchDireccion) {
+      return false;
+    }
+    
+    // Retornar true para todos los matches de dirección (validaremos CP después)
+    return true;
+  });
+  
+  console.log(`🔍 Encontrados ${todosLosMatches.length} matches de dirección (antes de validar CP)`);
+  
+  // Si hay código postal en el pedido, PRIORIZAR matches con CP válido
+  let matchesExactos = todosLosMatches;
+  
+  if (codigoPostal && todosLosMatches.length > 0) {
+    console.log(`🔍 Validando código postal ${codigoPostal} en ${todosLosMatches.length} matches...`);
+    
+    // Separar matches con CP válido y sin CP válido
+    const matchesConCPValido: AndreaniSucursalInfo[] = [];
+    const matchesSinCPValido: AndreaniSucursalInfo[] = [];
+    
+    for (const sucursal of todosLosMatches) {
+      // Extraer CP de la dirección de la sucursal
+      const cpMatchSucursal = (sucursal.direccion || '').match(/\b([B]?\d{4,5})\b/);
+      const cpSucursal = cpMatchSucursal ? cpMatchSucursal[1].replace(/^B/i, '') : null;
+      
+      // Validar provincia
+      const provSucursal = extraerProvinciaDeDireccion(sucursal.direccion || '');
+      const provCoincide = !provincia || !provSucursal || provSucursal.toLowerCase().includes(provincia.toLowerCase()) || 
+                           provincia.toLowerCase().includes(provSucursal.toLowerCase());
+      
+      // Verificar si es PUNTO HOP (que normalmente no tiene CP en dirección)
+      const esPuntoHop = sucursal.nombre_sucursal.toLowerCase().includes('punto andreani hop');
+      
+      if (cpSucursal && cpSucursal === codigoPostal && provCoincide) {
+        console.log(`   ✅ Match con CP válido: ${sucursal.nombre_sucursal} (CP: ${cpSucursal})`);
+        matchesConCPValido.push(sucursal);
+      } else if (cpSucursal && cpSucursal !== codigoPostal) {
+        console.log(`   ⚠️ Match dirección pero CP no coincide: ${sucursal.nombre_sucursal} (CP pedido: ${codigoPostal}, CP sucursal: ${cpSucursal})`);
+        // NO incluir si el CP no coincide (es un match incorrecto)
+      } else if (!cpSucursal && provCoincide) {
+        // No tiene CP en dirección - aceptar si provincia coincide
+        // PUNTO HOP generalmente no tiene CP en su dirección, así que es normal
+        if (esPuntoHop) {
+          console.log(`   ✅ Match PUNTO HOP (sin CP en dirección pero dirección exacta): ${sucursal.nombre_sucursal}`);
+        } else {
+          console.log(`   ⚠️ Match dirección sin CP pero provincia coincide: ${sucursal.nombre_sucursal}`);
+        }
+        matchesSinCPValido.push(sucursal);
+      }
+    }
+    
+    // PRIORIZAR matches con CP válido
+    if (matchesConCPValido.length > 0) {
+      matchesExactos = matchesConCPValido;
+      console.log(`✅ Usando ${matchesConCPValido.length} matches con CP válido`);
+    } else if (matchesSinCPValido.length > 0) {
+      // Si no hay matches con CP válido, usar matches sin CP (especialmente PUNTO HOP)
+      // Esto es válido porque PUNTO HOP normalmente no tiene CP en su dirección
+      matchesExactos = matchesSinCPValido;
+      console.log(`⚠️ Usando ${matchesSinCPValido.length} matches sin CP válido (pero dirección exacta)`);
+    } else {
+      // Hay CP en pedido pero ningún match tiene CP válido y ninguno es PUNTO HOP
+      console.log(`❌ Todos los matches rechazados - ninguno tiene dirección exacta válida`);
+      matchesExactos = [];
+    }
+  } else if (!codigoPostal && todosLosMatches.length > 0) {
+    // No hay CP, validar solo provincia
+    matchesExactos = todosLosMatches.filter(sucursal => {
+      const provSucursal = extraerProvinciaDeDireccion(sucursal.direccion || '');
+      const provCoincide = !provincia || !provSucursal || provSucursal.toLowerCase().includes(provincia.toLowerCase()) || 
+                           provincia.toLowerCase().includes(provSucursal.toLowerCase());
+      
+      if (!provCoincide) {
+        console.log(`   ⚠️ Match dirección pero provincia no coincide: ${sucursal.nombre_sucursal}`);
+      }
+      
+      return provCoincide;
+    });
+    
+    console.log(`✅ Filtrados a ${matchesExactos.length} matches con provincia válida`);
+  }
+  
+  if (matchesExactos.length > 0) {
+    console.log(`✅ MATCH EXACTO encontrado (con CP/Provincia válidos): ${matchesExactos[0].nombre_sucursal}`);
+    console.log(`   Dirección: ${matchesExactos[0].direccion}`);
+    return matchesExactos[0].nombre_sucursal;
+  }
+  
+  console.log('⚠️ No se encontró match exacto con validación de código postal...');
+  
+  // 2️⃣ FALLBACK: BÚSQUEDA GEOGRÁFICA (solo si no hay match exacto con CP válido)
+  // Los datos geográficos ya fueron extraídos arriba
+  
+  console.log('⚠️ NO SE ENCONTRÓ MATCH EXACTO - Usando búsqueda geográfica como último recurso');
+  console.log('🗺️  Datos geográficos extraídos:');
   console.log('   Calle:', calle);
   console.log('   Ciudad:', ciudad); 
   console.log('   Provincia:', provincia);
   console.log('   CP:', codigoPostal);
   
-  // 2️⃣ VALIDACIÓN CRÍTICA: FILTRAR POR PROVINCIA OBLIGATORIO
+  // ANTES de usar fallback geográfico, hacer una última búsqueda sin restricciones de CP
+  // para PUNTO HOP que pueden tener dirección exacta pero sin CP en su dirección
+  if (calleYNumeroNorm && calleYNumeroNorm.length > 5) {
+    console.log('🔍 Último intento: buscando match directo sin validar CP/Provincia...');
+    const matchDirecto = sucursales.find(suc => {
+      const nombreNorm = normalizarDireccionParaBusqueda(suc.nombre_sucursal);
+      const dirNorm = normalizarDireccionParaBusqueda(suc.direccion || '');
+      
+      // Para PUNTO HOP, extraer dirección del nombre
+      let dirSuc = dirNorm;
+      if (nombreNorm.includes('punto andreani hop')) {
+        const partes = nombreNorm.split('punto andreani hop');
+        if (partes.length > 1) {
+          dirSuc = normalizarDireccionParaBusqueda(partes[1].trim());
+        }
+      }
+      
+      // Match directo: dirección del pedido contiene dirección de sucursal o viceversa
+      return dirSuc.includes(calleYNumeroNorm) || calleYNumeroNorm.includes(dirSuc) || 
+             nombreNorm.includes(calleYNumeroNorm);
+    });
+    
+    if (matchDirecto) {
+      console.log(`✅ MATCH DIRECTO ENCONTRADO (sin validar CP): ${matchDirecto.nombre_sucursal}`);
+      return matchDirecto.nombre_sucursal;
+    }
+  }
+  
+  // Filtrar por provincia
   const sucursalesProvincia = filtrarPorProvincia(sucursales, provincia);
   
   if (sucursalesProvincia.length === 0) {
-    console.log('🚨 ALERTA CRÍTICA: No hay sucursales en la provincia:', provincia);
+    console.log('🚨 ALERTA: No hay sucursales en la provincia:', provincia);
     return generarAlertaSinSucursal(provincia, sucursales);
   }
   
-  console.log(`✅ Sucursales en ${provincia}:`, sucursalesProvincia.length);
-  
-  // 3️⃣ BÚSQUEDA POR CIUDAD EXACTA
+  // Buscar por ciudad
   const sucursalesCiudad = filtrarPorCiudad(sucursalesProvincia, ciudad);
   
   if (sucursalesCiudad.length > 0) {
-    console.log(`🎯 Encontradas ${sucursalesCiudad.length} sucursales en ${ciudad}, ${provincia}`);
+    console.log(`🎯 Buscando en ${sucursalesCiudad.length} sucursales de ${ciudad}`);
     return seleccionarMejorSucursalEnCiudad(sucursalesCiudad, calle, codigoPostal);
   }
   
-  // 4️⃣ FALLBACK: SUCURSAL MÁS IMPORTANTE EN LA PROVINCIA
-  console.log(`⚠️  No hay sucursal en ${ciudad}, buscando alternativa en ${provincia}`);
+  // Último fallback - pero esto NO debería pasar para direcciones exactas
+  console.log(`⚠️ ADVERTENCIA: No hay sucursal exacta para "${calleYNumero}" en ${ciudad}, usando alternativa en ${provincia}`);
   return seleccionarSucursalAlternativa(sucursalesProvincia, ciudad);
 };
 
-// 🔧 FUNCIÓN AUXILIAR: Extraer datos geográficos de la dirección
+// 🔧 FUNCIÓN AUXILIAR: Extraer datos geográficos de la dirección (MEJORADA)
 const extraerDatosGeograficos = (direccion: string) => {
-  const componentes = direccion.split(',').map(c => c.trim());
+  // Intentar primero con comas, luego con espacios si no hay comas
+  let componentes: string[];
+  
+  if (direccion.includes(',')) {
+    // Hay comas - separar por comas
+    componentes = direccion.split(',').map(c => c.trim());
+  } else {
+    // No hay comas - intentar separar por espacios (menos preciso pero funcional)
+    // Extraer dirección con número primero, luego el resto
+    const partes = direccion.trim().split(/\s+/);
+    componentes = [];
+    
+    // Primer componente: dirección con número (hasta encontrar una palabra que parezca ciudad)
+    let primerComponente: string[] = [];
+    let encontroNumero = false;
+    
+    for (let i = 0; i < partes.length; i++) {
+      const parte = partes[i];
+      
+      // Si encontramos un número, incluir y marcar
+      if (/\d+/.test(parte)) {
+        encontroNumero = true;
+        primerComponente.push(parte);
+      } else if (encontroNumero && /^\d{4,5}$/.test(parte)) {
+        // Es código postal, separarlo
+        componentes.push(primerComponente.join(' '));
+        componentes.push(parte);
+        primerComponente = [];
+      } else if (encontroNumero && esProvinciaArgentina(parte)) {
+        // Es provincia, separarlo
+        componentes.push(primerComponente.join(' '));
+        componentes.push(parte);
+        primerComponente = [];
+      } else {
+        primerComponente.push(parte);
+      }
+    }
+    
+    if (primerComponente.length > 0) {
+      componentes.push(primerComponente.join(' '));
+    }
+  }
   
   let calle = componentes[0] || '';
   let ciudad = '';
@@ -885,7 +1144,35 @@ const extraerDatosGeograficos = (direccion: string) => {
     }
   }
   
+  console.log('🔍 Datos extraídos:');
+  console.log(`   Calle completa: "${calle}"`);
+  console.log(`   Ciudad: "${ciudad}"`);
+  console.log(`   Provincia: "${provincia}"`);
+  console.log(`   CP: "${codigoPostal}"`);
+  
   return { calle, ciudad, provincia, codigoPostal };
+};
+
+// 🔧 FUNCIÓN AUXILIAR: Extraer provincia de una dirección de sucursal
+const extraerProvinciaDeDireccion = (direccion: string): string => {
+  const direccionLower = direccion.toLowerCase();
+  
+  // Buscar provincias en la dirección
+  const provincias = [
+    'buenos aires', 'catamarca', 'chaco', 'chubut', 'córdoba', 'cordoba', 'corrientes',
+    'entre ríos', 'formosa', 'jujuy', 'la pampa', 'la rioja', 'mendoza',
+    'misiones', 'neuquén', 'neuquen', 'río negro', 'rio negro', 'salta', 'san juan', 'san luis',
+    'santa cruz', 'santa fe', 'santiago del estero', 'tierra del fuego',
+    'tucumán', 'tucuman', 'capital federal', 'caba'
+  ];
+  
+  for (const prov of provincias) {
+    if (direccionLower.includes(prov)) {
+      return prov;
+    }
+  }
+  
+  return '';
 };
 
 // 🌍 VALIDADOR DE PROVINCIAS ARGENTINAS
@@ -949,37 +1236,126 @@ const filtrarPorCiudad = (sucursales: AndreaniSucursalInfo[], ciudad: string): A
   });
 };
 
-// 🎯 SELECCIONAR MEJOR SUCURSAL EN LA CIUDAD
+// 🎯 SELECCIONAR MEJOR SUCURSAL EN LA CIUDAD - VERSIÓN MEJORADA
 const seleccionarMejorSucursalEnCiudad = (sucursales: AndreaniSucursalInfo[], calle: string, codigoPostal: string): string => {
   if (sucursales.length === 1) {
     console.log('✅ Una sola sucursal en la ciudad:', sucursales[0].nombre_sucursal);
     return sucursales[0].nombre_sucursal;
   }
   
-  // Intentar match por calle/dirección exacta
-  const calleNorm = calle.toLowerCase();
-  let mejorMatch = sucursales.find(suc => 
-    suc.direccion.toLowerCase().includes(calleNorm) ||
-    suc.nombre_sucursal.toLowerCase().includes(calleNorm)
-  );
+  console.log(`🔍 Buscando mejor match entre ${sucursales.length} sucursales...`);
+  console.log(`   Calle a buscar: "${calle}"`);
   
-  if (mejorMatch) {
-    console.log('✅ Match por calle:', mejorMatch.nombre_sucursal);
-    return mejorMatch.nombre_sucursal;
+  // Normalizar calle para búsqueda
+  const calleNorm = normalizarDireccionParaBusqueda(calle);
+  
+  // 1️⃣ PRIORIDAD MÁXIMA: Match exacto PUNTO HOP con número de calle
+  // Extraer número de la calle si existe
+  const matchNumero = calle.match(/\d+/);
+  const numeroCalle = matchNumero ? matchNumero[0] : null;
+  
+  if (numeroCalle) {
+    console.log(`🎯 Buscando match exacto PUNTO HOP con número: ${numeroCalle}`);
+    
+    // Buscar PUNTO HOP que coincida con calle Y número
+    const matchesExactosPuntoHop = sucursales.filter(suc => {
+      const esPuntoHop = suc.nombre_sucursal.toLowerCase().includes('punto andreani hop');
+      if (!esPuntoHop) return false;
+      
+      const nombreSucNorm = normalizarDireccionParaBusqueda(suc.nombre_sucursal);
+      const dirSucNorm = normalizarDireccionParaBusqueda(suc.direccion || '');
+      
+      // Verificar que contiene el número
+      const tieneNumero = nombreSucNorm.includes(numeroCalle) || dirSucNorm.includes(numeroCalle);
+      
+      // Verificar que contiene palabras clave de la calle (normalizada)
+      const tieneCalle = nombreSucNorm.includes(calleNorm) || dirSucNorm.includes(calleNorm);
+      
+      return tieneNumero && tieneCalle;
+    });
+    
+    if (matchesExactosPuntoHop.length > 0) {
+      // Priorizar el que tenga el número más exacto
+      const mejorMatch = matchesExactosPuntoHop.find(suc => 
+        (suc.nombre_sucursal.includes(numeroCalle) || suc.direccion?.includes(numeroCalle))
+      ) || matchesExactosPuntoHop[0];
+      
+      console.log(`✅ MATCH EXACTO PUNTO HOP con número: ${mejorMatch.nombre_sucursal}`);
+      return mejorMatch.nombre_sucursal;
+    }
   }
   
-  // Si no hay match por calle, priorizar sucursales principales (no PUNTO HOP)
+  // 2️⃣ PRIORIDAD ALTA: Match PUNTO HOP por calle (sin número exacto)
+  const matchesPuntoHop = sucursales.filter(suc => {
+    const esPuntoHop = suc.nombre_sucursal.toLowerCase().includes('punto andreani hop');
+    if (!esPuntoHop) return false;
+    
+    const nombreSucNorm = normalizarDireccionParaBusqueda(suc.nombre_sucursal);
+    const dirSucNorm = normalizarDireccionParaBusqueda(suc.direccion || '');
+    
+    return nombreSucNorm.includes(calleNorm) || dirSucNorm.includes(calleNorm);
+  });
+  
+  if (matchesPuntoHop.length > 0) {
+    console.log(`✅ MATCH PUNTO HOP por calle: ${matchesPuntoHop[0].nombre_sucursal}`);
+    return matchesPuntoHop[0].nombre_sucursal;
+  }
+  
+  // 3️⃣ PRIORIDAD MEDIA: Match por calle en cualquier tipo de sucursal
+  // Buscar coincidencia EXACTA de dirección completa (ej: "Mendoza 2552" en dirección de sucursal)
+  let matchesPorCalle = sucursales.filter(suc => {
+    const nombreSucNorm = normalizarDireccionParaBusqueda(suc.nombre_sucursal);
+    const dirSucNorm = normalizarDireccionParaBusqueda(suc.direccion || '');
+    
+    // Match exacto de la calle completa en la dirección de la sucursal
+    const calleCompletaNorm = calleNorm.trim();
+    if (dirSucNorm.includes(calleCompletaNorm) || nombreSucNorm.includes(calleCompletaNorm)) {
+      return true;
+    }
+    
+    // Match por palabras clave de la calle (split y buscar componentes)
+    const palabrasCalle = calleCompletaNorm.split(/\s+/).filter(p => p.length > 2 && !/\d+/.test(p));
+    if (palabrasCalle.length > 0) {
+      const todasLasPalabras = palabrasCalle.every(palabra => 
+        dirSucNorm.includes(palabra) || nombreSucNorm.includes(palabra)
+      );
+      if (todasLasPalabras) {
+        return true;
+      }
+    }
+    
+    return false;
+  });
+  
+  if (matchesPorCalle.length > 0) {
+    // Si hay múltiples matches, priorizar el que tenga el número exacto si existe
+    if (numeroCalle) {
+      const matchConNumero = matchesPorCalle.find(suc => {
+        const dirNorm = normalizarDireccionParaBusqueda(suc.direccion || '');
+        return dirNorm.includes(numeroCalle);
+      });
+      if (matchConNumero) {
+        console.log(`✅ MATCH por calle con número: ${matchConNumero.nombre_sucursal}`);
+        return matchConNumero.nombre_sucursal;
+      }
+    }
+    
+    console.log(`✅ MATCH por calle: ${matchesPorCalle[0].nombre_sucursal}`);
+    return matchesPorCalle[0].nombre_sucursal;
+  }
+  
+  // 4️⃣ PRIORIDAD BAJA: Sucursales principales (no PUNTO HOP) como fallback
   const sucursalesPrincipales = sucursales.filter(suc => 
     !suc.nombre_sucursal.toLowerCase().includes('punto andreani hop')
   );
   
   if (sucursalesPrincipales.length > 0) {
-    console.log('✅ Seleccionando sucursal principal:', sucursalesPrincipales[0].nombre_sucursal);
+    console.log(`⚠️ Fallback - sucursal principal: ${sucursalesPrincipales[0].nombre_sucursal}`);
     return sucursalesPrincipales[0].nombre_sucursal;
   }
   
-  // Fallback: primera sucursal
-  console.log('✅ Fallback - primera sucursal:', sucursales[0].nombre_sucursal);
+  // 5️⃣ ÚLTIMO RECURSO: Primera sucursal disponible
+  console.log(`⚠️ Último fallback - primera sucursal: ${sucursales[0].nombre_sucursal}`);
   return sucursales[0].nombre_sucursal;
 };
 
@@ -2163,7 +2539,29 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
       contadorSucursales++;
       console.log(`[SUCURSAL ${contadorSucursales}] Procesando pedido:`, numeroOrden);
       // Procesar envío a sucursal
-      const direccionCompleta = `${direccion} ${numero} ${piso} ${localidad} ${ciudad}`.trim();
+      // Construir dirección con comas para mejor parsing
+      let direccionCompleta = `${direccion}`;
+      if (numero && numero.trim()) {
+        direccionCompleta += ` ${numero}`;
+      }
+      if (piso && piso.trim()) {
+        direccionCompleta += `, ${piso}`;
+      }
+      if (localidad && localidad.trim()) {
+        direccionCompleta += `, ${localidad}`;
+      }
+      if (ciudad && ciudad.trim() && ciudad !== localidad) {
+        direccionCompleta += `, ${ciudad}`;
+      }
+      if (codigoPostal && codigoPostal.trim()) {
+        direccionCompleta += `, ${codigoPostal}`;
+      }
+      if (provincia && provincia.trim()) {
+        direccionCompleta += `, ${provincia}`;
+      }
+      direccionCompleta = direccionCompleta.trim();
+      
+      console.log('📋 Dirección completa construida:', direccionCompleta);
       const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales);
 
       // 🔍 NUEVA VALIDACIÓN DE SEGURIDAD
