@@ -60,6 +60,27 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, pro
                   <div className="text-teal-300 font-semibold">{processingInfo.shipmentsToSucursal || processingInfo.sucursalesProcessed}</div>
                 </div>
               </div>
+              {processingInfo.hasShopifySucursalWarnings && processingInfo.shopifySucursalOrders && processingInfo.shopifySucursalOrders > 0 && (
+                <div className="mt-2 p-3 bg-orange-900/30 border-2 border-orange-500/50 rounded-lg text-orange-200 text-xs">
+                  <div className="flex items-start gap-2">
+                    <span className="text-orange-400 font-bold text-base">⚠️</span>
+                    <div>
+                      <strong className="block mb-1">Advertencia importante - Pedidos a Sucursal detectados</strong>
+                      <p className="mb-2">
+                        Se detectaron <strong>{processingInfo.shopifySucursalOrders}</strong> pedido(s) a sucursal de Shopify. 
+                        En Shopify, los clientes ingresan su dirección personal aunque elijan retiro en sucursal.
+                      </p>
+                      <p className="font-semibold text-orange-300">
+                        ⚠️ Por favor, REVISA los pedidos a sucursal antes de enviar. 
+                        Las sucursales asignadas pueden estar a 50km o más de la dirección del cliente.
+                      </p>
+                      <p className="mt-1 text-orange-200/80">
+                        La asignación de sucursal se basó en el código postal. Verifica manualmente cada caso.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               {processingInfo.noProcessed > 0 && (
                 <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-600/30 rounded text-yellow-300 text-xs">
                   {processingInfo.noProcessedReason?.includes('Medio de envío no reconocido') ? (

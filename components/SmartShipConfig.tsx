@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
+export type PlatformType = 'tiendanube' | 'shopify';
+
 export interface SmartShipConfigValues {
   peso: number;
   alto: number;
   ancho: number;
   profundidad: number;
   valorDeclarado: number;
+  platform: PlatformType;
 }
 
 interface SmartShipConfigProps {
   onConfigChange: (config: SmartShipConfigValues) => void;
+  onPlatformChange?: (platform: PlatformType) => void;
 }
 
-const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange }) => {
+const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange, onPlatformChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [config, setConfig] = useState<SmartShipConfigValues>({
     peso: 400,
@@ -20,23 +24,54 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange }) => 
     ancho: 10,
     profundidad: 10,
     valorDeclarado: 6000,
+    platform: 'tiendanube',
   });
 
   // Cargar configuración guardada al iniciar
   useEffect(() => {
     const savedConfig = localStorage.getItem('smartship-config');
+    const savedPlatform = localStorage.getItem('smartship-platform');
+    
     if (savedConfig) {
       try {
         const parsedConfig = JSON.parse(savedConfig);
+        // Asegurar que platform esté presente
+        if (!parsedConfig.platform) {
+          parsedConfig.platform = savedPlatform === 'shopify' ? 'shopify' : 'tiendanube';
+        }
         setConfig(parsedConfig);
         onConfigChange(parsedConfig);
+        if (onPlatformChange) {
+          onPlatformChange(parsedConfig.platform);
+        }
       } catch (error) {
         console.error('Error al cargar configuración:', error);
+        onConfigChange(config);
       }
     } else {
+      // Si hay plataforma guardada, usarla
+      if (savedPlatform) {
+        const platform = savedPlatform === 'shopify' ? 'shopify' : 'tiendanube';
+        config.platform = platform;
+        if (onPlatformChange) {
+          onPlatformChange(platform);
+        }
+      }
       onConfigChange(config);
     }
   }, []);
+  
+  // Manejar cambio de plataforma
+  const handlePlatformChange = (platform: PlatformType) => {
+    const newConfig = { ...config, platform };
+    setConfig(newConfig);
+    localStorage.setItem('smartship-config', JSON.stringify(newConfig));
+    localStorage.setItem('smartship-platform', platform);
+    onConfigChange(newConfig);
+    if (onPlatformChange) {
+      onPlatformChange(platform);
+    }
+  };
 
   // Guardar configuración cuando cambie
   const handleConfigChange = (field: keyof SmartShipConfigValues, value: number) => {
@@ -48,6 +83,21 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange }) => 
 
   return (
     <>
+      {/* Selector de plataforma */}
+      <div className="absolute top-4 left-4 flex items-center gap-3">
+        <div className="bg-gray-800 rounded-lg p-2 border border-gray-700">
+          <label className="text-sm text-gray-300 mr-2">Plataforma:</label>
+          <select
+            value={config.platform}
+            onChange={(e) => handlePlatformChange(e.target.value as PlatformType)}
+            className="bg-gray-700 text-white px-3 py-1 rounded border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="tiendanube">Tiendanube</option>
+            <option value="shopify">Shopify</option>
+          </select>
+        </div>
+      </div>
+      
       {/* Botón para abrir configuración con ícono de información */}
       <div className="absolute top-4 right-4 flex items-center gap-3">
         {/* Ícono de información */}

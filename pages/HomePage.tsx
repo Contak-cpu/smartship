@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { ProcessStatus, ProcessingInfo } from '../types';
 import { processOrders, processVentasOrders, fixEncoding, combineCSVs } from '../services/csvProcessor';
+import { processShopifyOrders } from '../services/shopifyCsvProcessor';
 import { FileUploader } from '../components/FileUploader';
 import { StatusDisplay } from '../components/StatusDisplay';
 import { ResultsDisplay } from '../components/ResultsDisplay';
@@ -8,7 +9,7 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import { guardarEnHistorialSmartShip } from '../src/utils/historialStorage';
 import { useAuth } from '../hooks/useAuth';
 import { guardarPedidosDesdeCSV, PedidoProcesado } from '../services/informacionService';
-import SmartShipConfig, { SmartShipConfigValues } from '../components/SmartShipConfig';
+import SmartShipConfig, { SmartShipConfigValues, PlatformType } from '../components/SmartShipConfig';
 
 // Función para normalizar caracteres problemáticos en el CSV final
 const normalizarCSVFinal = (content: string): string => {
@@ -166,7 +167,9 @@ const HomePage: React.FC = () => {
     ancho: 10,
     profundidad: 10,
     valorDeclarado: 6000,
+    platform: 'tiendanube',
   });
+  const [selectedPlatform, setSelectedPlatform] = useState<PlatformType>('tiendanube');
 
   const handleFileChange = (file: File | null) => {
     setSelectedFile(file);
@@ -190,16 +193,25 @@ const HomePage: React.FC = () => {
           throw new Error('El archivo está vacío o no se pudo leer.');
         }
         console.log('Starting to process CSV...');
-        
-        const isVentasFile = csvText.includes('Número de orden') && csvText.includes('Email') && csvText.includes('Estado de la orden');
+        console.log('Plataforma seleccionada:', selectedPlatform);
         
         let processedData;
-        if (isVentasFile) {
-          console.log('Detectado archivo de ventas, usando processVentasOrders...');
-          processedData = await processVentasOrders(csvText, config);
+        
+        // Procesar según la plataforma seleccionada
+        if (selectedPlatform === 'shopify') {
+          console.log('Procesando archivo de Shopify...');
+          processedData = await processShopifyOrders(csvText, config);
         } else {
-          console.log('Detectado archivo de pedidos Andreani, usando processOrders...');
-          processedData = await processOrders(csvText, config);
+          // Procesamiento para Tiendanube
+          const isVentasFile = csvText.includes('Número de orden') && csvText.includes('Email') && csvText.includes('Estado de la orden');
+          
+          if (isVentasFile) {
+            console.log('Detectado archivo de ventas, usando processVentasOrders...');
+            processedData = await processVentasOrders(csvText, config);
+          } else {
+            console.log('Detectado archivo de pedidos Andreani, usando processOrders...');
+            processedData = await processOrders(csvText, config);
+          }
         }
         
         console.log('Processing completed:', processedData);
@@ -361,7 +373,13 @@ const HomePage: React.FC = () => {
     <DashboardLayout>
       <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 relative">
-          <SmartShipConfig onConfigChange={setConfig} />
+          <SmartShipConfig 
+            onConfigChange={(newConfig) => {
+              setConfig(newConfig);
+              setSelectedPlatform(newConfig.platform);
+            }}
+            onPlatformChange={setSelectedPlatform}
+          />
           
           <div className="text-center mb-4">
             <div className="flex items-center justify-center gap-3 mb-2">

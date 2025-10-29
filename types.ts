@@ -19,6 +19,9 @@ export interface ProcessingInfo {
   shipmentsToDomicilio?: number;
   shipmentsToSucursal?: number;
   noProcessedReason?: string;
+  // Para Shopify: advertencia sobre pedidos a sucursal
+  hasShopifySucursalWarnings?: boolean;
+  shopifySucursalOrders?: number;
 }
 
 // Represents a row from the input Tiendanube CSV
@@ -35,6 +38,25 @@ export interface TiendanubeOrder {
   'Localidad': string;
   'Código postal': string;
   'Medio de envío': string;
+  [key: string]: string; // Allow other properties
+}
+
+// Represents a row from the input Shopify CSV
+export interface ShopifyOrder {
+  'Name': string;
+  'Email': string;
+  'Financial Status': string;
+  'Shipping Method': string;
+  'Shipping Name': string;
+  'Shipping Address1': string;
+  'Shipping Address2': string;
+  'Shipping City': string;
+  'Shipping Zip': string;
+  'Shipping Province': string;
+  'Shipping Country': string;
+  'Shipping Phone': string;
+  'Billing Name': string;
+  'Billing Phone': string;
   [key: string]: string; // Allow other properties
 }
 
