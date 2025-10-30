@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { ProcessStatus, ProcessingInfo } from '../types';
 import { processOrders, processVentasOrders, fixEncoding, combineCSVs } from '../services/csvProcessor';
-import { processShopifyOrders } from '../services/shopifyCsvProcessor';
 import { FileUploader } from '../components/FileUploader';
 import { StatusDisplay } from '../components/StatusDisplay';
 import { ResultsDisplay } from '../components/ResultsDisplay';
@@ -9,7 +8,6 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import { guardarEnHistorialSmartShip } from '../src/utils/historialStorage';
 import { useAuth } from '../hooks/useAuth';
 import { guardarPedidosDesdeCSV, PedidoProcesado } from '../services/informacionService';
-import SmartShipConfig, { SmartShipConfigValues, PlatformType } from '../components/SmartShipConfig';
 
 // Función para normalizar caracteres problemáticos en el CSV final
 const normalizarCSVFinal = (content: string): string => {
@@ -161,15 +159,6 @@ const HomePage: React.FC = () => {
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{ domicilioCSV: string; sucursalCSV: string; processingInfo: ProcessingInfo } | null>(null);
-  const [config, setConfig] = useState<SmartShipConfigValues>({
-    peso: 400,
-    alto: 10,
-    ancho: 10,
-    profundidad: 10,
-    valorDeclarado: 6000,
-    platform: 'tiendanube',
-  });
-  const [selectedPlatform, setSelectedPlatform] = useState<PlatformType>('tiendanube');
 
   const handleFileChange = (file: File | null) => {
     setSelectedFile(file);
@@ -193,25 +182,16 @@ const HomePage: React.FC = () => {
           throw new Error('El archivo está vacío o no se pudo leer.');
         }
         console.log('Starting to process CSV...');
-        console.log('Plataforma seleccionada:', selectedPlatform);
+        
+        const isVentasFile = csvText.includes('Número de orden') && csvText.includes('Email') && csvText.includes('Estado de la orden');
         
         let processedData;
-        
-        // Procesar según la plataforma seleccionada
-        if (selectedPlatform === 'shopify') {
-          console.log('Procesando archivo de Shopify...');
-          processedData = await processShopifyOrders(csvText, config);
+        if (isVentasFile) {
+          console.log('Detectado archivo de ventas, usando processVentasOrders...');
+          processedData = await processVentasOrders(csvText);
         } else {
-          // Procesamiento para Tiendanube
-          const isVentasFile = csvText.includes('Número de orden') && csvText.includes('Email') && csvText.includes('Estado de la orden');
-          
-          if (isVentasFile) {
-            console.log('Detectado archivo de ventas, usando processVentasOrders...');
-            processedData = await processVentasOrders(csvText, config);
-          } else {
-            console.log('Detectado archivo de pedidos Andreani, usando processOrders...');
-            processedData = await processOrders(csvText, config);
-          }
+          console.log('Detectado archivo de pedidos Andreani, usando processOrders...');
+          processedData = await processOrders(csvText);
         }
         
         console.log('Processing completed:', processedData);
@@ -220,21 +200,11 @@ const HomePage: React.FC = () => {
         
         // Guardar en historial
         try {
-          console.log('🔄 [HomePage] Iniciando guardado en historial...');
           const datosDomicilio = csvToArray(processedData.domicilioCSV);
           const datosSucursal = csvToArray(processedData.sucursalCSV);
-          console.log('📊 [HomePage] Datos procesados:', {
-            domicilio: datosDomicilio.length,
-            sucursal: datosSucursal.length,
-            username,
-            userId,
-            fileName: selectedFile.name
-          });
-          
-          await guardarEnHistorialSmartShip(selectedFile.name, datosDomicilio, datosSucursal, username, userId);
-          console.log('✅ [HomePage] Guardado en historial completado');
+          await guardarEnHistorialSmartShip(selectedFile.name, datosDomicilio, datosSucursal, username);
         } catch (historialError) {
-          console.error('❌ [HomePage] Error al guardar en historial:', historialError);
+          console.error('Error al guardar en historial:', historialError);
           // No interrumpir el flujo si falla el guardado del historial
         }
 
@@ -372,17 +342,21 @@ const HomePage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 relative">
-          <SmartShipConfig 
-            onConfigChange={(newConfig) => {
-              setConfig(newConfig);
-              setSelectedPlatform(newConfig.platform);
-            }}
-            onPlatformChange={setSelectedPlatform}
-          />
-          
+        <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
           <div className="text-center mb-4">
             <div className="flex items-center justify-center gap-3 mb-2">
+              <div className="text-green-500 size-8 sm:size-10">
+                <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                  <g clipPath="url(#clip0_6_535)">
+                    <path clipRule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fillRule="evenodd"></path>
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_6_535">
+                      <rect fill="white" height="48" width="48"></rect>
+                    </clipPath>
+                  </defs>
+                </svg>
+              </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-white">SmartShip</h1>
             </div>
             <p className="text-green-400 font-medium text-sm sm:text-base">Transformador de Pedidos Andreani</p>

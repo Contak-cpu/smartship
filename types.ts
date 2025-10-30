@@ -13,15 +13,6 @@ export interface ProcessingInfo {
   sucursalesProcessed: number;
   noProcessed: number;
   processingLogs: string[];
-  // Información detallada para el nuevo resumen
-  totalRowsWithData?: number;
-  actualSalesProcessed?: number;
-  shipmentsToDomicilio?: number;
-  shipmentsToSucursal?: number;
-  noProcessedReason?: string;
-  // Para Shopify: advertencia sobre pedidos a sucursal
-  hasShopifySucursalWarnings?: boolean;
-  shopifySucursalOrders?: number;
 }
 
 // Represents a row from the input Tiendanube CSV
@@ -38,25 +29,6 @@ export interface TiendanubeOrder {
   'Localidad': string;
   'Código postal': string;
   'Medio de envío': string;
-  [key: string]: string; // Allow other properties
-}
-
-// Represents a row from the input Shopify CSV
-export interface ShopifyOrder {
-  'Name': string;
-  'Email': string;
-  'Financial Status': string;
-  'Shipping Method': string;
-  'Shipping Name': string;
-  'Shipping Address1': string;
-  'Shipping Address2': string;
-  'Shipping City': string;
-  'Shipping Zip': string;
-  'Shipping Province': string;
-  'Shipping Country': string;
-  'Shipping Phone': string;
-  'Billing Name': string;
-  'Billing Phone': string;
   [key: string]: string; // Allow other properties
 }
 
@@ -104,23 +76,4 @@ export interface AndreaniSucursalOutput {
   'Celular código *': string;
   'Celular número *': string;
   'Sucursal *': string;
-}
-
-// Stock interface
-export interface Stock {
-  id: string;
-  user_id: string;
-  username: string;
-  sku: string;
-  nombreproducto: string | null;
-  cantidad: number;
-  fecha_actualizacion: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface StockInput {
-  sku: string;
-  nombreproducto?: string;
-  cantidad: number;
 }
