@@ -668,7 +668,7 @@ const calcularSimilitud = (str1: string, str2: string): number => {
 };
 
 // Función para encontrar la sucursal correcta basándose en la dirección
-const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucursalInfo[]): string => {
+const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucursalInfo[], codigoPostal?: string, provincia?: string): string => {
   const direccionNormalizada = direccionPedido.toLowerCase().trim();
   console.log('=== DEBUG SUCURSAL ===');
   console.log('Buscando sucursal para dirección:', direccionNormalizada);
@@ -856,6 +856,47 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
                   'con similitud:', coincidenciasDifusas[0].similitud.toFixed(2));
       return coincidenciasDifusas[0].sucursal.nombre_sucursal;
     } else {
+      // Si no hay coincidencias exactas ni difusas, intentar buscar por código postal
+      if (codigoPostal) {
+        console.log('🔄 Sin coincidencias, intentando búsqueda por código postal:', codigoPostal);
+        
+        // Filtrar solo sucursales (NO punto hop)
+        const sucursalesSinHop = sucursales.filter(suc => {
+          const esPuntoHop = suc.nombre_sucursal.toLowerCase().includes('punto andreani hop');
+          return !esPuntoHop;
+        });
+        
+        // Buscar por código postal en la dirección de las sucursales
+        const cpMatches = sucursalesSinHop.filter(suc => {
+          const dirSuc = suc.direccion || '';
+          const cpsEncontrados = dirSuc.match(/\b(\d{4,5})\b/g);
+          if (cpsEncontrados) {
+            return cpsEncontrados.some(cp => cp === codigoPostal);
+          }
+          return false;
+        });
+        
+        if (cpMatches.length > 0) {
+          console.log(`✅ Sucursal encontrada por código postal: ${cpMatches[0].nombre_sucursal}`);
+          return cpMatches[0].nombre_sucursal;
+        }
+        
+        // Si no hay match exacto de CP, buscar por provincia + CP
+        if (provincia) {
+          const provCPMatches = sucursalesSinHop.filter(suc => {
+            const dirSuc = suc.direccion || '';
+            const provMatch = dirSuc.toLowerCase().includes(provincia.toLowerCase());
+            const cpMatch = dirSuc.match(/\b(\d{4,5})\b/g)?.some(cp => cp === codigoPostal);
+            return provMatch && cpMatch;
+          });
+          
+          if (provCPMatches.length > 0) {
+            console.log(`✅ Sucursal encontrada por provincia + CP: ${provCPMatches[0].nombre_sucursal}`);
+            return provCPMatches[0].nombre_sucursal;
+          }
+        }
+      }
+      
       console.log('❌ No se encontraron coincidencias');
       console.log('Dirección buscada:', direccionNormalizada);
       console.log('Total sucursales revisadas:', sucursales.length);
@@ -1427,7 +1468,7 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       console.log('Calle y número básico combinados:', `${calle} ${numeroBasico}`);
       console.log('Dirección completa del pedido:', direccionCompleta);
       
-      const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales);
+      const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales, codigoPostalPedido, provinciaPedido);
       console.log('Sucursal encontrada:', nombreSucursal);
       console.log('=== FIN DEBUGGING ===');
 
@@ -1815,7 +1856,7 @@ export const processVentasOrders = async (
       console.log(`[SUCURSAL ${contadorSucursales}] Procesando pedido:`, numeroOrden);
       // Procesar envío a sucursal
       const direccionCompleta = `${direccion} ${numero} ${piso} ${localidad} ${ciudad}`.trim();
-      const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales);
+      const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales, codigoPostal, provincia);
 
       sucursalesOutput.push({
         ...baseData,
