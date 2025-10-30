@@ -190,7 +190,9 @@ const HomePage: React.FC = () => {
         }
         console.log('Starting to process CSV...');
         
-        const isVentasFile = csvText.includes('Número de orden') && csvText.includes('Email') && csvText.includes('Estado de la orden');
+        // Detectar archivo de ventas (Tiendanube) - normalizar para manejar caracteres especiales
+        const normalizedCsv = csvText.replace(/[àáâãäå]/gi, 'a').replace(/[èéêë]/gi, 'e').replace(/[ìíîï]/gi, 'i').replace(/[òóôõö]/gi, 'o').replace(/[ùúûü]/gi, 'u').replace(/[ñ]/gi, 'n');
+        const isVentasFile = normalizedCsv.includes('Número de orden') && normalizedCsv.includes('Email') && normalizedCsv.includes('Estado de la orden');
         
         let processedData;
         if (isVentasFile) {
