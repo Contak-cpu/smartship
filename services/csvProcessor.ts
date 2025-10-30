@@ -1929,6 +1929,16 @@ export const processVentasOrders = async (
       : 'Se omitió 1 línea duplicada (producto adicional del mismo pedido)';
   }
 
+  console.log('📊 RESUMEN FINAL DE PROCESAMIENTO:');
+  console.log(`   - Domicilios procesados: ${contadorDomicilios}`);
+  console.log(`   - Sucursales procesadas: ${contadorSucursales}`);
+  console.log(`   - Líneas duplicadas omitidas: ${contadorNoProcesados}`);
+  console.log(`   - Errores de sucursal: ${contadorErroresSucursal}`);
+  console.log(`   - Tasa de efectividad: ${tasaEfectividad}%`);
+  if (erroresSucursal.length > 0) {
+    console.log(`   - Pedidos con errores: ${erroresSucursal.join(', ')}`);
+  }
+
   const processingInfo: ProcessingInfo = {
     totalOrders: actualSalesProcessed,
     domiciliosProcessed: contadorDomicilios,

@@ -43,7 +43,14 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, pro
           </p>
           
           {processingInfo && (
-            <div className="bg-gray-800/50 p-3 rounded-lg border border-gray-600">
+            <>
+              {/* Debug logs */}
+              {console.log('🔍 DEBUG StatusDisplay - processingInfo:', processingInfo)}
+              {console.log('🔍 DEBUG - erroresSucursal:', processingInfo.erroresSucursal)}
+              {console.log('🔍 DEBUG - erroresSucursal length:', processingInfo.erroresSucursal?.length)}
+              {console.log('🔍 DEBUG - tasaEfectividad:', processingInfo.tasaEfectividad)}
+              
+              <div className="bg-gray-800/50 p-3 rounded-lg border border-gray-600">
               <h4 className="text-green-400 font-semibold text-sm mb-2">📊 Resumen de Procesamiento</h4>
               
               {/* Mostrar tasa de efectividad si existe */}
@@ -101,7 +108,8 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, pro
                   )}
                 </div>
               )}
-            </div>
+              </div>
+            </>
           )}
         </div>
       )}
