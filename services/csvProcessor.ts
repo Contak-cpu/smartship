@@ -1475,10 +1475,15 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       console.log('Sucursal encontrada:', nombreSucursal);
       console.log('=== FIN DEBUGGING ===');
 
-      sucursalesOutput.push({
-        ...baseData,
-        'Sucursal *': nombreSucursal,
-      });
+      // Verificar si se encontró la sucursal correctamente
+      if (nombreSucursal === 'SUCURSAL NO ENCONTRADA') {
+        console.error(`❌ Pedido #${baseData['Numero Interno']} NO PROCESADO: no se encontró la sucursal. Debe cargarlo manualmente.`);
+      } else {
+        sucursalesOutput.push({
+          ...baseData,
+          'Sucursal *': nombreSucursal,
+        });
+      }
     } else {
       contadorNoProcesados++;
       console.error(`❌ [NO PROCESADO ${contadorNoProcesados}] Pedido ${baseData['Numero Interno']}`);
@@ -1862,11 +1867,15 @@ export const processVentasOrders = async (
       const direccionCompleta = `${direccion} ${numero} ${piso} ${localidad} ${ciudad}`.trim();
       const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales, codigoPostal, provincia);
 
+      console.log(`🔍 DEBUG: Resultado búsqueda sucursal para pedido ${numeroOrden}:`, nombreSucursal);
+      console.log(`🔍 DEBUG: Comparación con 'SUCURSAL NO ENCONTRADA':`, nombreSucursal === 'SUCURSAL NO ENCONTRADA');
+
       // Verificar si se encontró la sucursal correctamente
       if (nombreSucursal === 'SUCURSAL NO ENCONTRADA') {
         contadorErroresSucursal++;
         erroresSucursal.push(`Pedido #${numeroOrden} no procesado por error en la sucursal`);
         console.error(`❌ Pedido #${numeroOrden} NO PROCESADO: no se encontró la sucursal. Debe cargarlo manualmente.`);
+        console.log(`📊 Contador de errores de sucursal actualizado:`, contadorErroresSucursal);
       } else {
         contadorSucursales++;
         console.log(`[SUCURSAL ${contadorSucursales}] Sucursal encontrada:`, nombreSucursal);
