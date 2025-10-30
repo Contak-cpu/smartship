@@ -65,7 +65,11 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, pro
               </div>
               {processingInfo.noProcessed > 0 && (
                 <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-600/30 rounded text-yellow-300 text-xs">
-                  ⚠️ {processingInfo.noProcessed} pedidos no se procesaron. Verifica los medios de envío en el archivo original.
+                  {processingInfo.noProcessedReason ? (
+                    <>✅ {processingInfo.noProcessedReason}</>
+                  ) : (
+                    <>⚠️ {processingInfo.noProcessed} pedidos no se procesaron. Verifica los medios de envío en el archivo original.</>
+                  )}
                 </div>
               )}
             </div>

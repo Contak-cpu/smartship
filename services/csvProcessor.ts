@@ -1460,6 +1460,12 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
   processingLogs.push(`Sucursales procesadas: ${contadorSucursales}`);
   processingLogs.push(`No procesados: ${contadorNoProcesados}`);
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
+  
+  // Determinar razón de no procesados para processOrders
+  let noProcessedReason = '';
+  if (contadorNoProcesados > 0) {
+    noProcessedReason = 'Medio de envío no reconocido. Verifica los medios de envío en el archivo original.';
+  }
 
   return {
     domicilioCSV: unparseCSV(domicilios),
@@ -1469,7 +1475,8 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       domiciliosProcessed: contadorDomicilios,
       sucursalesProcessed: contadorSucursales,
       noProcessed: contadorNoProcesados,
-      processingLogs: processingLogs
+      processingLogs: processingLogs,
+      noProcessedReason
     }
   };
 };
