@@ -7,7 +7,6 @@ import {
 } from '../types';
 import { getDomiciliosMapping } from './domiciliosData';
 import { getSucursalesData } from './sucursalesData';
-import { validarEnvioAntesDeProcesar, generarReporteValidacion, PedidoParaValidar, ValidacionResult } from './validacionEnvios';
 
 // PapaParse is loaded from a CDN and available as a global variable.
 declare const Papa: any;
@@ -591,155 +590,6 @@ const normalizarNombre = (nombre: string): string => {
     .trim();
 };
 
-// Función NUEVA para limpiar campos de texto de caracteres inválidos para Andreani
-const limpiarCampoTexto = (texto: string): string => {
-  if (!texto) return '';
-  
-  // Primero normalizar caracteres especiales
-  let textoLimpio = texto
-    // Normalizar acentos minúsculas
-    .replace(/[áàäâ]/g, 'a')
-    .replace(/[éèëê]/g, 'e')
-    .replace(/[íìïî]/g, 'i')
-    .replace(/[óòöô]/g, 'o')
-    .replace(/[úùüû]/g, 'u')
-    .replace(/[ñ]/g, 'n')
-    // Normalizar acentos mayúsculas
-    .replace(/[ÁÀÄÂ]/g, 'A')
-    .replace(/[ÉÈËÊ]/g, 'E')
-    .replace(/[ÍÌÏÎ]/g, 'I')
-    .replace(/[ÓÒÖÔ]/g, 'O')
-    .replace(/[ÚÙÜÛ]/g, 'U')
-    .replace(/[Ñ]/g, 'N')
-    // Caracteres especiales
-    .replace(/[ç]/g, 'c')
-    .replace(/[Ç]/g, 'C');
-  
-  // CRÍTICO: Remover caracteres que pueden causar problemas en CSVs de Andreani
-  // Remover puntos, barras, guiones y otros caracteres especiales problemáticos
-  textoLimpio = textoLimpio
-    .replace(/\./g, ' ')  // Punto -> espacio
-    .replace(/\//g, ' ')  // Barra -> espacio
-    .replace(/\\/g, ' ')  // Barra invertida -> espacio
-    .replace(/\|/g, ' ')  // Pipe -> espacio
-    .replace(/:/g, ' ')   // Dos puntos -> espacio
-    .replace(/;/g, ' ')   // Punto y coma -> espacio (crítico para CSV)
-    .replace(/"/g, '')    // Comillas dobles -> vacío
-    .replace(/'/g, '')    // Comillas simples -> vacío
-    .replace(/`/g, '')    // Comilla invertida -> vacío
-    .replace(/\*/g, '')   // Asterisco -> vacío
-    .replace(/\?/g, '')   // Interrogación -> vacío
-    .replace(/!/g, '')    // Exclamación -> vacío
-    .replace(/@/g, ' ')   // Arroba -> espacio (excepto en emails)
-    .replace(/#/g, '')    // Numeral -> vacío
-    .replace(/\$/g, '')   // Dólar -> vacío
-    .replace(/%/g, '')    // Porcentaje -> vacío
-    .replace(/&/g, ' y ') // Ampersand -> 'y'
-    .replace(/\+/g, ' ')  // Más -> espacio
-    .replace(/=/g, ' ')   // Igual -> espacio
-    .replace(/\[/g, '')   // Corchete izq -> vacío
-    .replace(/\]/g, '')   // Corchete der -> vacío
-    .replace(/\{/g, '')   // Llave izq -> vacío
-    .replace(/\}/g, '')   // Llave der -> vacío
-    .replace(/\(/g, '')   // Paréntesis izq -> vacío
-    .replace(/\)/g, '')   // Paréntesis der -> vacío
-    .replace(/<</g, '')   // Menor que -> vacío
-    .replace(/>>/g, '')   // Mayor que -> vacío
-    .replace(/~/g, '')    // Tilde -> vacío
-    .replace(/\^/g, '')   // Acento circunflejo -> vacío
-    .replace(/_/g, ' ')   // Guión bajo -> espacio
-    .replace(/[–—]/g, ' ') // Guiones largos -> espacio
-    .replace(/-/g, ' ')   // Guión normal -> espacio
-    .replace(/,/g, ' ')   // Coma -> espacio
-    .replace(/\r?\n/g, ' ') // Saltos de línea -> espacio
-    .replace(/\t/g, ' ')  // Tabulaciones -> espacio
-    .replace(/\s+/g, ' ') // Múltiples espacios -> un espacio
-    .trim();
-  
-  // Remover cualquier carácter no ASCII que quede
-  textoLimpio = textoLimpio.replace(/[^\x00-\x7F]/g, '');
-  
-  return textoLimpio;
-};
-
-// Función para validar y reportar datos inválidos
-const validarDatos = (data: any[], tipo: string): void => {
-  console.log(`\n=== 🔍 VALIDACIÓN DE DATOS ${tipo.toUpperCase()} ===`);
-  
-  let erroresEncontrados = 0;
-  const caracteresProblematicos = /[\.\/\\\|:;"'`\*\?!@#\$%&\+\=\[\]\{\}\(\)<>~\^_\-,\r\n\t]/g;
-  
-  data.forEach((registro, index) => {
-    const numInterno = registro['Numero Interno'] || registro['Numero Interno\nEj: '] || `Registro ${index + 1}`;
-    
-    // Validar cada campo de texto
-    const camposTexto = tipo === 'DOMICILIOS' 
-      ? ['Nombre *', 'Apellido *', 'Calle *', 'Piso', 'Departamento', 'Provincia / Localidad / CP *']
-      : ['Nombre *', 'Apellido *', 'Sucursal *'];
-    
-    // También considerar variantes con saltos de línea
-    const camposTextoConNL = tipo === 'DOMICILIOS'
-      ? ['Nombre *\nEj: ', 'Apellido *\nEj: ', 'Calle *\nEj: ', 'Piso\nEj: ', 'Departamento\nEj: ', 'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657']
-      : ['Nombre *\nEj: ', 'Apellido *\nEj: ', 'Sucursal * \nEj: 9 DE JULIO'];
-    
-    camposTexto.forEach((campo, idx) => {
-      const campoConNL = camposTextoConNL[idx];
-      const valor = registro[campo] || registro[campoConNL] || '';
-      
-      if (valor && typeof valor === 'string') {
-        const match = valor.match(caracteresProblematicos);
-        if (match) {
-          erroresEncontrados++;
-          console.warn(`⚠️  ${numInterno} - Campo "${campo}": caracteres inválidos encontrados: ${[...new Set(match)].join(', ')}`);
-          console.warn(`    Valor original: "${valor}"`);
-          console.warn(`    Valor limpio debería ser: "${limpiarCampoTexto(valor)}"`);
-        }
-        
-        // Verificar caracteres no-ASCII
-        const nonAscii = valor.match(/[^\x00-\x7F]/g);
-        if (nonAscii) {
-          erroresEncontrados++;
-          console.warn(`⚠️  ${numInterno} - Campo "${campo}": caracteres no-ASCII encontrados`);
-          console.warn(`    Caracteres problemáticos: ${[...new Set(nonAscii)].join(', ')}`);
-        }
-      }
-    });
-    
-    // Validar número de calle (solo para domicilios)
-    if (tipo === 'DOMICILIOS') {
-      const numero = registro['Número *'] || registro['Número *\nEj: '] || '';
-      if (numero && !/^\d+$/.test(numero)) {
-        erroresEncontrados++;
-        console.warn(`⚠️  ${numInterno} - Número de calle inválido: "${numero}" (debe contener solo dígitos)`);
-      }
-    }
-    
-    // Validar DNI
-    const dni = registro['DNI *'] || registro['DNI *\nEj: '] || '';
-    if (dni && !/^\d{7,8}$/.test(dni)) {
-      erroresEncontrados++;
-      console.warn(`⚠️  ${numInterno} - DNI inválido: "${dni}" (debe tener 7-8 dígitos)`);
-    }
-    
-    // Validar teléfono
-    const codigo = registro['Celular código *'] || registro['Celular código *\nEj: '] || '';
-    const numero = registro['Celular número *'] || registro['Celular número *\nEj: '] || '';
-    if ((codigo && !/^\d{2,4}$/.test(codigo)) || (numero && !/^\d{6,8}$/.test(numero))) {
-      erroresEncontrados++;
-      console.warn(`⚠️  ${numInterno} - Teléfono inválido: Código "${codigo}" / Número "${numero}"`);
-    }
-  });
-  
-  if (erroresEncontrados === 0) {
-    console.log(`✅ No se encontraron errores en ${data.length} registros de ${tipo}`);
-  } else {
-    console.log(`❌ Se encontraron ${erroresEncontrados} errores en ${data.length} registros de ${tipo}`);
-    console.log(`⚠️  ADVERTENCIA: Andreani puede rechazar el archivo si hay caracteres inválidos`);
-  }
-  
-  console.log(`=== FIN VALIDACIÓN ${tipo.toUpperCase()} ===\n`);
-};
-
 // Función para normalizar direcciones (remover acentos, caracteres especiales, etc.)
 const normalizarDireccion = (direccion: string): string => {
   return direccion
@@ -817,621 +667,13 @@ const calcularSimilitud = (str1: string, str2: string): number => {
   return maxLength === 0 ? 1 : 1 - (distancia / maxLength);
 };
 
-// 🔧 FUNCIÓN AUXILIAR: Normalizar dirección para búsqueda (más agresiva)
-const normalizarDireccionParaBusqueda = (texto: string): string => {
-  return texto.toLowerCase()
-    .replace(/[áàäâ]/g, 'a')
-    .replace(/[éèëê]/g, 'e')
-    .replace(/[íìïî]/g, 'i')
-    .replace(/[óòöô]/g, 'o')
-    .replace(/[úùüû]/g, 'u')
-    .replace(/[ñ]/g, 'n')
-    .replace(/[\.]/g, '')
-    .replace(/[\s]+/g, ' ')
-    .trim();
-};
-
-// 🚀 ALGORITMO ROBUSTO: MATCH EXACTO PRIMERO, GEOLOCALIZACIÓN DESPUÉS
-const findSucursalByAddressImproved = (direccionPedido: string, sucursales: AndreaniSucursalInfo[]): string => {
-  console.log('=== 🎯 ALGORITMO ROBUSTO DE SELECCIÓN ===');
-  console.log('📍 Dirección del pedido:', direccionPedido);
-  
-  // Normalizar dirección del pedido para búsqueda
-  const direccionPedidoNorm = normalizarDireccionParaBusqueda(direccionPedido);
-  
-  // 1️⃣ PRIORIDAD MÁXIMA: BÚSQUEDA DIRECTA DE MATCH EXACTO CON VALIDACIÓN DE CÓDIGO POSTAL
-  // El pedido contiene la dirección exacta de la sucursal, busquémosla directamente
-  console.log('🔍 Paso 1: Buscando match exacto de dirección con validación de código postal...');
-  
-  // Extraer datos geográficos PRIMERO para tener el código postal
-  const { calle, ciudad, provincia, codigoPostal } = extraerDatosGeograficos(direccionPedido);
-  
-  // Extraer calle y número del pedido - MEJORADO para manejar casos donde están separados
-  const componentesPedido = direccionPedido.split(',').map(c => c.trim());
-  let calleYNumero = componentesPedido[0] || '';
-  
-  // Si la calle no incluye números, el número puede estar en el segundo componente
-  // Solo si el segundo componente es SOLO números (no tiene letras)
-  if (!/\d/.test(calleYNumero) && componentesPedido.length > 1) {
-    const segundoComponente = componentesPedido[1];
-    if (/^\d+$/.test(segundoComponente)) {
-      calleYNumero = `${calleYNumero} ${segundoComponente}`.trim();
-    }
-  }
-  
-  const calleYNumeroNorm = normalizarDireccionParaBusqueda(calleYNumero);
-  
-  console.log(`   Dirección clave del pedido (original): "${componentesPedido[0]}"`);
-  console.log(`   Dirección clave del pedido (con número): "${calleYNumero}"`);
-  console.log(`   Dirección clave normalizada: "${calleYNumeroNorm}"`);
-  console.log(`   Código postal del pedido: "${codigoPostal}"`);
-  console.log(`   Provincia del pedido: "${provincia}"`);
-  
-  // Buscar matches exactos o muy precisos - PRIMERO sin validar CP para ver TODOS los posibles matches
-  const todosLosMatches = sucursales.filter(sucursal => {
-    const nombreNorm = normalizarDireccionParaBusqueda(sucursal.nombre_sucursal);
-    const direccionNorm = normalizarDireccionParaBusqueda(sucursal.direccion || '');
-    
-    // Extraer la parte relevante del nombre (después de "PUNTO ANDREANI HOP" si existe)
-    let direccionRealSucursal = direccionNorm;
-    if (nombreNorm.includes('punto andreani hop')) {
-      // La dirección real está en el nombre después de "punto andreani hop"
-      const partes = nombreNorm.split('punto andreani hop');
-      if (partes.length > 1) {
-        direccionRealSucursal = normalizarDireccionParaBusqueda(partes[1].trim());
-      }
-    }
-    
-    // Verificar match de dirección
-    let tieneMatchDireccion = false;
-    
-    // Match 1: Dirección del pedido contiene dirección de la sucursal completa
-    if (direccionPedidoNorm.includes(direccionRealSucursal) && direccionRealSucursal.length > 5) {
-      tieneMatchDireccion = true;
-    }
-    // Match 2: Dirección de sucursal contiene calle y número del pedido
-    else if (direccionRealSucursal.includes(calleYNumeroNorm) && calleYNumeroNorm.length > 3) {
-      tieneMatchDireccion = true;
-    }
-    // Match 3: Nombre de sucursal contiene dirección del pedido
-    else if (nombreNorm.includes(calleYNumeroNorm) && calleYNumeroNorm.length > 3) {
-      tieneMatchDireccion = true;
-    }
-    // Match 3b: Para PUNTO HOP, buscar dirección directa en el nombre (después de extraer la parte relevante)
-    else if (nombreNorm.includes('punto andreani hop')) {
-      // Extraer solo la parte de dirección del nombre PUNTO HOP
-      const partesNombre = nombreNorm.split('punto andreani hop');
-      if (partesNombre.length > 1) {
-        const dirEnNombre = normalizarDireccionParaBusqueda(partesNombre[1].trim());
-        // Buscar si la dirección del pedido está contenida en la dirección del nombre
-        if (dirEnNombre.includes(calleYNumeroNorm) || calleYNumeroNorm.includes(dirEnNombre)) {
-          tieneMatchDireccion = true;
-        }
-      }
-    }
-    // Match 4: Match exacto palabra por palabra
-    else {
-      const palabrasPedido = calleYNumeroNorm.split(/\s+/).filter(p => p.length > 2);
-      if (palabrasPedido.length > 0) {
-        const todasLasPalabras = palabrasPedido.every(palabra => 
-          direccionRealSucursal.includes(palabra) || nombreNorm.includes(palabra)
-        );
-        if (todasLasPalabras && palabrasPedido.length >= 2) {
-          tieneMatchDireccion = true;
-        }
-      }
-    }
-    
-    // Si no hay match de dirección, descartar
-    if (!tieneMatchDireccion) {
-      return false;
-    }
-    
-    // Retornar true para todos los matches de dirección (validaremos CP después)
-    return true;
-  });
-  
-  console.log(`🔍 Encontrados ${todosLosMatches.length} matches de dirección (antes de validar CP)`);
-  
-  // Si hay código postal en el pedido, PRIORIZAR matches con CP válido
-  let matchesExactos = todosLosMatches;
-  
-  if (codigoPostal && todosLosMatches.length > 0) {
-    console.log(`🔍 Validando código postal ${codigoPostal} en ${todosLosMatches.length} matches...`);
-    
-    // Separar matches con CP válido y sin CP válido
-    const matchesConCPValido: AndreaniSucursalInfo[] = [];
-    const matchesSinCPValido: AndreaniSucursalInfo[] = [];
-    
-    for (const sucursal of todosLosMatches) {
-      // Extraer CP de la dirección de la sucursal
-      const cpMatchSucursal = (sucursal.direccion || '').match(/\b([B]?\d{4,5})\b/);
-      const cpSucursal = cpMatchSucursal ? cpMatchSucursal[1].replace(/^B/i, '') : null;
-      
-      // Validar provincia
-      const provSucursal = extraerProvinciaDeDireccion(sucursal.direccion || '');
-      const provCoincide = !provincia || !provSucursal || provSucursal.toLowerCase().includes(provincia.toLowerCase()) || 
-                           provincia.toLowerCase().includes(provSucursal.toLowerCase());
-      
-      // Verificar si es PUNTO HOP (que normalmente no tiene CP en dirección)
-      const esPuntoHop = sucursal.nombre_sucursal.toLowerCase().includes('punto andreani hop');
-      
-      if (cpSucursal && cpSucursal === codigoPostal && provCoincide) {
-        console.log(`   ✅ Match con CP válido: ${sucursal.nombre_sucursal} (CP: ${cpSucursal})`);
-        matchesConCPValido.push(sucursal);
-      } else if (cpSucursal && cpSucursal !== codigoPostal) {
-        console.log(`   ⚠️ Match dirección pero CP no coincide: ${sucursal.nombre_sucursal} (CP pedido: ${codigoPostal}, CP sucursal: ${cpSucursal})`);
-        // NO incluir si el CP no coincide (es un match incorrecto)
-      } else if (!cpSucursal && provCoincide) {
-        // No tiene CP en dirección - aceptar si provincia coincide
-        // PUNTO HOP generalmente no tiene CP en su dirección, así que es normal
-        if (esPuntoHop) {
-          console.log(`   ✅ Match PUNTO HOP (sin CP en dirección pero dirección exacta): ${sucursal.nombre_sucursal}`);
-        } else {
-          console.log(`   ⚠️ Match dirección sin CP pero provincia coincide: ${sucursal.nombre_sucursal}`);
-        }
-        matchesSinCPValido.push(sucursal);
-      }
-    }
-    
-    // PRIORIZAR matches con CP válido
-    if (matchesConCPValido.length > 0) {
-      matchesExactos = matchesConCPValido;
-      console.log(`✅ Usando ${matchesConCPValido.length} matches con CP válido`);
-    } else if (matchesSinCPValido.length > 0) {
-      // Si no hay matches con CP válido, usar matches sin CP (especialmente PUNTO HOP)
-      // Esto es válido porque PUNTO HOP normalmente no tiene CP en su dirección
-      matchesExactos = matchesSinCPValido;
-      console.log(`⚠️ Usando ${matchesSinCPValido.length} matches sin CP válido (pero dirección exacta)`);
-    } else {
-      // Hay CP en pedido pero ningún match tiene CP válido y ninguno es PUNTO HOP
-      console.log(`❌ Todos los matches rechazados - ninguno tiene dirección exacta válida`);
-      matchesExactos = [];
-    }
-  } else if (!codigoPostal && todosLosMatches.length > 0) {
-    // No hay CP, validar solo provincia
-    matchesExactos = todosLosMatches.filter(sucursal => {
-      const provSucursal = extraerProvinciaDeDireccion(sucursal.direccion || '');
-      const provCoincide = !provincia || !provSucursal || provSucursal.toLowerCase().includes(provincia.toLowerCase()) || 
-                           provincia.toLowerCase().includes(provSucursal.toLowerCase());
-      
-      if (!provCoincide) {
-        console.log(`   ⚠️ Match dirección pero provincia no coincide: ${sucursal.nombre_sucursal}`);
-      }
-      
-      return provCoincide;
-    });
-    
-    console.log(`✅ Filtrados a ${matchesExactos.length} matches con provincia válida`);
-  }
-  
-  if (matchesExactos.length > 0) {
-    console.log(`✅ MATCH EXACTO encontrado (con CP/Provincia válidos): ${matchesExactos[0].nombre_sucursal}`);
-    console.log(`   Dirección: ${matchesExactos[0].direccion}`);
-    return matchesExactos[0].nombre_sucursal;
-  }
-  
-  console.log('⚠️ No se encontró match exacto con validación de código postal...');
-  
-  // 2️⃣ FALLBACK: BÚSQUEDA GEOGRÁFICA (solo si no hay match exacto con CP válido)
-  // Los datos geográficos ya fueron extraídos arriba
-  
-  console.log('⚠️ NO SE ENCONTRÓ MATCH EXACTO - Usando búsqueda geográfica como último recurso');
-  console.log('🗺️  Datos geográficos extraídos:');
-  console.log('   Calle:', calle);
-  console.log('   Ciudad:', ciudad); 
-  console.log('   Provincia:', provincia);
-  console.log('   CP:', codigoPostal);
-  
-  // ANTES de usar fallback geográfico, hacer una última búsqueda sin restricciones de CP
-  // para PUNTO HOP que pueden tener dirección exacta pero sin CP en su dirección
-  if (calleYNumeroNorm && calleYNumeroNorm.length > 5) {
-    console.log('🔍 Último intento: buscando match directo sin validar CP/Provincia...');
-    const matchDirecto = sucursales.find(suc => {
-      const nombreNorm = normalizarDireccionParaBusqueda(suc.nombre_sucursal);
-      const dirNorm = normalizarDireccionParaBusqueda(suc.direccion || '');
-      
-      // Para PUNTO HOP, extraer dirección del nombre
-      let dirSuc = dirNorm;
-      if (nombreNorm.includes('punto andreani hop')) {
-        const partes = nombreNorm.split('punto andreani hop');
-        if (partes.length > 1) {
-          dirSuc = normalizarDireccionParaBusqueda(partes[1].trim());
-        }
-      }
-      
-      // Match directo: dirección del pedido contiene dirección de sucursal o viceversa
-      return dirSuc.includes(calleYNumeroNorm) || calleYNumeroNorm.includes(dirSuc) || 
-             nombreNorm.includes(calleYNumeroNorm);
-    });
-    
-    if (matchDirecto) {
-      console.log(`✅ MATCH DIRECTO ENCONTRADO (sin validar CP): ${matchDirecto.nombre_sucursal}`);
-      return matchDirecto.nombre_sucursal;
-    }
-  }
-  
-  // Filtrar por provincia
-  const sucursalesProvincia = filtrarPorProvincia(sucursales, provincia);
-  
-  if (sucursalesProvincia.length === 0) {
-    console.log('🚨 ALERTA: No hay sucursales en la provincia:', provincia);
-    return generarAlertaSinSucursal(provincia, sucursales);
-  }
-  
-  // Buscar por ciudad
-  const sucursalesCiudad = filtrarPorCiudad(sucursalesProvincia, ciudad);
-  
-  if (sucursalesCiudad.length > 0) {
-    console.log(`🎯 Buscando en ${sucursalesCiudad.length} sucursales de ${ciudad}`);
-    return seleccionarMejorSucursalEnCiudad(sucursalesCiudad, calle, codigoPostal);
-  }
-  
-  // Último fallback - pero esto NO debería pasar para direcciones exactas
-  console.log(`⚠️ ADVERTENCIA: No hay sucursal exacta para "${calleYNumero}" en ${ciudad}, usando alternativa en ${provincia}`);
-  return seleccionarSucursalAlternativa(sucursalesProvincia, ciudad);
-};
-
-// 🔧 FUNCIÓN AUXILIAR: Extraer datos geográficos de la dirección (MEJORADA)
-const extraerDatosGeograficos = (direccion: string) => {
-  // Intentar primero con comas, luego con espacios si no hay comas
-  let componentes: string[];
-  
-  if (direccion.includes(',')) {
-    // Hay comas - separar por comas
-    componentes = direccion.split(',').map(c => c.trim());
-  } else {
-    // No hay comas - intentar separar por espacios (menos preciso pero funcional)
-    // Extraer dirección con número primero, luego el resto
-    const partes = direccion.trim().split(/\s+/);
-    componentes = [];
-    
-    // Primer componente: dirección con número (hasta encontrar una palabra que parezca ciudad)
-    let primerComponente: string[] = [];
-    let encontroNumero = false;
-    
-    for (let i = 0; i < partes.length; i++) {
-      const parte = partes[i];
-      
-      // Si encontramos un número, incluir y marcar
-      if (/\d+/.test(parte)) {
-        encontroNumero = true;
-        primerComponente.push(parte);
-      } else if (encontroNumero && /^\d{4,5}$/.test(parte)) {
-        // Es código postal, separarlo
-        componentes.push(primerComponente.join(' '));
-        componentes.push(parte);
-        primerComponente = [];
-      } else if (encontroNumero && esProvinciaArgentina(parte)) {
-        // Es provincia, separarlo
-        componentes.push(primerComponente.join(' '));
-        componentes.push(parte);
-        primerComponente = [];
-      } else {
-        primerComponente.push(parte);
-      }
-    }
-    
-    if (primerComponente.length > 0) {
-      componentes.push(primerComponente.join(' '));
-    }
-  }
-  
-  let calle = componentes[0] || '';
-  let ciudad = '';
-  let provincia = '';
-  let codigoPostal = '';
-  
-  // Identificar provincia, ciudad y CP por patrones
-  for (let i = 1; i < componentes.length; i++) {
-    const comp = componentes[i].toLowerCase().trim();
-    
-    // Detectar código postal (números de 4-5 dígitos)
-    if (/^\d{4,5}$/.test(comp)) {
-      codigoPostal = comp;
-      continue;
-    }
-    
-    // Detectar provincias argentinas
-    if (esProvinciaArgentina(comp)) {
-      provincia = comp;
-      continue;
-    }
-    
-    // Si no es CP ni provincia, probablemente es ciudad/localidad
-    if (!ciudad && comp.length > 2) {
-      ciudad = comp;
-    }
-  }
-  
-  console.log('🔍 Datos extraídos:');
-  console.log(`   Calle completa: "${calle}"`);
-  console.log(`   Ciudad: "${ciudad}"`);
-  console.log(`   Provincia: "${provincia}"`);
-  console.log(`   CP: "${codigoPostal}"`);
-  
-  return { calle, ciudad, provincia, codigoPostal };
-};
-
-// 🔧 FUNCIÓN AUXILIAR: Extraer provincia de una dirección de sucursal
-const extraerProvinciaDeDireccion = (direccion: string): string => {
-  const direccionLower = direccion.toLowerCase();
-  
-  // Buscar provincias en la dirección
-  const provincias = [
-    'buenos aires', 'catamarca', 'chaco', 'chubut', 'córdoba', 'cordoba', 'corrientes',
-    'entre ríos', 'formosa', 'jujuy', 'la pampa', 'la rioja', 'mendoza',
-    'misiones', 'neuquén', 'neuquen', 'río negro', 'rio negro', 'salta', 'san juan', 'san luis',
-    'santa cruz', 'santa fe', 'santiago del estero', 'tierra del fuego',
-    'tucumán', 'tucuman', 'capital federal', 'caba'
-  ];
-  
-  for (const prov of provincias) {
-    if (direccionLower.includes(prov)) {
-      return prov;
-    }
-  }
-  
-  return '';
-};
-
-// 🌍 VALIDADOR DE PROVINCIAS ARGENTINAS
-const esProvinciaArgentina = (texto: string): boolean => {
-  const provincias = [
-    'buenos aires', 'catamarca', 'chaco', 'chubut', 'córdoba', 'corrientes',
-    'entre ríos', 'formosa', 'jujuy', 'la pampa', 'la rioja', 'mendoza',
-    'misiones', 'neuquén', 'río negro', 'salta', 'san juan', 'san luis',
-    'santa cruz', 'santa fe', 'santiago del estero', 'tierra del fuego',
-    'tucumán', 'capital federal', 'caba', 'gran buenos aires'
-  ];
-  
-  return provincias.some(prov => texto.includes(prov) || prov.includes(texto));
-};
-
-// 🏛️ FILTRAR SUCURSALES POR PROVINCIA
-const filtrarPorProvincia = (sucursales: AndreaniSucursalInfo[], provincia: string): AndreaniSucursalInfo[] => {
-  if (!provincia) return sucursales;
-  
-  const provNorm = provincia.toLowerCase();
-  
-  return sucursales.filter(sucursal => {
-    const dirSuc = sucursal.direccion.toLowerCase();
-    const nomSuc = sucursal.nombre_sucursal.toLowerCase();
-    
-    // Mapeos específicos de provincias
-    const mapeoProvincias: { [key: string]: string[] } = {
-      'tucumán': ['tucumán', 'san miguel de tucumán', 'tucuman'],
-      'san juan': ['san juan'],
-      'misiones': ['misiones', 'posadas', 'oberá', 'eldorado'],
-      'chubut': ['chubut', 'comodoro rivadavia', 'puerto madryn', 'trelew', 'esquel'],
-      'santa fe': ['santa fe', 'rosario', 'santo tomé', 'santo tome'],
-      'buenos aires': ['buenos aires', 'provincia de buenos aires', 'gran buenos aires'],
-      'formosa': ['formosa', 'clorinda'],
-      'catamarca': ['catamarca', 'san fernando del valle de catamarca']
-    };
-    
-    // Buscar coincidencias directas o por mapeo
-    for (const [prov, variantes] of Object.entries(mapeoProvincias)) {
-      if (provNorm.includes(prov) || prov.includes(provNorm)) {
-        return variantes.some(var_ => dirSuc.includes(var_) || nomSuc.includes(var_));
-      }
-    }
-    
-    // Fallback: búsqueda directa
-    return dirSuc.includes(provNorm) || nomSuc.includes(provNorm);
-  });
-};
-
-// 🏙️ FILTRAR SUCURSALES POR CIUDAD
-const filtrarPorCiudad = (sucursales: AndreaniSucursalInfo[], ciudad: string): AndreaniSucursalInfo[] => {
-  if (!ciudad) return sucursales;
-  
-  const ciudadNorm = ciudad.toLowerCase().trim();
-  
-  return sucursales.filter(sucursal => {
-    const dirSuc = sucursal.direccion.toLowerCase();
-    const nomSuc = sucursal.nombre_sucursal.toLowerCase();
-    
-    return dirSuc.includes(ciudadNorm) || nomSuc.includes(ciudadNorm);
-  });
-};
-
-// 🎯 SELECCIONAR MEJOR SUCURSAL EN LA CIUDAD - VERSIÓN MEJORADA
-const seleccionarMejorSucursalEnCiudad = (sucursales: AndreaniSucursalInfo[], calle: string, codigoPostal: string): string => {
-  if (sucursales.length === 1) {
-    console.log('✅ Una sola sucursal en la ciudad:', sucursales[0].nombre_sucursal);
-    return sucursales[0].nombre_sucursal;
-  }
-  
-  console.log(`🔍 Buscando mejor match entre ${sucursales.length} sucursales...`);
-  console.log(`   Calle a buscar: "${calle}"`);
-  
-  // Normalizar calle para búsqueda
-  const calleNorm = normalizarDireccionParaBusqueda(calle);
-  
-  // 1️⃣ PRIORIDAD MÁXIMA: Match exacto PUNTO HOP con número de calle
-  // Extraer número de la calle si existe
-  const matchNumero = calle.match(/\d+/);
-  const numeroCalle = matchNumero ? matchNumero[0] : null;
-  
-  if (numeroCalle) {
-    console.log(`🎯 Buscando match exacto PUNTO HOP con número: ${numeroCalle}`);
-    
-    // Buscar PUNTO HOP que coincida con calle Y número
-    const matchesExactosPuntoHop = sucursales.filter(suc => {
-      const esPuntoHop = suc.nombre_sucursal.toLowerCase().includes('punto andreani hop');
-      if (!esPuntoHop) return false;
-      
-      const nombreSucNorm = normalizarDireccionParaBusqueda(suc.nombre_sucursal);
-      const dirSucNorm = normalizarDireccionParaBusqueda(suc.direccion || '');
-      
-      // Verificar que contiene el número
-      const tieneNumero = nombreSucNorm.includes(numeroCalle) || dirSucNorm.includes(numeroCalle);
-      
-      // Verificar que contiene palabras clave de la calle (normalizada)
-      const tieneCalle = nombreSucNorm.includes(calleNorm) || dirSucNorm.includes(calleNorm);
-      
-      return tieneNumero && tieneCalle;
-    });
-    
-    if (matchesExactosPuntoHop.length > 0) {
-      // Priorizar el que tenga el número más exacto
-      const mejorMatch = matchesExactosPuntoHop.find(suc => 
-        (suc.nombre_sucursal.includes(numeroCalle) || suc.direccion?.includes(numeroCalle))
-      ) || matchesExactosPuntoHop[0];
-      
-      console.log(`✅ MATCH EXACTO PUNTO HOP con número: ${mejorMatch.nombre_sucursal}`);
-      return mejorMatch.nombre_sucursal;
-    }
-  }
-  
-  // 2️⃣ PRIORIDAD ALTA: Match PUNTO HOP por calle (sin número exacto)
-  const matchesPuntoHop = sucursales.filter(suc => {
-    const esPuntoHop = suc.nombre_sucursal.toLowerCase().includes('punto andreani hop');
-    if (!esPuntoHop) return false;
-    
-    const nombreSucNorm = normalizarDireccionParaBusqueda(suc.nombre_sucursal);
-    const dirSucNorm = normalizarDireccionParaBusqueda(suc.direccion || '');
-    
-    return nombreSucNorm.includes(calleNorm) || dirSucNorm.includes(calleNorm);
-  });
-  
-  if (matchesPuntoHop.length > 0) {
-    console.log(`✅ MATCH PUNTO HOP por calle: ${matchesPuntoHop[0].nombre_sucursal}`);
-    return matchesPuntoHop[0].nombre_sucursal;
-  }
-  
-  // 3️⃣ PRIORIDAD MEDIA: Match por calle en cualquier tipo de sucursal
-  // Buscar coincidencia EXACTA de dirección completa (ej: "Mendoza 2552" en dirección de sucursal)
-  let matchesPorCalle = sucursales.filter(suc => {
-    const nombreSucNorm = normalizarDireccionParaBusqueda(suc.nombre_sucursal);
-    const dirSucNorm = normalizarDireccionParaBusqueda(suc.direccion || '');
-    
-    // Match exacto de la calle completa en la dirección de la sucursal
-    const calleCompletaNorm = calleNorm.trim();
-    if (dirSucNorm.includes(calleCompletaNorm) || nombreSucNorm.includes(calleCompletaNorm)) {
-      return true;
-    }
-    
-    // Match por palabras clave de la calle (split y buscar componentes)
-    const palabrasCalle = calleCompletaNorm.split(/\s+/).filter(p => p.length > 2 && !/\d+/.test(p));
-    if (palabrasCalle.length > 0) {
-      const todasLasPalabras = palabrasCalle.every(palabra => 
-        dirSucNorm.includes(palabra) || nombreSucNorm.includes(palabra)
-      );
-      if (todasLasPalabras) {
-        return true;
-      }
-    }
-    
-    return false;
-  });
-  
-  if (matchesPorCalle.length > 0) {
-    // Si hay múltiples matches, priorizar el que tenga el número exacto si existe
-    if (numeroCalle) {
-      const matchConNumero = matchesPorCalle.find(suc => {
-        const dirNorm = normalizarDireccionParaBusqueda(suc.direccion || '');
-        return dirNorm.includes(numeroCalle);
-      });
-      if (matchConNumero) {
-        console.log(`✅ MATCH por calle con número: ${matchConNumero.nombre_sucursal}`);
-        return matchConNumero.nombre_sucursal;
-      }
-    }
-    
-    console.log(`✅ MATCH por calle: ${matchesPorCalle[0].nombre_sucursal}`);
-    return matchesPorCalle[0].nombre_sucursal;
-  }
-  
-  // 4️⃣ PRIORIDAD BAJA: Sucursales principales (no PUNTO HOP) como fallback
-  const sucursalesPrincipales = sucursales.filter(suc => 
-    !suc.nombre_sucursal.toLowerCase().includes('punto andreani hop')
-  );
-  
-  if (sucursalesPrincipales.length > 0) {
-    console.log(`⚠️ Fallback - sucursal principal: ${sucursalesPrincipales[0].nombre_sucursal}`);
-    return sucursalesPrincipales[0].nombre_sucursal;
-  }
-  
-  // 5️⃣ ÚLTIMO RECURSO: Primera sucursal disponible
-  console.log(`⚠️ Último fallback - primera sucursal: ${sucursales[0].nombre_sucursal}`);
-  return sucursales[0].nombre_sucursal;
-};
-
-// 🚨 GENERAR ALERTA CUANDO NO HAY SUCURSAL EN LA PROVINCIA
-const generarAlertaSinSucursal = (provincia: string, todasSucursales: AndreaniSucursalInfo[]): string => {
-  console.log('🚨🚨🚨 ALERTA CRÍTICA 🚨🚨🚨');
-  console.log(`❌ NO EXISTE SUCURSAL EN: ${provincia}`);
-  console.log('📋 Provincias disponibles:', obtenerProvinciasDisponibles(todasSucursales));
-  
-  // Retornar un identificador de error claro
-  return `❌ SIN SUCURSAL EN ${provincia.toUpperCase()}`;
-};
-
-// 🗺️ OBTENER PROVINCIAS DISPONIBLES
-const obtenerProvinciasDisponibles = (sucursales: AndreaniSucursalInfo[]): string[] => {
-  const provincias = new Set<string>();
-  
-  sucursales.forEach(suc => {
-    const dir = suc.direccion.toLowerCase();
-    
-    if (dir.includes('buenos aires')) provincias.add('Buenos Aires');
-    if (dir.includes('córdoba') || dir.includes('cordoba')) provincias.add('Córdoba');
-    if (dir.includes('santa fe')) provincias.add('Santa Fe');
-    if (dir.includes('tucumán') || dir.includes('tucuman')) provincias.add('Tucumán');
-    if (dir.includes('mendoza')) provincias.add('Mendoza');
-    if (dir.includes('misiones')) provincias.add('Misiones');
-    if (dir.includes('chubut')) provincias.add('Chubut');
-    if (dir.includes('san juan')) provincias.add('San Juan');
-    // ... agregar más según sea necesario
-  });
-  
-  return Array.from(provincias);
-};
-
-// 🔄 SELECCIONAR SUCURSAL ALTERNATIVA EN LA PROVINCIA
-const seleccionarSucursalAlternativa = (sucursalesProvincia: AndreaniSucursalInfo[], ciudadOriginal: string): string => {
-  // Priorizar sucursales principales de la capital/ciudad más importante
-  const sucursalesPrincipales = sucursalesProvincia.filter(suc => 
-    !suc.nombre_sucursal.toLowerCase().includes('punto andreani hop') &&
-    (suc.nombre_sucursal.toLowerCase().includes('centro') || 
-     suc.nombre_sucursal.toLowerCase().includes('capital'))
-  );
-  
-  if (sucursalesPrincipales.length > 0) {
-    const seleccionada = sucursalesPrincipales[0];
-    console.log(`⚠️  ENVIANDO A SUCURSAL ALTERNATIVA: ${seleccionada.nombre_sucursal}`);
-    console.log(`   (No hay sucursal en ${ciudadOriginal})`);
-    return seleccionada.nombre_sucursal;
-  }
-  
-  // Fallback: primera sucursal de la provincia
-  const seleccionada = sucursalesProvincia[0];
-  console.log(`⚠️  ENVIANDO A SUCURSAL ALTERNATIVA: ${seleccionada.nombre_sucursal}`);
-  return seleccionada.nombre_sucursal;
-};
-
-// 📞 MANTENER FUNCIÓN ORIGINAL COMO FALLBACK
+// Función para encontrar la sucursal correcta basándose en la dirección
 const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucursalInfo[]): string => {
-  // Usar el nuevo algoritmo mejorado
-  const resultado = findSucursalByAddressImproved(direccionPedido, sucursales);
-  
-  // Si el nuevo algoritmo falla, usar el original como último recurso
-  if (resultado.includes('❌') || resultado === 'SUCURSAL NO ENCONTRADA') {
-    console.log('🔄 Usando algoritmo fallback...');
-    return findSucursalByAddressLegacy(direccionPedido, sucursales);
-  }
-  
-  return resultado;
-};
-
-// 🔧 FUNCIÓN LEGACY (algoritmo anterior renombrado)
-const findSucursalByAddressLegacy = (direccionPedido: string, sucursales: AndreaniSucursalInfo[]): string => {
   const direccionNormalizada = direccionPedido.toLowerCase().trim();
-  console.log('=== DEBUG SUCURSAL LEGACY ===');
-  console.log('🔍 Buscando sucursal para dirección:', direccionNormalizada);
-  console.log('📊 Total sucursales disponibles:', sucursales.length);
+  console.log('=== DEBUG SUCURSAL ===');
+  console.log('Buscando sucursal para dirección:', direccionNormalizada);
+  console.log('Total sucursales disponibles:', sucursales.length);
+  console.log('Primeras 3 sucursales:', sucursales.slice(0, 3));
   
   // Extraer componentes específicos de la dirección del pedido
   const componentes = direccionPedido.split(',').map(c => c.trim());
@@ -1634,57 +876,24 @@ const findSucursalByAddressLegacy = (direccionPedido: string, sucursales: Andrea
   let mejorCoincidencia = '';
   let mejorPuntuacion = 0;
   
-  // Primero filtrar por provincia si está disponible
-  let coincidenciasFiltradas = coincidenciasExactas;
-  if (provincia) {
-    coincidenciasFiltradas = coincidenciasExactas.filter(sucursal => {
-      const direccionSucursal = sucursal.direccion.toLowerCase().trim();
-      const nombreSucursal = sucursal.nombre_sucursal.toLowerCase();
-      
-      // Verificar que la sucursal coincida con la provincia del pedido
-      const coincideProvincia = direccionSucursal.includes(provincia) || 
-                                nombreSucursal.includes(provincia) ||
-                                direccionSucursal.includes(provincia.replace('provincia de ', '')) ||
-                                nombreSucursal.includes(provincia.replace('provincia de ', ''));
-      
-      return coincideProvincia;
-    });
-    
-    console.log(`Coincidencias después de filtrar por provincia ${provincia}:`, coincidenciasFiltradas.length);
-    if (coincidenciasFiltradas.length === 0) {
-      console.log('No hay coincidencias para la provincia, usando todas las coincidencias originales');
-      coincidenciasFiltradas = coincidenciasExactas;
-    }
-  }
-  
-  for (const sucursal of coincidenciasFiltradas) {
+  for (const sucursal of coincidenciasExactas) {
     const direccionSucursal = sucursal.direccion.toLowerCase().trim();
     const nombreSucursal = sucursal.nombre_sucursal.toLowerCase();
     let puntuacion = 0;
     
-    // Desempate por código postal (más específico) - PESO AUMENTADO
+    // Desempate por código postal (más específico)
     if (codigoPostal && direccionSucursal.includes(codigoPostal)) {
-      puntuacion += 15;
+      puntuacion += 10;
       console.log(`Desempate por código postal ${codigoPostal} en: ${sucursal.nombre_sucursal}`);
-    }
-    
-    // Desempate por provincia - PESO AUMENTADO SIGNIFICATIVAMENTE
-    if (provincia && direccionSucursal.includes(provincia)) {
-      puntuacion += 20;
-      console.log(`Desempate por provincia ${provincia} en: ${sucursal.nombre_sucursal}`);
-    }
-    if (provincia && nombreSucursal.includes(provincia)) {
-      puntuacion += 15;
-      console.log(`Desempate por provincia en nombre ${provincia} en: ${sucursal.nombre_sucursal}`);
     }
     
     // Desempate por localidad
     if (localidad && direccionSucursal.includes(localidad)) {
-      puntuacion += 10;
+      puntuacion += 8;
       console.log(`Desempate por localidad ${localidad} en: ${sucursal.nombre_sucursal}`);
     }
     if (localidad && nombreSucursal.includes(localidad)) {
-      puntuacion += 8;
+      puntuacion += 6;
     }
     
     // Desempate por ciudad
@@ -1696,6 +905,12 @@ const findSucursalByAddressLegacy = (direccionPedido: string, sucursales: Andrea
       puntuacion += 4;
     }
     
+    // Desempate por provincia
+    if (provincia && direccionSucursal.includes(provincia)) {
+      puntuacion += 4;
+      console.log(`Desempate por provincia ${provincia} en: ${sucursal.nombre_sucursal}`);
+    }
+    
     if (puntuacion > mejorPuntuacion) {
       mejorPuntuacion = puntuacion;
       mejorCoincidencia = sucursal.nombre_sucursal;
@@ -1704,12 +919,7 @@ const findSucursalByAddressLegacy = (direccionPedido: string, sucursales: Andrea
   
   // Si no se pudo desempatar, devolver la primera coincidencia
   if (mejorPuntuacion === 0) {
-    console.log('No se pudo desempatar, devolviendo primera coincidencia de las filtradas:', coincidenciasFiltradas[0]?.nombre_sucursal);
-    // Si teníamos coincidencias filtradas y no encontramos una con puntuación, usar la primera filtrada
-    if (coincidenciasFiltradas.length > 0) {
-      return coincidenciasFiltradas[0].nombre_sucursal;
-    }
-    // Si no, usar la primera de todas las coincidencias
+    console.log('No se pudo desempatar, devolviendo primera coincidencia:', coincidenciasExactas[0].nombre_sucursal);
     return coincidenciasExactas[0].nombre_sucursal;
   }
   
@@ -1717,17 +927,7 @@ const findSucursalByAddressLegacy = (direccionPedido: string, sucursales: Andrea
   return mejorCoincidencia;
 };
 
-export const processOrders = async (tiendanubeCsvText: string, config?: { peso: number; alto: number; ancho: number; profundidad: number; valorDeclarado: number }): Promise<{ domicilioCSV: string; sucursalCSV: string; }> => {
-  // Valores por defecto
-  const defaultConfig = {
-    peso: 400,
-    alto: 10,
-    ancho: 10,
-    profundidad: 10,
-    valorDeclarado: 6000,
-  };
-  
-  const finalConfig = config || defaultConfig;
+export const processOrders = async (tiendanubeCsvText: string): Promise<{ domicilioCSV: string; sucursalCSV: string; }> => {
   const [sucursales, codigosPostales, tiendanubeOrders] = await Promise.all([
     fetchSucursales(),
     fetchCodigosPostales(),
@@ -1781,8 +981,8 @@ export const processOrders = async (tiendanubeCsvText: string, config?: { peso: 
     const apellido = apellidoParts.join(' ');
     
     // Normalizar nombres y apellidos para evitar caracteres inválidos
-    const nombreNormalizado = limpiarCampoTexto(nombre);
-    const apellidoNormalizado = limpiarCampoTexto(apellido);
+    const nombreNormalizado = normalizarNombre(nombre);
+    const apellidoNormalizado = normalizarNombre(apellido);
 
     // Helper function to split phone number based on province and phone number
     const telefono = getColumnValue(order, 13); // Teléfono
@@ -2012,11 +1212,11 @@ export const processOrders = async (tiendanubeCsvText: string, config?: { peso: 
     
     const baseData = {
       'Paquete Guardado Ej:': '', // Siempre vacío
-      'Peso (grs)': finalConfig.peso,
-      'Alto (cm)': finalConfig.alto,
-      'Ancho (cm)': finalConfig.ancho,
-      'Profundidad (cm)': finalConfig.profundidad,
-      'Valor declarado ($ C/IVA) *': finalConfig.valorDeclarado,
+      'Peso (grs)': 400,
+      'Alto (cm)': 10,
+      'Ancho (cm)': 10,
+      'Profundidad (cm)': 10,
+      'Valor declarado ($ C/IVA) *': 6000,
       'Numero Interno': `#${getColumnValue(order, 0)}`, // Número de orden con #
       'Nombre *': nombreNormalizado || '',
       'Apellido *': apellidoNormalizado || '',
@@ -2050,21 +1250,27 @@ export const processOrders = async (tiendanubeCsvText: string, config?: { peso: 
     const medioEnvioNormalizado = medioEnvio ? normalizeText(medioEnvio) : '';
     console.log('📦 Medio de envío normalizado:', medioEnvioNormalizado);
     
-    // Detectar envío a domicilio - condiciones más flexibles
+    // Detectar envío a domicilio
+    // Reglas:
+    // - "Andreani" → domicilio
+    // - "Andreani Estándar" → domicilio
+    // - "Andreani Despacho" → domicilio
+    // - Cualquier cosa con "domicilio" → domicilio
     const esDomicilio = medioEnvioNormalizado && (
       medioEnvioNormalizado.includes("domicilio") ||
-      medioEnvioNormalizado.includes("andreani") && medioEnvioNormalizado.includes("estandar") ||
+      medioEnvioNormalizado.includes("andreani") ||
       medioEnvioNormalizado.includes("envio a domicilio") ||
-      medioEnvioNormalizado.includes("a domicilio") ||
-      medioEnvioNormalizado.includes("correo argentino") ||
-      medioEnvioNormalizado.includes("envio clasico") ||
-      medioEnvioNormalizado.includes("envio express")
+      medioEnvioNormalizado.includes("a domicilio")
     );
     
     // Detectar envío a sucursal
+    // Reglas:
+    // - "Punto de retiro" → sucursal
+    // - "Andreani Sucursal" → sucursal
+    // - "retiro" (genérico) → sucursal
     const esSucursal = medioEnvioNormalizado && (
       medioEnvioNormalizado.includes("punto de retiro") ||
-      medioEnvioNormalizado.includes("sucursal") ||
+      (medioEnvioNormalizado.includes("andreani") && medioEnvioNormalizado.includes("sucursal")) ||
       medioEnvioNormalizado.includes("retiro")
     );
     
@@ -2142,8 +1348,8 @@ export const processOrders = async (tiendanubeCsvText: string, config?: { peso: 
       }
       
       // Normalizar campos de dirección para evitar caracteres inválidos
-      const calleNormalizada = limpiarCampoTexto(getColumnValue(order, 16));
-      const pisoNormalizado = limpiarCampoTexto(getColumnValue(order, 18));
+      const calleNormalizada = normalizarNombre(getColumnValue(order, 16));
+      const pisoNormalizado = normalizarNombre(getColumnValue(order, 18));
       
       // Procesar número de calle - debe ser SOLO números
       let numeroCalle = getColumnValue(order, 17).trim();
@@ -2235,7 +1441,7 @@ export const processOrders = async (tiendanubeCsvText: string, config?: { peso: 
       console.error(`   Medio de envío original: "${medioEnvio}"`);
       console.error(`   Medio de envío normalizado: "${medioEnvioNormalizado}"`);
       console.error(`   ⚠️ El medio de envío no coincide con ningún patrón conocido`);
-      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar", "correo argentino", "envio clasico", "envio express"`);
+      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar"`);
       console.error(`   ✅ Patrones de SUCURSAL: "punto de retiro", "sucursal", "retiro"`);
     }
   }
@@ -2247,14 +1453,6 @@ export const processOrders = async (tiendanubeCsvText: string, config?: { peso: 
   console.log(`- No procesados: ${contadorNoProcesados}`);
   console.log('Final results - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
 
-  // 🔍 VALIDAR DATOS ANTES DE GENERAR CSV
-  if (domicilios.length > 0) {
-    validarDatos(domicilios, 'DOMICILIOS');
-  }
-  if (sucursalesOutput.length > 0) {
-    validarDatos(sucursalesOutput, 'SUCURSALES');
-  }
-
   // Recopilar logs de procesamiento
   const processingLogs: string[] = [];
   processingLogs.push(`Total pedidos cargados: ${tiendanubeOrders.length}`);
@@ -2262,33 +1460,6 @@ export const processOrders = async (tiendanubeCsvText: string, config?: { peso: 
   processingLogs.push(`Sucursales procesadas: ${contadorSucursales}`);
   processingLogs.push(`No procesados: ${contadorNoProcesados}`);
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
-
-  // Calcular información detallada para el nuevo resumen
-  const totalRowsWithData = tiendanubeOrders.length;
-  const actualSalesProcessed = contadorDomicilios + contadorSucursales;
-  const shipmentsToDomicilio = contadorDomicilios;
-  const shipmentsToSucursal = contadorSucursales;
-  
-  // Determinar la razón de los no procesados
-  let noProcessedReason = '';
-  if (contadorNoProcesados > 0) {
-    // Verificar si hay clientes duplicados (esto es normal)
-    const clientesUnicos = new Set();
-    tiendanubeOrders.forEach(order => {
-      const numeroOrden = getColumnValue(order, 0);
-      const email = getColumnValue(order, 1);
-      clientesUnicos.add(numeroOrden || email);
-    });
-    
-    const totalClientes = clientesUnicos.size;
-    const diferencia = tiendanubeOrders.length - totalClientes;
-    
-    if (diferencia > 0) {
-      noProcessedReason = `Incluye ${diferencia} productos de clientes con múltiples pedidos (esto es normal)`;
-    } else {
-      noProcessedReason = 'Medio de envío no reconocido';
-    }
-  }
 
   return {
     domicilioCSV: unparseCSV(domicilios),
@@ -2298,32 +1469,16 @@ export const processOrders = async (tiendanubeCsvText: string, config?: { peso: 
       domiciliosProcessed: contadorDomicilios,
       sucursalesProcessed: contadorSucursales,
       noProcessed: contadorNoProcesados,
-      processingLogs: processingLogs,
-      // Nueva información detallada
-      totalRowsWithData: totalRowsWithData,
-      actualSalesProcessed: actualSalesProcessed,
-      shipmentsToDomicilio: shipmentsToDomicilio,
-      shipmentsToSucursal: shipmentsToSucursal,
-      noProcessedReason: noProcessedReason
+      processingLogs: processingLogs
     }
   };
 };
 
 // Nueva función para procesar el formato de ventas específico
-export const processVentasOrders = async (csvContent: string, config?: { peso: number; alto: number; ancho: number; profundidad: number; valorDeclarado: number }): Promise<{
+export const processVentasOrders = async (csvContent: string): Promise<{
   domicilioCSV: string;
   sucursalCSV: string;
 }> => {
-  // Valores por defecto
-  const defaultConfig = {
-    peso: 400,
-    alto: 10,
-    ancho: 10,
-    profundidad: 10,
-    valorDeclarado: 6000,
-  };
-  
-  const finalConfig = config || defaultConfig;
   console.log('Procesando archivo de ventas...');
   
   // Cargar datos necesarios
@@ -2435,17 +1590,17 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
       console.warn(`Formato de DNI/CUIT no reconocido: ${dniCuitLimpio} (${dniCuitLimpio.length} dígitos)`);
     }
 
-    // Datos base para ambos tipos - con limpieza de campos de texto
+    // Datos base para ambos tipos
     const baseData = {
       'Paquete Guardado \nEj: 1': '',
-      'Peso (grs)\nEj: ': String(finalConfig.peso),
-      'Alto (cm)\nEj: ': String(finalConfig.alto),
-      'Ancho (cm)\nEj: ': String(finalConfig.ancho),
-      'Profundidad (cm)\nEj: ': String(finalConfig.profundidad),
-      'Valor declarado ($ C/IVA) *\nEj: ': String(finalConfig.valorDeclarado),
+      'Peso (grs)\nEj: ': '400',
+      'Alto (cm)\nEj: ': '10',
+      'Ancho (cm)\nEj: ': '10',
+      'Profundidad (cm)\nEj: ': '10',
+      'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado,
       'Numero Interno\nEj: ': `#${numeroOrden}`,
-      'Nombre *\nEj: ': limpiarCampoTexto(nombreCompleto),
-      'Apellido *\nEj: ': limpiarCampoTexto(apellidoComprador),
+      'Nombre *\nEj: ': nombreCompleto,
+      'Apellido *\nEj: ': apellidoComprador,
       'DNI *\nEj: ': dniProcesado,
       'Email *\nEj: ': email,
       'Celular código *\nEj: ': codigoArea,
@@ -2463,21 +1618,27 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
     console.log('🔍 Processing order (VENTAS):', numeroOrden, 'Medio de envío:', medioEnvio);
     console.log('📦 Medio de envío normalizado:', medioEnvioNorm);
     
-    // Detectar envío a domicilio - condiciones más flexibles
+    // Detectar envío a domicilio
+    // Reglas:
+    // - "Andreani" → domicilio
+    // - "Andreani Estándar" → domicilio
+    // - "Andreani Despacho" → domicilio
+    // - Cualquier cosa con "domicilio" → domicilio
     const esDomicilioVentas = medioEnvioNorm && (
       medioEnvioNorm.includes("domicilio") ||
-      medioEnvioNorm.includes("andreani") && medioEnvioNorm.includes("estandar") ||
+      medioEnvioNorm.includes("andreani") ||
       medioEnvioNorm.includes("envio a domicilio") ||
-      medioEnvioNorm.includes("a domicilio") ||
-      medioEnvioNorm.includes("correo argentino") ||
-      medioEnvioNorm.includes("envio clasico") ||
-      medioEnvioNorm.includes("envio express")
+      medioEnvioNorm.includes("a domicilio")
     );
     
     // Detectar envío a sucursal
+    // Reglas:
+    // - "Punto de retiro" → sucursal
+    // - "Andreani Sucursal" → sucursal
+    // - "retiro" (genérico) → sucursal
     const esSucursalVentas = medioEnvioNorm && (
       medioEnvioNorm.includes("punto de retiro") ||
-      medioEnvioNorm.includes("sucursal") ||
+      (medioEnvioNorm.includes("andreani") && medioEnvioNorm.includes("sucursal")) ||
       medioEnvioNorm.includes("retiro")
     );
     
@@ -2487,9 +1648,46 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
     if (esDomicilioVentas && !esSucursalVentas) {
       contadorDomicilios++;
       console.log(`[DOMICILIO ${contadorDomicilios}] Procesando pedido:`, numeroOrden);
-      // Procesar envío a domicilio - usando función de limpieza mejorada
-      const calleNormalizada = limpiarCampoTexto(direccion);
-      const pisoNormalizado = limpiarCampoTexto(piso);
+      // Procesar envío a domicilio
+      const calleNormalizada = direccion.replace(/[áàäâ]/g, 'a')
+        .replace(/[éèëê]/g, 'e')
+        .replace(/[íìïî]/g, 'i')
+        .replace(/[óòöô]/g, 'o')
+        .replace(/[úùüû]/g, 'u')
+        .replace(/[ñ]/g, 'n')
+        .replace(/[ÁÀÄÂ]/g, 'A')
+        .replace(/[ÉÈËÊ]/g, 'E')
+        .replace(/[ÍÌÏÎ]/g, 'I')
+        .replace(/[ÓÒÖÔ]/g, 'O')
+        .replace(/[ÚÙÜÛ]/g, 'U')
+        .replace(/[Ñ]/g, 'N')
+        .replace(/[ç]/g, 'c')
+        .replace(/[Ç]/g, 'C')
+        .replace(/['']/g, '')
+        .replace(/[""]/g, '"')
+        .replace(/[–—]/g, '-')
+        .replace(/[…]/g, '...')
+        .replace(/[]/g, '');
+
+      const pisoNormalizado = piso.replace(/[áàäâ]/g, 'a')
+        .replace(/[éèëê]/g, 'e')
+        .replace(/[íìïî]/g, 'i')
+        .replace(/[óòöô]/g, 'o')
+        .replace(/[úùüû]/g, 'u')
+        .replace(/[ñ]/g, 'n')
+        .replace(/[ÁÀÄÂ]/g, 'A')
+        .replace(/[ÉÈËÊ]/g, 'E')
+        .replace(/[ÍÌÏÎ]/g, 'I')
+        .replace(/[ÓÒÖÔ]/g, 'O')
+        .replace(/[ÚÙÜÛ]/g, 'U')
+        .replace(/[Ñ]/g, 'N')
+        .replace(/[ç]/g, 'c')
+        .replace(/[Ç]/g, 'C')
+        .replace(/['']/g, '')
+        .replace(/[""]/g, '"')
+        .replace(/[–—]/g, '-')
+        .replace(/[…]/g, '...')
+        .replace(/[]/g, '');
 
       // Procesar número de calle - debe ser SOLO números
       let numeroCalleVentas = numero.trim();
@@ -2517,12 +1715,60 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
       
       if (codigosPostales.has(codigoPostal)) {
         formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
-        console.log(`✅ Código postal ${codigoPostal} encontrado en domiciliosData.ts: ${formatoProvinciaLocalidadCP}`);
+        console.log(`✅ Código postal ${codigoPostal} encontrado TAL CUAL en domiciliosData.ts: ${formatoProvinciaLocalidadCP}`);
       } else {
         console.log(`❌ Código postal ${codigoPostal} NO encontrado en domiciliosData.ts`);
-        // Fallback: crear formato estándar
-        formatoProvinciaLocalidadCP = `${provincia.toUpperCase()} / ${localidad.toUpperCase()} / ${codigoPostal}`;
-        console.log('Usando formato de fallback:', formatoProvinciaLocalidadCP);
+        
+        // FALLBACK: Buscar por PROVINCIA + LOCALIDAD
+        const provinciaPedido = provincia.toUpperCase();
+        const localidadPedido = localidad.toUpperCase();
+        
+        console.log(`🔍 Buscando por PROVINCIA + LOCALIDAD: "${provinciaPedido} / ${localidadPedido}"`);
+        
+        let encontradoPorProvinciaLocalidad = false;
+        for (const [cp, formato] of codigosPostales.entries()) {
+          // Normalizar para comparar (quitar acentos y convertir a mayúsculas)
+          const formatoNormalizado = formato
+            .replace(/[áàäâ]/g, 'A')
+            .replace(/[éèëê]/g, 'E')
+            .replace(/[íìïî]/g, 'I')
+            .replace(/[óòöô]/g, 'O')
+            .replace(/[úùüû]/g, 'U')
+            .replace(/[ñ]/g, 'N')
+            .toUpperCase();
+          
+          const provinciaNormalizada = provinciaPedido
+            .replace(/[áàäâ]/g, 'A')
+            .replace(/[éèëê]/g, 'E')
+            .replace(/[íìïî]/g, 'I')
+            .replace(/[óòöô]/g, 'O')
+            .replace(/[úùüû]/g, 'U')
+            .replace(/[ñ]/g, 'N');
+          
+          const localidadNormalizada = localidadPedido
+            .replace(/[áàäâ]/g, 'A')
+            .replace(/[éèëê]/g, 'E')
+            .replace(/[íìïî]/g, 'I')
+            .replace(/[óòöô]/g, 'O')
+            .replace(/[úùüû]/g, 'U')
+            .replace(/[ñ]/g, 'N');
+          
+          const patronBusqueda = `${provinciaNormalizada} / ${localidadNormalizada}`;
+          
+          if (formatoNormalizado.includes(patronBusqueda)) {
+            formatoProvinciaLocalidadCP = formato;
+            encontradoPorProvinciaLocalidad = true;
+            console.log(`✅ Encontrado por PROVINCIA + LOCALIDAD: ${formato}`);
+            break;
+          }
+        }
+        
+        if (!encontradoPorProvinciaLocalidad) {
+          console.log(`❌ No encontrado por PROVINCIA + LOCALIDAD tampoco`);
+          // Último fallback: formato por defecto
+          formatoProvinciaLocalidadCP = `${provinciaPedido} / ${localidadPedido} / ${codigoPostal}`;
+          console.log('Usando formato de fallback final:', formatoProvinciaLocalidadCP);
+        }
       }
 
       domicilios.push({
@@ -2539,55 +1785,8 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
       contadorSucursales++;
       console.log(`[SUCURSAL ${contadorSucursales}] Procesando pedido:`, numeroOrden);
       // Procesar envío a sucursal
-      // Construir dirección con comas para mejor parsing
-      let direccionCompleta = `${direccion}`;
-      if (numero && numero.trim()) {
-        direccionCompleta += ` ${numero}`;
-      }
-      if (piso && piso.trim()) {
-        direccionCompleta += `, ${piso}`;
-      }
-      if (localidad && localidad.trim()) {
-        direccionCompleta += `, ${localidad}`;
-      }
-      if (ciudad && ciudad.trim() && ciudad !== localidad) {
-        direccionCompleta += `, ${ciudad}`;
-      }
-      if (codigoPostal && codigoPostal.trim()) {
-        direccionCompleta += `, ${codigoPostal}`;
-      }
-      if (provincia && provincia.trim()) {
-        direccionCompleta += `, ${provincia}`;
-      }
-      direccionCompleta = direccionCompleta.trim();
-      
-      console.log('📋 Dirección completa construida:', direccionCompleta);
+      const direccionCompleta = `${direccion} ${numero} ${piso} ${localidad} ${ciudad}`.trim();
       const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales);
-
-      // 🔍 NUEVA VALIDACIÓN DE SEGURIDAD
-      const pedidoValidacion: PedidoParaValidar = {
-        numeroOrden: numeroOrden,
-        direccion: direccionCompleta,
-        sucursalSeleccionada: nombreSucursal,
-        tipoEnvio: 'sucursal',
-        provincia: provincia || '',
-        ciudad: ciudad || localidad || ''
-      };
-      
-      const validacion = validarEnvioAntesDeProcesar(pedidoValidacion);
-      
-      if (!validacion.esValido) {
-        console.log(`🚨 PEDIDO ${numeroOrden} - ERRORES DETECTADOS:`);
-        validacion.errores.forEach(error => console.log(`   ${error}`));
-        if (validacion.accionRequerida) {
-          console.log(`💡 ACCIÓN REQUERIDA: ${validacion.accionRequerida}`);
-        }
-      }
-      
-      if (validacion.advertencias.length > 0) {
-        console.log(`⚠️ PEDIDO ${numeroOrden} - ADVERTENCIAS:`);
-        validacion.advertencias.forEach(adv => console.log(`   ${adv}`));
-      }
 
       sucursalesOutput.push({
         ...baseData,
@@ -2599,7 +1798,7 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
       console.error(`   Medio de envío original: "${medioEnvio}"`);
       console.error(`   Medio de envío normalizado: "${medioEnvioNorm}"`);
       console.error(`   ⚠️ El medio de envío no coincide con ningún patrón conocido`);
-      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar", "correo argentino", "envio clasico", "envio express"`);
+      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar"`);
       console.error(`   ✅ Patrones de SUCURSAL: "punto de retiro", "sucursal", "retiro"`);
     }
   }
@@ -2611,14 +1810,6 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
   console.log(`- No procesados: ${contadorNoProcesados}`);
   console.log('Resultados finales - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
 
-  // 🔍 VALIDAR DATOS ANTES DE GENERAR CSV
-  if (domicilios.length > 0) {
-    validarDatos(domicilios, 'DOMICILIOS');
-  }
-  if (sucursalesOutput.length > 0) {
-    validarDatos(sucursalesOutput, 'SUCURSALES');
-  }
-
   // Recopilar logs de procesamiento
   const processingLogs: string[] = [];
   processingLogs.push(`Total pedidos cargados: ${lines.length - 1}`);
@@ -2626,19 +1817,6 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
   processingLogs.push(`Sucursales procesadas: ${contadorSucursales}`);
   processingLogs.push(`No procesados: ${contadorNoProcesados}`);
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
-
-  // Calcular información detallada para el nuevo resumen
-  const totalRowsWithData = lines.length - 1;
-  const actualSalesProcessed = contadorDomicilios + contadorSucursales;
-  const shipmentsToDomicilio = contadorDomicilios;
-  const shipmentsToSucursal = contadorSucursales;
-  
-  // Determinar la razón de los no procesados
-  let noProcessedReason = '';
-  if (contadorNoProcesados > 0) {
-    // Si hay no procesados, asumimos que es por medio de envío incorrecto
-    noProcessedReason = 'Medio de envío no reconocido';
-  }
 
   return {
     domicilioCSV: unparseCSV(domicilios),
@@ -2648,13 +1826,7 @@ export const processVentasOrders = async (csvContent: string, config?: { peso: n
       domiciliosProcessed: contadorDomicilios,
       sucursalesProcessed: contadorSucursales,
       noProcessed: contadorNoProcesados,
-      processingLogs: processingLogs,
-      // Nueva información detallada
-      totalRowsWithData: totalRowsWithData,
-      actualSalesProcessed: actualSalesProcessed,
-      shipmentsToDomicilio: shipmentsToDomicilio,
-      shipmentsToSucursal: shipmentsToSucursal,
-      noProcessedReason: noProcessedReason
+      processingLogs: processingLogs
     }
   };
 };
