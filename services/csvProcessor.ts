@@ -1475,10 +1475,25 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
 };
 
 // Nueva función para procesar el formato de ventas específico
-export const processVentasOrders = async (csvContent: string): Promise<{
+export const processVentasOrders = async (
+  csvContent: string, 
+  config?: { peso: number; alto: number; ancho: number; profundidad: number; valorDeclarado: number }
+): Promise<{
   domicilioCSV: string;
   sucursalCSV: string;
+  processingInfo: ProcessingInfo;
 }> => {
+  // Valores por defecto
+  const defaultConfig = {
+    peso: 400,
+    alto: 10,
+    ancho: 10,
+    profundidad: 10,
+    valorDeclarado: 6000,
+  };
+  
+  const finalConfig = config || defaultConfig;
+  
   console.log('Procesando archivo de ventas...');
   
   // Cargar datos necesarios
@@ -1516,6 +1531,13 @@ export const processVentasOrders = async (csvContent: string): Promise<{
 
     // Extraer datos del pedido
     const numeroOrden = values[0]?.replace(/"/g, '') || '';
+    
+    // Si no hay número de orden, es una línea duplicada del mismo pedido con múltiples productos - saltar
+    if (!numeroOrden || numeroOrden.trim() === '') {
+      console.log(`⏭️ Línea ${i} omitida: no tiene número de orden (producto adicional del pedido)`);
+      continue;
+    }
+    
     const nombreComprador = values[11]?.replace(/"/g, '') || '';
     const apellidoComprador = nombreComprador.split(' ')[0] || '';
     const nombreCompleto = nombreComprador.split(' ').slice(1).join(' ') || '';
@@ -1593,11 +1615,11 @@ export const processVentasOrders = async (csvContent: string): Promise<{
     // Datos base para ambos tipos
     const baseData = {
       'Paquete Guardado \nEj: 1': '',
-      'Peso (grs)\nEj: ': '400',
-      'Alto (cm)\nEj: ': '10',
-      'Ancho (cm)\nEj: ': '10',
-      'Profundidad (cm)\nEj: ': '10',
-      'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado,
+      'Peso (grs)\nEj: ': String(finalConfig.peso),
+      'Alto (cm)\nEj: ': String(finalConfig.alto),
+      'Ancho (cm)\nEj: ': String(finalConfig.ancho),
+      'Profundidad (cm)\nEj: ': String(finalConfig.profundidad),
+      'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado || String(finalConfig.valorDeclarado),
       'Numero Interno\nEj: ': `#${numeroOrden}`,
       'Nombre *\nEj: ': nombreCompleto,
       'Apellido *\nEj: ': apellidoComprador,
@@ -1817,16 +1839,37 @@ export const processVentasOrders = async (csvContent: string): Promise<{
   processingLogs.push(`Sucursales procesadas: ${contadorSucursales}`);
   processingLogs.push(`No procesados: ${contadorNoProcesados}`);
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
+  
+  // Calcular total de órdenes reales (sin líneas duplicadas de productos)
+  const totalRowsWithData = lines.length - 1; // Todas las líneas del CSV
+  const actualSalesProcessed = contadorDomicilios + contadorSucursales; // Pedidos únicos procesados
+  const shipmentsToDomicilio = contadorDomicilios;
+  const shipmentsToSucursal = contadorSucursales;
+  
+  // Determinar razón de no procesados
+  let noProcessedReason = '';
+  if (contadorNoProcesados > 0) {
+    noProcessedReason = contadorNoProcesados > 1 
+      ? `Se omitieron ${contadorNoProcesados} líneas duplicadas (productos adicionales del mismo pedido)`
+      : 'Se omitió 1 línea duplicada (producto adicional del mismo pedido)';
+  }
+
+  const processingInfo: ProcessingInfo = {
+    totalOrders: actualSalesProcessed,
+    domiciliosProcessed: contadorDomicilios,
+    sucursalesProcessed: contadorSucursales,
+    noProcessed: contadorNoProcesados,
+    processingLogs,
+    totalRowsWithData,
+    actualSalesProcessed,
+    shipmentsToDomicilio,
+    shipmentsToSucursal,
+    noProcessedReason
+  };
 
   return {
     domicilioCSV: unparseCSV(domicilios),
     sucursalCSV: unparseCSV(sucursalesOutput),
-    processingInfo: {
-      totalOrders: lines.length - 1,
-      domiciliosProcessed: contadorDomicilios,
-      sucursalesProcessed: contadorSucursales,
-      noProcessed: contadorNoProcesados,
-      processingLogs: processingLogs
-    }
+    processingInfo
   };
 };

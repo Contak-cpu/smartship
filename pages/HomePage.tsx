@@ -159,6 +159,13 @@ const HomePage: React.FC = () => {
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{ domicilioCSV: string; sucursalCSV: string; processingInfo: ProcessingInfo } | null>(null);
+  const [config] = useState({
+    peso: 400,
+    alto: 10,
+    ancho: 10,
+    profundidad: 10,
+    valorDeclarado: 6000,
+  });
 
   const handleFileChange = (file: File | null) => {
     setSelectedFile(file);
@@ -188,10 +195,10 @@ const HomePage: React.FC = () => {
         let processedData;
         if (isVentasFile) {
           console.log('Detectado archivo de ventas, usando processVentasOrders...');
-          processedData = await processVentasOrders(csvText);
+          processedData = await processVentasOrders(csvText, config);
         } else {
           console.log('Detectado archivo de pedidos Andreani, usando processOrders...');
-          processedData = await processOrders(csvText);
+          processedData = await processOrders(csvText, config);
         }
         
         console.log('Processing completed:', processedData);
