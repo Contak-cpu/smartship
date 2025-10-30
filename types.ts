@@ -13,6 +13,15 @@ export interface ProcessingInfo {
   sucursalesProcessed: number;
   noProcessed: number;
   processingLogs: string[];
+  totalRowsWithData?: number;
+  actualSalesProcessed?: number;
+  shipmentsToDomicilio?: number;
+  shipmentsToSucursal?: number;
+  noProcessedReason?: string;
+  hasShopifySucursalWarnings?: boolean;
+  shopifySucursalOrders?: number;
+  erroresSucursal?: string[]; // Lista de pedidos con errores de sucursal
+  tasaEfectividad?: number; // Porcentaje de pedidos procesados exitosamente
 }
 
 // Represents a row from the input Tiendanube CSV

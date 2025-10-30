@@ -1568,6 +1568,8 @@ export const processVentasOrders = async (
   let contadorDomicilios = 0;
   let contadorSucursales = 0;
   let contadorNoProcesados = 0;
+  let contadorErroresSucursal = 0;
+  const erroresSucursal: string[] = [];
 
   console.log('=== PROCESANDO ARCHIVO DE VENTAS ===');
   console.log('Total líneas de datos:', lines.length - 1);
@@ -1855,16 +1857,24 @@ export const processVentasOrders = async (
       });
 
     } else if (esSucursalVentas && !esDomicilioVentas) {
-      contadorSucursales++;
-      console.log(`[SUCURSAL ${contadorSucursales}] Procesando pedido:`, numeroOrden);
+      console.log(`[SUCURSAL] Procesando pedido:`, numeroOrden);
       // Procesar envío a sucursal
       const direccionCompleta = `${direccion} ${numero} ${piso} ${localidad} ${ciudad}`.trim();
       const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales, codigoPostal, provincia);
 
-      sucursalesOutput.push({
-        ...baseData,
-        'Sucursal * \nEj: 9 DE JULIO': nombreSucursal,
-      });
+      // Verificar si se encontró la sucursal correctamente
+      if (nombreSucursal === 'SUCURSAL NO ENCONTRADA') {
+        contadorErroresSucursal++;
+        erroresSucursal.push(`Pedido #${numeroOrden} no procesado por error en la sucursal`);
+        console.error(`❌ Pedido #${numeroOrden} NO PROCESADO: no se encontró la sucursal. Debe cargarlo manualmente.`);
+      } else {
+        contadorSucursales++;
+        console.log(`[SUCURSAL ${contadorSucursales}] Sucursal encontrada:`, nombreSucursal);
+        sucursalesOutput.push({
+          ...baseData,
+          'Sucursal * \nEj: 9 DE JULIO': nombreSucursal,
+        });
+      }
     } else {
       contadorNoProcesados++;
       console.error(`❌ [NO PROCESADO ${contadorNoProcesados}] Pedido ${numeroOrden}`);
@@ -1897,6 +1907,11 @@ export const processVentasOrders = async (
   const shipmentsToDomicilio = contadorDomicilios;
   const shipmentsToSucursal = contadorSucursales;
   
+  // Calcular tasa de efectividad (excluyendo errores de sucursal de no procesados)
+  const totalProcesadosExitosamente = actualSalesProcessed;
+  const totalIntentos = totalProcesadosExitosamente + contadorErroresSucursal;
+  const tasaEfectividad = totalIntentos > 0 ? Math.round((totalProcesadosExitosamente / totalIntentos) * 100) : 100;
+  
   // Determinar razón de no procesados
   let noProcessedReason = '';
   if (contadorNoProcesados > 0) {
@@ -1915,7 +1930,9 @@ export const processVentasOrders = async (
     actualSalesProcessed,
     shipmentsToDomicilio,
     shipmentsToSucursal,
-    noProcessedReason
+    noProcessedReason,
+    erroresSucursal: erroresSucursal.length > 0 ? erroresSucursal : undefined,
+    tasaEfectividad
   };
 
   return {

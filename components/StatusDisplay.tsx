@@ -45,9 +45,18 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, pro
           {processingInfo && (
             <div className="bg-gray-800/50 p-3 rounded-lg border border-gray-600">
               <h4 className="text-green-400 font-semibold text-sm mb-2">📊 Resumen de Procesamiento</h4>
+              
+              {/* Mostrar tasa de efectividad si existe */}
+              {processingInfo.tasaEfectividad !== undefined && (
+                <div className="mb-2 p-2 rounded bg-blue-900/20 border border-blue-600/30">
+                  <div className="text-blue-400 text-xs">Tasa de Efectividad</div>
+                  <div className="text-blue-300 font-bold text-lg">{processingInfo.tasaEfectividad}%</div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-gray-700/50 p-2 rounded">
-                  <div className="text-gray-400">Total cargados:</div>
+                  <div className="text-gray-400">Total procesados:</div>
                   <div className="text-white font-semibold">{processingInfo.totalOrders}</div>
                 </div>
                 <div className="bg-green-700/20 p-2 rounded border border-green-600/30">
@@ -59,10 +68,25 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, pro
                   <div className="text-teal-300 font-semibold">{processingInfo.sucursalesProcessed}</div>
                 </div>
                 <div className="bg-red-700/20 p-2 rounded border border-red-600/30">
-                  <div className="text-red-400">No procesados:</div>
+                  <div className="text-red-400">Líneas omitidas:</div>
                   <div className="text-red-300 font-semibold">{processingInfo.noProcessed}</div>
                 </div>
               </div>
+              
+              {/* Mostrar errores de sucursal si existen */}
+              {processingInfo.erroresSucursal && processingInfo.erroresSucursal.length > 0 && (
+                <div className="mt-2 p-2 rounded bg-orange-900/20 border border-orange-600/30 text-xs">
+                  <div className="text-orange-300 font-semibold mb-1">
+                    ⚠️ Pedidos con error de sucursal ({processingInfo.erroresSucursal.length})
+                  </div>
+                  <div className="text-orange-300 text-xs space-y-1">
+                    {processingInfo.erroresSucursal.map((error, idx) => (
+                      <div key={idx}>• {error}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {processingInfo.noProcessed > 0 && (
                 <div className={`mt-2 p-2 rounded text-xs ${
                   processingInfo.noProcessedReason?.includes('líneas duplicadas') || 
