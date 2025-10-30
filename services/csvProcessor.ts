@@ -679,44 +679,47 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
   const componentes = direccionPedido.split(',').map(c => c.trim());
   const calleNumero = componentes[0] || '';
   
-  // Buscar localidad, ciudad, código postal y provincia en los componentes restantes
+  // Usar parámetros proporcionados o extraer de la dirección
   let localidad = '';
   let ciudad = '';
-  let codigoPostal = '';
-  let provincia = '';
+  let codigoPostalFinal = codigoPostal || '';
+  let provinciaFinal = provincia || '';
   
-  // Los componentes pueden estar en cualquier orden, así que los identificamos por contenido
-  for (let i = 1; i < componentes.length; i++) {
-    const componente = componentes[i].toLowerCase();
-    
-    // Identificar código postal (solo números)
-    if (/^\d{4,5}$/.test(componente)) {
-      codigoPostal = componente;
-    }
-    // Identificar provincia (palabras conocidas)
-    else if (componente.includes('buenos aires') || componente.includes('capital federal') || 
-             componente.includes('córdoba') || componente.includes('santa fe') || 
-             componente.includes('mendoza') || componente.includes('tucumán') || 
-             componente.includes('entre ríos') || componente.includes('salta') || 
-             componente.includes('misiones') || componente.includes('chaco') || 
-             componente.includes('corrientes') || componente.includes('formosa') || 
-             componente.includes('jujuy') || componente.includes('la rioja') || 
-             componente.includes('catamarca') || componente.includes('santiago del estero') || 
-             componente.includes('san juan') || componente.includes('san luis') || 
-             componente.includes('la pampa') || componente.includes('río negro') || 
-             componente.includes('neuquén') || componente.includes('chubut') || 
-             componente.includes('santa cruz') || componente.includes('tierra del fuego')) {
-      provincia = componente;
-    }
-    // Si no es código postal ni provincia, es localidad o ciudad
-    else if (!localidad) {
-      localidad = componente;
-    } else if (!ciudad) {
-      ciudad = componente;
+  // Si no se proporcionaron parámetros, intentar extraer de los componentes
+  if (!codigoPostalFinal || !provinciaFinal) {
+    // Los componentes pueden estar en cualquier orden, así que los identificamos por contenido
+    for (let i = 1; i < componentes.length; i++) {
+      const componente = componentes[i].toLowerCase();
+      
+      // Identificar código postal (solo números)
+      if (!codigoPostalFinal && /^\d{4,5}$/.test(componente)) {
+        codigoPostalFinal = componente;
+      }
+      // Identificar provincia (palabras conocidas)
+      else if (!provinciaFinal && (componente.includes('buenos aires') || componente.includes('capital federal') || 
+               componente.includes('córdoba') || componente.includes('santa fe') || 
+               componente.includes('mendoza') || componente.includes('tucumán') || 
+               componente.includes('entre ríos') || componente.includes('salta') || 
+               componente.includes('misiones') || componente.includes('chaco') || 
+               componente.includes('corrientes') || componente.includes('formosa') || 
+               componente.includes('jujuy') || componente.includes('la rioja') || 
+               componente.includes('catamarca') || componente.includes('santiago del estero') || 
+               componente.includes('san juan') || componente.includes('san luis') || 
+               componente.includes('la pampa') || componente.includes('río negro') || 
+               componente.includes('neuquén') || componente.includes('chubut') || 
+               componente.includes('santa cruz') || componente.includes('tierra del fuego'))) {
+        provinciaFinal = componente;
+      }
+      // Si no es código postal ni provincia, es localidad o ciudad
+      else if (!localidad) {
+        localidad = componente;
+      } else if (!ciudad) {
+        ciudad = componente;
+      }
     }
   }
   
-  console.log('Componentes extraídos:', { calleNumero, localidad, ciudad, codigoPostal, provincia });
+  console.log('Componentes extraídos:', { calleNumero, localidad, ciudad, codigoPostal: codigoPostalFinal, provincia: provinciaFinal });
   
   // Normalizar la calle y número del pedido
   const calleNumeroNormalizada = normalizarDireccion(calleNumero);
@@ -857,8 +860,8 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
       return coincidenciasDifusas[0].sucursal.nombre_sucursal;
     } else {
       // Si no hay coincidencias exactas ni difusas, intentar buscar por código postal
-      if (codigoPostal) {
-        console.log('🔄 Sin coincidencias, intentando búsqueda por código postal:', codigoPostal);
+      if (codigoPostalFinal) {
+        console.log('🔄 Sin coincidencias, intentando búsqueda por código postal:', codigoPostalFinal);
         
         // Filtrar solo sucursales (NO punto hop)
         const sucursalesSinHop = sucursales.filter(suc => {
@@ -871,7 +874,7 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
           const dirSuc = suc.direccion || '';
           const cpsEncontrados = dirSuc.match(/\b(\d{4,5})\b/g);
           if (cpsEncontrados) {
-            return cpsEncontrados.some(cp => cp === codigoPostal);
+            return cpsEncontrados.some(cp => cp === codigoPostalFinal);
           }
           return false;
         });
@@ -882,11 +885,11 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
         }
         
         // Si no hay match exacto de CP, buscar por provincia + CP
-        if (provincia) {
+        if (provinciaFinal) {
           const provCPMatches = sucursalesSinHop.filter(suc => {
             const dirSuc = suc.direccion || '';
-            const provMatch = dirSuc.toLowerCase().includes(provincia.toLowerCase());
-            const cpMatch = dirSuc.match(/\b(\d{4,5})\b/g)?.some(cp => cp === codigoPostal);
+            const provMatch = dirSuc.toLowerCase().includes(provinciaFinal.toLowerCase());
+            const cpMatch = dirSuc.match(/\b(\d{4,5})\b/g)?.some(cp => cp === codigoPostalFinal);
             return provMatch && cpMatch;
           });
           
@@ -923,9 +926,9 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
     let puntuacion = 0;
     
     // Desempate por código postal (más específico)
-    if (codigoPostal && direccionSucursal.includes(codigoPostal)) {
+    if (codigoPostalFinal && direccionSucursal.includes(codigoPostalFinal)) {
       puntuacion += 10;
-      console.log(`Desempate por código postal ${codigoPostal} en: ${sucursal.nombre_sucursal}`);
+      console.log(`Desempate por código postal ${codigoPostalFinal} en: ${sucursal.nombre_sucursal}`);
     }
     
     // Desempate por localidad
@@ -947,9 +950,9 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
     }
     
     // Desempate por provincia
-    if (provincia && direccionSucursal.includes(provincia)) {
+    if (provinciaFinal && direccionSucursal.includes(provinciaFinal)) {
       puntuacion += 4;
-      console.log(`Desempate por provincia ${provincia} en: ${sucursal.nombre_sucursal}`);
+      console.log(`Desempate por provincia ${provinciaFinal} en: ${sucursal.nombre_sucursal}`);
     }
     
     if (puntuacion > mejorPuntuacion) {
@@ -1468,7 +1471,7 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       console.log('Calle y número básico combinados:', `${calle} ${numeroBasico}`);
       console.log('Dirección completa del pedido:', direccionCompleta);
       
-      const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales, codigoPostalPedido, provinciaPedido);
+      const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales, codigoPostal, provincia);
       console.log('Sucursal encontrada:', nombreSucursal);
       console.log('=== FIN DEBUGGING ===');
 
