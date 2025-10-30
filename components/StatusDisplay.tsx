@@ -64,9 +64,14 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, pro
                 </div>
               </div>
               {processingInfo.noProcessed > 0 && (
-                <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-600/30 rounded text-yellow-300 text-xs">
+                <div className={`mt-2 p-2 rounded text-xs ${
+                  processingInfo.noProcessedReason?.includes('líneas duplicadas') || 
+                  processingInfo.noProcessedReason?.includes('producto adicional')
+                    ? 'bg-green-900/20 border border-green-600/30 text-green-300'
+                    : 'bg-yellow-900/20 border border-yellow-600/30 text-yellow-300'
+                }`}>
                   {processingInfo.noProcessedReason ? (
-                    <>✅ {processingInfo.noProcessedReason}</>
+                    <>{processingInfo.noProcessedReason}</>
                   ) : (
                     <>⚠️ {processingInfo.noProcessed} pedidos no se procesaron. Verifica los medios de envío en el archivo original.</>
                   )}
