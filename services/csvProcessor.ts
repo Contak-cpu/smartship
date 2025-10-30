@@ -971,7 +971,325 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
   return mejorCoincidencia;
 };
 
-export const processOrders = async (tiendanubeCsvText: string): Promise<{ domicilioCSV: string; sucursalCSV: string; }> => {
+// Detectar si el CSV pertenece a Shopify por sus encabezados característicos
+const isShopifyCSV = (text: string): boolean => {
+  const head = text.slice(0, 500).toLowerCase();
+  return head.includes('name,email,financial status') && head.includes('shipping method');
+};
+
+// Procesador específico para CSV de Shopify (todos los envíos a domicilio)
+const processShopifyOrders = async (csvText: string): Promise<{
+  domicilioCSV: string;
+  sucursalCSV: string;
+  processingInfo: any;
+}> => {
+  // Cargar datos auxiliares
+  const [codigosPostales] = await Promise.all([
+    fetchCodigosPostales(),
+  ]);
+
+  // Parsear con coma como delimitador
+  const parseWithPapa = (): Promise<any[]> => new Promise((resolve) => {
+    Papa.parse(csvText.replace(/^\uFEFF/, ''), {
+      header: true,
+      skipEmptyLines: true,
+      delimiter: ',',
+      quoteChar: '"',
+      complete: (results: { data: any[] }) => resolve(results.data),
+    });
+  });
+
+  const rows = await parseWithPapa();
+  const domicilios: any[] = [];
+
+  let contadorDomicilios = 0;
+  let contadorNoProcesados = 0;
+  const droppedOrders: string[] = [];
+  const autofilledEmails: string[] = [];
+
+  // Construir índice PROVINCIA/LOCALIDAD -> formato exacto del catálogo
+  const provLocToFormato: Map<string, string> = new Map();
+  for (const [, formato] of codigosPostales.entries()) {
+    const norm = formato
+      .toUpperCase()
+      .replace(/[ÁÀÄÂ]/g, 'A')
+      .replace(/[ÉÈËÊ]/g, 'E')
+      .replace(/[ÍÌÏÎ]/g, 'I')
+      .replace(/[ÓÒÖÔ]/g, 'O')
+      .replace(/[ÚÙÜÛ]/g, 'U')
+      .replace(/[Ñ]/g, 'N')
+      .replace(/\./g, ' ')
+      .replace(/,/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const partes = norm.split('/').map(p => p.trim());
+    if (partes.length >= 2) {
+      const key = `${partes[0]} / ${partes[1]}`;
+      if (!provLocToFormato.has(key)) provLocToFormato.set(key, formato);
+    }
+  }
+
+  const get = (row: any, key: string): string => (row?.[key] ?? '').toString().trim();
+
+  for (const row of rows) {
+    if (!row || Object.keys(row).length === 0) continue;
+
+    const numeroOrden = get(row, 'Name') || get(row, 'Id') || '';
+    let email = get(row, 'Email');
+    const telefono = get(row, 'Shipping Phone') || get(row, 'Phone');
+    const medioEnvio = get(row, 'Shipping Method');
+
+    // Nombre y apellido desde dirección de envío (fallback a facturación)
+    const shippingName = get(row, 'Shipping Name') || get(row, 'Billing Name');
+    const [nombre, ...apParts] = shippingName.split(' ');
+    const apellido = apParts.join(' ');
+
+    // Dirección
+    const address1 = get(row, 'Shipping Address1');
+    const address2 = get(row, 'Shipping Address2');
+    const localidad = get(row, 'Shipping City');
+    const codigoPostal = get(row, 'Shipping Zip').replace(/[^\d]/g, '');
+    const provincia = get(row, 'Shipping Province Name') || get(row, 'Shipping Province');
+
+    // Extraer calle y número desde address1
+    const calle = normalizarNombre(address1);
+    let numeroCalle = '0';
+    const numMatch = address1.match(/\b(\d{1,6})\b/);
+    if (numMatch) {
+      numeroCalle = numMatch[1];
+    }
+
+    const pisoDepto = normalizarNombre(address2);
+
+    // Teléfono: limpiar prefijos +54 y el 9
+    let tel = telefono.replace(/[^\d]/g, '');
+    if (tel.startsWith('54')) tel = tel.substring(2);
+    if (tel.startsWith('9')) tel = tel.substring(1);
+
+    // Código de área básico: intentar detectar 2/3/4 dígitos comunes
+    let celularCodigo = '11';
+    let celularNumero = tel;
+    const posibles4 = ['2652','2901','2920','2944','2954','2965','2966','3541'];
+    const posibles3 = ['221','223','291','341','342','343','351','358','261','381','376','362','379','370','387','388','380','383','385','264','297','299'];
+    if (tel.length >= 10 && posibles4.some(p => tel.startsWith(p))) {
+      celularCodigo = posibles4.find(p => tel.startsWith(p))!;
+      celularNumero = tel.substring(4);
+    } else if (tel.length >= 10 && posibles3.some(p => tel.startsWith(p))) {
+      celularCodigo = posibles3.find(p => tel.startsWith(p))!;
+      celularNumero = tel.substring(3);
+    } else if (tel.length >= 8) {
+      celularCodigo = tel.substring(0, 2);
+      celularNumero = tel.substring(2);
+    }
+
+    // DNI: Shopify no lo trae; usar placeholder seguro
+    const dniProcesado = '00000000';
+
+    // Armar formato Provincia / Localidad / CP
+    let formatoProvinciaLocalidadCP = '';
+    if (codigoPostal && codigosPostales.has(codigoPostal)) {
+      formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
+    } else {
+      // Fallback: buscar por PROVINCIA + LOCALIDAD en el catálogo, ignorando CP provisto
+      const provinciaPedido = (provincia || '').toUpperCase().replace(/\s*\(.*?\)\s*/g, '').trim();
+      const localidadPedido = (localidad || '').toUpperCase().trim();
+
+      const provinciaNormalizada = provinciaPedido
+        .replace(/[áàäâ]/g, 'A')
+        .replace(/[éèëê]/g, 'E')
+        .replace(/[íìïî]/g, 'I')
+        .replace(/[óòöô]/g, 'O')
+        .replace(/[úùüû]/g, 'U')
+        .replace(/[ñ]/g, 'N')
+        .replace(/\./g, ' ')
+        .replace(/,/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const localidadNormalizada = localidadPedido
+        .replace(/[áàäâ]/g, 'A')
+        .replace(/[éèëê]/g, 'E')
+        .replace(/[íìïî]/g, 'I')
+        .replace(/[óòöô]/g, 'O')
+        .replace(/[úùüû]/g, 'U')
+        .replace(/[ñ]/g, 'N')
+        .replace(/\./g, ' ')
+        .replace(/,/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      let encontradoPorProvinciaLocalidad = false;
+
+      // Intento directo por índice exacto
+      const keyDirecta = `${provinciaNormalizada} / ${localidadNormalizada}`;
+      if (provLocToFormato.has(keyDirecta)) {
+        formatoProvinciaLocalidadCP = provLocToFormato.get(keyDirecta)!;
+        encontradoPorProvinciaLocalidad = true;
+      }
+      for (const [, formato] of codigosPostales.entries()) {
+        const formatoNormalizado = formato
+          .replace(/[áàäâ]/g, 'A')
+          .replace(/[éèëê]/g, 'E')
+          .replace(/[íìïî]/g, 'I')
+          .replace(/[óòöô]/g, 'O')
+          .replace(/[úùüû]/g, 'U')
+          .replace(/[ñ]/g, 'N')
+          .toUpperCase()
+          .replace(/\./g, ' ')
+          .replace(/,/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        // provinciaNormalizada y localidadNormalizada ya calculadas fuera del bucle
+
+        const patronBusqueda = `${provinciaNormalizada} / ${localidadNormalizada}`;
+        if (!encontradoPorProvinciaLocalidad && formatoNormalizado.includes(patronBusqueda)) {
+          formatoProvinciaLocalidadCP = formato;
+          encontradoPorProvinciaLocalidad = true;
+          break;
+        }
+      }
+
+      // Si no se encontró por provincia+localidad, NO escribir una opción inválida; dejar vacío para corrección manual
+      if (!encontradoPorProvinciaLocalidad) {
+        // Fallback adicional: buscar por localidad exacta (ignorando provincia), tomar primera coincidencia
+        for (const [, formato] of codigosPostales.entries()) {
+          const formatoNormalizado = formato
+            .replace(/[áàäâ]/g, 'A')
+            .replace(/[éèëê]/g, 'E')
+            .replace(/[íìïî]/g, 'I')
+            .replace(/[óòöô]/g, 'O')
+            .replace(/[úùüû]/g, 'U')
+            .replace(/[ñ]/g, 'N')
+            .toUpperCase()
+            .replace(/\./g, ' ')
+            .replace(/,/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          const partes = formatoNormalizado.split('/').map(p => p.trim());
+          if (partes.length >= 2) {
+            const localidadCatalogo = partes[1];
+            if (localidadCatalogo === localidadNormalizada) {
+              formatoProvinciaLocalidadCP = formato;
+              encontradoPorProvinciaLocalidad = true;
+              break;
+            }
+          }
+        }
+        // Fallback por inclusión de localidad (maneja pequeñas diferencias)
+        if (!encontradoPorProvinciaLocalidad && localidadNormalizada) {
+          for (const [, formato] of codigosPostales.entries()) {
+            const formatoNormalizado = formato
+              .replace(/[áàäâ]/g, 'A')
+              .replace(/[éèëê]/g, 'E')
+              .replace(/[íìïî]/g, 'I')
+              .replace(/[óòöô]/g, 'O')
+              .replace(/[úùüû]/g, 'U')
+              .replace(/[ñ]/g, 'N')
+              .toUpperCase()
+              .replace(/\./g, ' ')
+              .replace(/,/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+            const partes = formatoNormalizado.split('/').map(p => p.trim());
+            if (partes.length >= 2) {
+              const localidadCatalogo = partes[1];
+              if (localidadCatalogo.includes(localidadNormalizada) || localidadNormalizada.includes(localidadCatalogo)) {
+                formatoProvinciaLocalidadCP = formato;
+                encontradoPorProvinciaLocalidad = true;
+                break;
+              }
+            }
+          }
+        }
+        // Fallback dirigido: forzar match por clave conocida de catálogo
+        if (!encontradoPorProvinciaLocalidad) {
+          if (provinciaNormalizada === 'BUENOS AIRES' && localidadNormalizada.includes('VILLA GESELL')) {
+            const clave = 'BUENOS AIRES / VILLA GESELL';
+            if (provLocToFormato.has(clave)) {
+              formatoProvinciaLocalidadCP = provLocToFormato.get(clave)!;
+              encontradoPorProvinciaLocalidad = true;
+            }
+          }
+        }
+        if (!encontradoPorProvinciaLocalidad) {
+          formatoProvinciaLocalidadCP = '';
+        }
+      }
+    }
+
+    // Si falta email, autocompletar con un placeholder y registrar
+    if (!email) {
+      email = 'ejemplo@gmail.com';
+      if (numeroOrden) {
+        autofilledEmails.push(numeroOrden);
+      }
+    }
+
+    // Todos los envíos se consideran a domicilio según requerimiento
+    if (numeroOrden && email) {
+      // Si no hay formato válido de Provincia/Localidad/CP, descartar pedido y notificar
+      if (!formatoProvinciaLocalidadCP) {
+        contadorNoProcesados++;
+        droppedOrders.push(`${numeroOrden} - sin match Provincia/Localidad/CP`);
+        continue;
+      }
+      contadorDomicilios++;
+      domicilios.push({
+        'Paquete Guardado Ej:': '',
+        'Peso (grs)': 400,
+        'Alto (cm)': 10,
+        'Ancho (cm)': 10,
+        'Profundidad (cm)': 10,
+        'Valor declarado ($ C/IVA) *': 6000,
+        'Numero Interno': numeroOrden,
+        'Nombre *': nombre ? normalizarNombre(nombre) : '',
+        'Apellido *': apellido ? normalizarNombre(apellido) : '',
+        'DNI *': dniProcesado,
+        'Email *': email,
+        'Celular código *': celularCodigo,
+        'Celular número *': celularNumero,
+        'Calle *': calle,
+        'Número *': numeroCalle,
+        'Piso': pisoDepto,
+        'Departamento': pisoDepto,
+        'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
+      });
+    } else {
+      contadorNoProcesados++;
+      console.warn(`Pedido Shopify omitido: Name="${numeroOrden}", Email="${email}"`);
+    }
+  }
+
+  const processingInfo = {
+    totalOrders: rows.length,
+    domiciliosProcessed: contadorDomicilios,
+    sucursalesProcessed: 0,
+    noProcessed: contadorNoProcesados,
+    processingLogs: [
+      `Total pedidos cargados: ${rows.length}`,
+      `Domicilios procesados: ${contadorDomicilios}`,
+      `Sucursales procesadas: 0`,
+      `No procesados: ${contadorNoProcesados}`,
+    ],
+    noProcessedReason: contadorNoProcesados > 0 ? 'Pedidos descartados por Provincia/Localidad/CP no encontrados' : '',
+    droppedOrders: droppedOrders.length ? droppedOrders : undefined,
+    autofilledEmails: autofilledEmails.length ? autofilledEmails : undefined,
+  };
+
+  return {
+    domicilioCSV: unparseCSV(domicilios),
+    sucursalCSV: '',
+    processingInfo,
+  };
+};
+
+export const processOrders = async (tiendanubeCsvText: string): Promise<{ domicilioCSV: string; sucursalCSV: string; processingInfo: any; }> => {
+  // Ruta Shopify
+  if (isShopifyCSV(tiendanubeCsvText)) {
+    console.log('CSV de Shopify detectado. Procesando como Shopify (envíos a domicilio).');
+    return await processShopifyOrders(tiendanubeCsvText);
+  }
   const [sucursales, codigosPostales, tiendanubeOrders] = await Promise.all([
     fetchSucursales(),
     fetchCodigosPostales(),
