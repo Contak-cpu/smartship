@@ -1120,6 +1120,12 @@ const processShopifyOrders = async (csvText: string): Promise<{
 
       let encontradoPorProvinciaLocalidad = false;
 
+      // Regla directa: VILLA GESELL -> BUENOS AIRES / VILLA GESELL / 7165
+      if (localidadNormalizada === 'VILLA GESELL' || localidadNormalizada.includes('VILLA GESELL')) {
+        formatoProvinciaLocalidadCP = 'BUENOS AIRES / VILLA GESELL / 7165';
+        encontradoPorProvinciaLocalidad = true;
+      }
+
       // Intento directo por índice exacto
       const keyDirecta = `${provinciaNormalizada} / ${localidadNormalizada}`;
       if (provLocToFormato.has(keyDirecta)) {
