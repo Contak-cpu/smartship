@@ -36,6 +36,9 @@ export const useAuth = () => {
         trial_expires_at: currentUser.user_metadata?.trial_expires_at,
         email: currentUser.email,
         is_paid: currentUser.user_metadata?.is_paid,
+        payment_status: currentUser.user_metadata?.payment_status,
+        paid_until: currentUser.user_metadata?.paid_until,
+        pagos_empresa: currentUser.user_metadata?.pagos_empresa,
       };
 
       const userLevel: UserLevel = {
@@ -62,6 +65,9 @@ export const useAuth = () => {
         trial_expires_at: currentUser.user_metadata?.trial_expires_at,
         email: currentUser.email,
         is_paid: currentUser.user_metadata?.is_paid,
+        payment_status: currentUser.user_metadata?.payment_status,
+        paid_until: currentUser.user_metadata?.paid_until,
+        pagos_empresa: currentUser.user_metadata?.pagos_empresa,
       };
 
       const expired = hasTrialExpired(metadata);
@@ -272,6 +278,9 @@ export const useAuth = () => {
           trial_expires_at: currentUser.user_metadata?.trial_expires_at,
           email: currentUser.email,
           is_paid: currentUser.user_metadata?.is_paid,
+          payment_status: currentUser.user_metadata?.payment_status,
+          paid_until: currentUser.user_metadata?.paid_until,
+          pagos_empresa: currentUser.user_metadata?.pagos_empresa,
         };
         
         console.log('🔍 [isPaid] Verificando estado de pago:', metadata.is_paid, 'para', metadata.email);
@@ -290,6 +299,9 @@ export const useAuth = () => {
       trial_expires_at: user.user_metadata?.trial_expires_at,
       email: user.email,
       is_paid: user.user_metadata?.is_paid,
+      payment_status: user.user_metadata?.payment_status,
+      paid_until: user.user_metadata?.paid_until,
+      pagos_empresa: user.user_metadata?.pagos_empresa,
     };
     
     return isPaidUser(metadata);

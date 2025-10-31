@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { levelService, LEVEL_CONFIG, getLevelName, getLevelColor } from '../services/levelService';
 import { TrialStatus } from '../components/common/TrialStatus';
 import { PaymentRequest } from '../components/common/PaymentRequest';
+import { PaidPlanStatus } from '../components/common/PaidPlanStatus';
 
 interface FeatureCard {
   id: string;
@@ -326,17 +327,22 @@ const DashboardPage: React.FC = () => {
             Buenos días <span className="text-blue-400">{username}</span>, ¿en qué vas a trabajar hoy?
           </h2>
           
-          {/* Trial Status */}
+          {/* Status del Plan - Mostrar PaidPlanStatus si está pagado, sino TrialStatus */}
           <div className="mb-8 px-2">
-            <TrialStatus />
+            {userPaidStatus ? (
+              <PaidPlanStatus />
+            ) : (
+              <>
+                <TrialStatus />
+                {/* Payment Request (solo para usuarios que no pagaron Y no tienen solicitud pendiente) */}
+                {paymentStatus !== 'pending' && (
+                  <div className="mt-4">
+                    <PaymentRequest currentPlan="Trial" onPaymentRequested={(plan) => console.log('Solicitud de pago:', plan)} />
+                  </div>
+                )}
+              </>
+            )}
           </div>
-
-          {/* Payment Request (solo para usuarios que no pagaron Y no tienen solicitud pendiente) */}
-          {!userPaidStatus && paymentStatus !== 'pending' && (
-            <div className="mb-8 px-2">
-              <PaymentRequest currentPlan="Trial" onPaymentRequested={(plan) => console.log('Solicitud de pago:', plan)} />
-            </div>
-          )}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {features.map((feature) => {
               const colors = getColorClasses(feature.color);

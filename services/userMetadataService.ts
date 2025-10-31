@@ -13,6 +13,8 @@ export interface UserMetadata {
   email?: string;
   is_paid?: boolean;
   payment_status?: 'pending' | 'approved' | 'rejected';
+  paid_until?: string; // Fecha de finalización del plan pagado
+  pagos_empresa?: boolean; // Indica si tiene Plan Empresa
 }
 
 /**
@@ -31,6 +33,10 @@ export async function getUserMetadata(): Promise<{ metadata: UserMetadata | null
       nivel: user.user_metadata?.nivel ?? 0,
       trial_expires_at: user.user_metadata?.trial_expires_at,
       email: user.email,
+      is_paid: user.user_metadata?.is_paid,
+      payment_status: user.user_metadata?.payment_status,
+      paid_until: user.user_metadata?.paid_until,
+      pagos_empresa: user.user_metadata?.pagos_empresa,
     };
 
     return { metadata, error: null };
