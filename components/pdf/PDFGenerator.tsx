@@ -141,7 +141,8 @@ const PDFGenerator = () => {
     try {
       if (!pdfjsWorkerReady) {
         // Esperar un momento a que el worker se inicialice
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('⏳ Esperando a que el worker se inicialice...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       showMessage('info', 'Analizando PDF para extraer números de orden...');
@@ -151,6 +152,8 @@ const PDFGenerator = () => {
         // Si no está configurado, configurarlo ahora
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.296/pdf.worker.min.mjs';
         console.log('🔧 Configurando PDF.js worker sobre la marcha');
+        // Dar tiempo para que el worker se cargue
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       console.log('🔍 Worker configurado:', pdfjsLib.GlobalWorkerOptions.workerSrc);
@@ -171,23 +174,39 @@ const PDFGenerator = () => {
           const page = await pdf.getPage(pageNum);
           const textContent = await page.getTextContent();
           
-          // Concatenar todo el texto de la página
+          // Concatenar todo el texto de la página con mejor manejo de espacios
+          // Algunos PDFs tienen texto separado por caracteres, necesitamos unirlos mejor
           const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(' ');
+            .map((item: any) => {
+              // Si el item tiene transformaciones de posición, podríamos usarlas
+              // pero por ahora simplemente tomamos el texto
+              return item.str || '';
+            })
+            .join(' ')
+            // Limpiar espacios múltiples pero mantener la estructura
+            .replace(/\s+/g, ' ')
+            .trim();
+          
+          // Log del texto extraído para debugging (primeras 200 caracteres)
+          console.log(`📄 Página ${pageNum} - Texto extraído (primeros 200 chars):`, pageText.substring(0, 200));
           
           // Buscar el patrón "N° Interno: #XXXX"
           const orderNumber = extractOrderNumber(pageText);
+          
+          if (!orderNumber) {
+            // Si no se encuentra, intentar buscar en diferentes formatos
+            console.warn(`⚠️ Página ${pageNum}: No se encontró número con patrones estándar. Texto completo:`, pageText);
+          } else {
+            console.log(`✅ Página ${pageNum}: Número encontrado: ${orderNumber}`);
+          }
           
           pagesData.push({
             pageNumber: pageNum,
             orderNumber: orderNumber
           });
           
-          console.log(`Página ${pageNum}: ${orderNumber || 'Sin número encontrado'}`);
-          
         } catch (pageError) {
-          console.error(`Error en página ${pageNum}:`, pageError);
+          console.error(`❌ Error en página ${pageNum}:`, pageError);
           pagesData.push({
             pageNumber: pageNum,
             orderNumber: null
@@ -227,13 +246,28 @@ const PDFGenerator = () => {
             try {
               const page = await pdf.getPage(pageNum);
               const textContent = await page.getTextContent();
-              const pageText = textContent.items.map((item: any) => item.str).join(' ');
+              
+              // Usar el mismo procesamiento mejorado de texto
+              const pageText = textContent.items
+                .map((item: any) => item.str || '')
+                .join(' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+              
+              console.log(`📄 [Fallback] Página ${pageNum} - Texto extraído (primeros 200 chars):`, pageText.substring(0, 200));
+              
               const orderNumber = extractOrderNumber(pageText);
+              
+              if (orderNumber) {
+                console.log(`✅ [Fallback] Página ${pageNum}: Número encontrado: ${orderNumber}`);
+              }
+              
               pagesData.push({
                 pageNumber: pageNum,
                 orderNumber: orderNumber
               });
             } catch (pageError) {
+              console.error(`❌ [Fallback] Error en página ${pageNum}:`, pageError);
               pagesData.push({
                 pageNumber: pageNum,
                 orderNumber: null
@@ -270,23 +304,64 @@ const PDFGenerator = () => {
 
   // Función para extraer número de orden del texto
   const extractOrderNumber = (text: string) => {
+    if (!text || text.trim().length === 0) {
+      return null;
+    }
+
+    // Normalizar el texto: eliminar espacios múltiples y normalizar caracteres especiales
+    const normalizedText = text
+      .replace(/\s+/g, ' ')
+      .replace(/[°º]/g, '°')
+      .trim();
+
+    console.log('🔍 Buscando número de orden en texto normalizado:', normalizedText.substring(0, 300));
+
+    // Patrones mejorados para detectar números de orden
     const patterns = [
-      /N°\s*Interno:\s*#?(\d{4})/gi,
-      /N\s*Interno:\s*#?(\d{4})/gi,
-      /Interno:\s*#?(\d{4})/gi,
-      /#(\d{4})/g
+      // Patrones específicos con "N° Interno" o variaciones
+      /N°\s*Interno\s*:?\s*#?\s*(\d{4,})/gi,
+      /N\s*°\s*Interno\s*:?\s*#?\s*(\d{4,})/gi,
+      /N\s+Interno\s*:?\s*#?\s*(\d{4,})/gi,
+      /Interno\s*:?\s*#?\s*(\d{4,})/gi,
+      /Número\s+Interno\s*:?\s*#?\s*(\d{4,})/gi,
+      /Numero\s+Interno\s*:?\s*#?\s*(\d{4,})/gi,
+      // Patrones con "#" seguido de 4 dígitos
+      /#\s*(\d{4,})/g,
+      // Patrones con "N°" y número de 4 dígitos cercano
+      /N°\s*:?\s*(\d{4,})/gi,
+      // Buscar números de 4 dígitos cerca de palabras clave
+      /(?:Interno|Orden|Número|Numero|Pedido)[\s:]*#?\s*(\d{4,})/gi,
+      // Buscar solo números de 4 dígitos al inicio o después de caracteres especiales
+      /(?:^|[\s:#])(\d{4,})(?:\s|$)/g,
     ];
     
     for (const pattern of patterns) {
-      const match = text.match(pattern);
-      if (match) {
-        const numberMatch = match[0].match(/(\d{4})/);
-        if (numberMatch) {
-          return numberMatch[1];
+      const matches = normalizedText.matchAll(pattern);
+      for (const match of matches) {
+        if (match[1]) {
+          const number = match[1].trim();
+          // Verificar que sea un número de 4 dígitos (puede ser más largo pero extraemos 4)
+          if (number.length >= 4) {
+            const fourDigits = number.substring(0, 4);
+            console.log(`✅ Número encontrado con patrón: "${match[0]}" -> ${fourDigits}`);
+            return fourDigits;
+          }
         }
       }
     }
+
+    // Si no se encuentra con patrones, buscar cualquier número de 4 dígitos como último recurso
+    const fallbackPattern = /\b(\d{4})\b/g;
+    const fallbackMatches = Array.from(normalizedText.matchAll(fallbackPattern));
     
+    if (fallbackMatches.length > 0) {
+      // Tomar el primer número de 4 dígitos encontrado
+      const firstMatch = fallbackMatches[0][1];
+      console.log(`⚠️ Usando fallback: número de 4 dígitos encontrado: ${firstMatch}`);
+      return firstMatch;
+    }
+    
+    console.log('❌ No se encontró ningún número de orden');
     return null;
   };
 
