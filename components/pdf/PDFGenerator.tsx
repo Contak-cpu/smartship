@@ -29,6 +29,34 @@ const PDFGenerator = () => {
   const [isEditingPosition, setIsEditingPosition] = useState(false);
   const [showDescontarStockModal, setShowDescontarStockModal] = useState(false);
   const [stockParaDescontar, setStockParaDescontar] = useState<Array<{sku: string, cantidad: number}>>([]);
+  const [pdfjsWorkerReady, setPdfjsWorkerReady] = useState(false);
+
+  // Configurar el worker de PDF.js una vez al montar el componente
+  useEffect(() => {
+    const initializePDFWorker = () => {
+      try {
+        // Versión de pdfjs-dist instalada: 5.4.296
+        const pdfjsVersion = '5.4.296';
+        
+        // Prioridad: CDN confiable primero (más probable que funcione en producción)
+        // Luego intentar local como fallback
+        const preferredWorker = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.mjs`;
+        const fallbackWorker = '/pdf.worker.min.mjs';
+        
+        // Usar CDN como predeterminado (más confiable en producción)
+        pdfjsLib.GlobalWorkerOptions.workerSrc = preferredWorker;
+        console.log('✅ PDF.js worker configurado:', preferredWorker);
+        setPdfjsWorkerReady(true);
+      } catch (error) {
+        console.error('❌ Error inicializando PDF.js worker:', error);
+        // Fallback a CDN alternativo
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs';
+        setPdfjsWorkerReady(true);
+      }
+    };
+
+    initializePDFWorker();
+  }, []);
 
   const showMessage = (type: 'success' | 'error' | 'info', text: string) => {
     setMessage({ type, text });
@@ -109,44 +137,29 @@ const PDFGenerator = () => {
       return;
     }
     
-    // Intentar analizar el PDF con PDF.js para extraer números de orden (opcional)
+    // Analizar el PDF con PDF.js para extraer números de orden (CRÍTICO para la funcionalidad)
     try {
-      showMessage('info', 'Analizando PDF para extraer números de orden...');
+      if (!pdfjsWorkerReady) {
+        // Esperar un momento a que el worker se inicialice
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
 
-      // Configurar PDF.js con worker - múltiples opciones para compatibilidad
-      // Primero intentar con worker local, luego usar CDN como fallback
-      const baseUrl = window.location.origin;
-      let workerSrc = pdfjsLib.GlobalWorkerOptions.workerSrc;
+      showMessage('info', 'Analizando PDF para extraer números de orden...');
       
-      if (!workerSrc || workerSrc === '') {
-        // Preferir worker local si está disponible
-        workerSrc = '/pdf.worker.min.mjs';
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-        console.log('🔧 Configurando PDF.js worker (local):', workerSrc);
+      // Asegurarse de que el worker esté configurado
+      if (!pdfjsLib.GlobalWorkerOptions.workerSrc || pdfjsLib.GlobalWorkerOptions.workerSrc === '') {
+        // Si no está configurado, configurarlo ahora
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.296/pdf.worker.min.mjs';
+        console.log('🔧 Configurando PDF.js worker sobre la marcha');
       }
+
+      console.log('🔍 Worker configurado:', pdfjsLib.GlobalWorkerOptions.workerSrc);
       
-      // Función auxiliar para intentar cargar PDF con un worker específico
-      const tryLoadPDF = async (workerUrl: string) => {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-        return await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      };
-      
-      // Cargar el PDF con PDF.js para análisis - intentar con diferentes workers
-      let pdf;
-      try {
-        pdf = await tryLoadPDF(workerSrc);
-      } catch (workerError) {
-        console.warn('⚠️ Worker local falló, intentando con CDN...', workerError);
-        // Intentar con CDN como fallback
-        try {
-          const cdnWorker = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
-          pdf = await tryLoadPDF(cdnWorker);
-          console.log('✅ Worker CDN funcionando correctamente');
-        } catch (cdnError) {
-          console.error('❌ También falló el worker CDN:', cdnError);
-          throw new Error('No se pudo cargar el worker de PDF.js');
-        }
-      }
+      // Cargar el PDF con PDF.js para análisis
+      const pdf = await pdfjsLib.getDocument({ 
+        data: arrayBuffer,
+        verbosity: 0 // Reducir logs
+      }).promise;
       const numPages = pdf.numPages;
       const pagesData = [];
       
@@ -191,19 +204,67 @@ const PDFGenerator = () => {
         showMessage('info', `PDF cargado: ${numPages} páginas. No se encontraron números de orden automáticamente, pero puedes generar el PDF manualmente.`);
       }
       
-    } catch (pdfjsError) {
-      console.warn('⚠️ No se pudo analizar el PDF con PDF.js (opcional):', pdfjsError);
-      // No es crítico si falla el análisis con PDF.js, el PDF ya está cargado con pdf-lib
-      // Crear páginas vacías para que la interfaz funcione
-      if (originalPdfDoc) {
-        const numPages = originalPdfDoc.getPageCount();
-        const pagesData = Array.from({ length: numPages }, (_, i) => ({
-          pageNumber: i + 1,
-          orderNumber: null
-        }));
-        setPdfPagesData(pagesData);
+    } catch (pdfjsError: any) {
+      console.error('❌ Error crítico al analizar PDF con PDF.js:', pdfjsError);
+      
+      // Intentar con diferentes workers como último recurso
+      const fallbackWorkers = [
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.296/pdf.worker.min.mjs',
+        'https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs',
+        'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs'
+      ];
+
+      let pdfAnalysisSuccess = false;
+      for (const workerUrl of fallbackWorkers) {
+        try {
+          console.log(`🔄 Intentando con worker alternativo: ${workerUrl}`);
+          pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          const numPages = pdf.numPages;
+          const pagesData = [];
+
+          for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+            try {
+              const page = await pdf.getPage(pageNum);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items.map((item: any) => item.str).join(' ');
+              const orderNumber = extractOrderNumber(pageText);
+              pagesData.push({
+                pageNumber: pageNum,
+                orderNumber: orderNumber
+              });
+            } catch (pageError) {
+              pagesData.push({
+                pageNumber: pageNum,
+                orderNumber: null
+              });
+            }
+          }
+
+          setPdfPagesData(pagesData);
+          const foundNumbers = pagesData.filter(page => page.orderNumber).length;
+          showMessage('success', `PDF analizado: ${numPages} páginas, ${foundNumbers} números de orden encontrados`);
+          pdfAnalysisSuccess = true;
+          break;
+        } catch (fallbackError) {
+          console.warn(`⚠️ Worker fallback falló: ${workerUrl}`, fallbackError);
+          continue;
+        }
       }
-      showMessage('info', 'PDF cargado correctamente. El análisis automático de números de orden no está disponible, pero puedes generar el PDF normalmente.');
+
+      if (!pdfAnalysisSuccess) {
+        // Si todos los workers fallan, crear páginas vacías pero mostrar advertencia
+        if (originalPdfDoc) {
+          const numPages = originalPdfDoc.getPageCount();
+          const pagesData = Array.from({ length: numPages }, (_, i) => ({
+            pageNumber: i + 1,
+            orderNumber: null
+          }));
+          setPdfPagesData(pagesData);
+        }
+        showMessage('error', 'No se pudo analizar el PDF. Los números de orden no se detectaron automáticamente. Verifica tu conexión a internet o intenta recargar la página.');
+        console.error('❌ Todos los intentos de análisis fallaron:', pdfjsError);
+      }
     }
   };
 
