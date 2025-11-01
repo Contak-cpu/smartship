@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import { PDFDocument, rgb } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
+// Importar el worker directamente desde el paquete (Vite lo manejará correctamente)
+// @ts-ignore - pdfjs-dist puede no tener tipos completos para el worker
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { guardarEnHistorialSKU } from '../../src/utils/historialStorage';
 import { useAuth } from '../../hooks/useAuth';
 import { guardarStockDespachado, StockDespachado } from '../../services/informacionService';
@@ -35,18 +38,32 @@ const PDFGenerator = () => {
   useEffect(() => {
     const initializePDFWorker = async () => {
       try {
-        // Usar CDN con versión estable (4.0.379 está disponible y es compatible)
-        // Esta versión es estable y funciona bien con pdfjs-dist 5.x
-        const stableWorkerUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
-        pdfjsLib.GlobalWorkerOptions.workerSrc = stableWorkerUrl;
-        console.log('✅ PDF.js worker configurado:', stableWorkerUrl);
-        setPdfjsWorkerReady(true);
+        // Prioridad 1: Worker importado directamente desde el paquete (más confiable)
+        if (pdfjsWorker) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+          console.log('✅ PDF.js worker configurado desde paquete:', pdfjsWorker);
+          setPdfjsWorkerReady(true);
+          return;
+        }
       } catch (error) {
-        console.error('❌ Error inicializando PDF.js worker:', error);
-        // Último recurso: usar CDN estable
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
-        setPdfjsWorkerReady(true);
+        console.warn('⚠️ No se pudo usar worker del paquete:', error);
       }
+
+      // Prioridad 2: Worker local en public
+      try {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+        console.log('✅ PDF.js worker configurado (local):', '/pdf.worker.min.mjs');
+        setPdfjsWorkerReady(true);
+        return;
+      } catch (error) {
+        console.warn('⚠️ No se pudo usar worker local:', error);
+      }
+
+      // Prioridad 3: CDN como último recurso
+      const cdnWorkerUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = cdnWorkerUrl;
+      console.log('✅ PDF.js worker configurado (CDN fallback):', cdnWorkerUrl);
+      setPdfjsWorkerReady(true);
     };
 
     initializePDFWorker();
@@ -157,12 +174,18 @@ const PDFGenerator = () => {
       }
 
       console.log('🔍 Worker configurado:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+      console.log('📦 Versión pdfjs-dist:', pdfjsLib.version || 'desconocida');
       
       // Cargar el PDF con PDF.js para análisis
-      const pdf = await pdfjsLib.getDocument({ 
+      console.log('🔄 Iniciando carga del PDF con PDF.js...');
+      const loadingTask = pdfjsLib.getDocument({ 
         data: arrayBuffer,
         verbosity: 0 // Reducir logs
-      }).promise;
+      });
+      
+      console.log('⏳ Esperando promesa del PDF...');
+      const pdf = await loadingTask.promise;
+      console.log('✅ PDF cargado con PDF.js exitosamente');
       const numPages = pdf.numPages;
       const pagesData = [];
       
@@ -225,6 +248,12 @@ const PDFGenerator = () => {
       
     } catch (pdfjsError: any) {
       console.error('❌ Error crítico al analizar PDF con PDF.js:', pdfjsError);
+      console.error('📋 Detalles del error:', {
+        name: pdfjsError?.name,
+        message: pdfjsError?.message,
+        stack: pdfjsError?.stack,
+        workerSrc: pdfjsLib.GlobalWorkerOptions.workerSrc
+      });
       
       // Intentar con diferentes workers como último recurso (versiones estables disponibles)
       const fallbackWorkers = [
