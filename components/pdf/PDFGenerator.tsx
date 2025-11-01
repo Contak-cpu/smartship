@@ -682,32 +682,35 @@ const PDFGenerator = () => {
         // No interrumpir el flujo si falla el guardado del historial
       }
 
+      // TEMPORALMENTE OCULTO - Funcionalidad de stock
       // Guardar stock despachado en Supabase
-      if (stockDespachado.length > 0) {
-        try {
-          console.log(`Guardando ${stockDespachado.length} items de stock despachado en Supabase...`);
-          await guardarStockDespachado(stockDespachado);
-          console.log(`✅ Stock despachado guardado: ${stockDespachado.length} items`);
-        } catch (stockError) {
-          console.error('Error al guardar stock despachado:', stockError);
-          // No interrumpir el flujo si falla
-        }
-      }
+      // if (stockDespachado.length > 0) {
+      //   try {
+      //     console.log(`Guardando ${stockDespachado.length} items de stock despachado en Supabase...`);
+      //     await guardarStockDespachado(stockDespachado);
+      //     console.log(`✅ Stock despachado guardado: ${stockDespachado.length} items`);
+      //   } catch (stockError) {
+      //     console.error('Error al guardar stock despachado:', stockError);
+      //     // No interrumpir el flujo si falla
+      //   }
+      // }
 
+      // TEMPORALMENTE OCULTO - Modal de descontar stock
       // Crear resumen de stock para descontar
-      const stockSummaryMap = new Map<string, number>();
-      stockDespachado.forEach(item => {
-        const current = stockSummaryMap.get(item.sku) || 0;
-        stockSummaryMap.set(item.sku, current + item.cantidad);
-      });
+      // const stockSummaryMap = new Map<string, number>();
+      // stockDespachado.forEach(item => {
+      //   const current = stockSummaryMap.get(item.sku) || 0;
+      //   stockSummaryMap.set(item.sku, current + item.cantidad);
+      // });
+      // 
+      // const stockArray = Array.from(stockSummaryMap.entries()).map(([sku, cantidad]) => ({
+      //   sku,
+      //   cantidad
+      // }));
+      // 
+      // setStockParaDescontar(stockArray);
+      // setShowDescontarStockModal(true);
       
-      const stockArray = Array.from(stockSummaryMap.entries()).map(([sku, cantidad]) => ({
-        sku,
-        cantidad
-      }));
-      
-      setStockParaDescontar(stockArray);
-      setShowDescontarStockModal(true);
       showMessage('success', `PDF generado con ${finalPdfDoc.getPageCount()} páginas (incluye resumen de productos)`);
     } catch (error) {
       console.error('Error al generar PDF:', error);
@@ -1126,8 +1129,8 @@ const PDFGenerator = () => {
         </footer>
       </div>
 
-      {/* Modal de confirmación para descontar stock */}
-      {showDescontarStockModal && (
+      {/* TEMPORALMENTE OCULTO - Modal de confirmación para descontar stock */}
+      {false && showDescontarStockModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full border border-gray-700 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
