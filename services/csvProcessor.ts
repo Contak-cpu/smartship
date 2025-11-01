@@ -852,6 +852,59 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
     console.log(`Sucursales que contienen "${calleNumero}":`, sucursalesConCalle.slice(0, 5).map(s => s.nombre_sucursal));
   }
   
+  // NUEVA LÓGICA: Si hay múltiples números en la dirección, buscar sucursal más cercana por número
+  // Esta lógica se ejecuta ANTES de buscar por código postal para maximizar las posibilidades de encontrar la sucursal correcta
+  const numeroPedidoMatch = calleNumero.match(/\b(\d+)\b/g);
+  if (numeroPedidoMatch && numeroPedidoMatch.length >= 2) {
+    // Hay múltiples números (ej: "CALLE 49 621")
+    const ultimoNumeroPedido = parseInt(numeroPedidoMatch[numeroPedidoMatch.length - 1]);
+    const numeroCallePedido = numeroPedidoMatch[0]; // Primer número es el de la calle
+    
+    console.log(`🔍 Buscando sucursal más cercana: Calle "${numeroCallePedido}", Número pedido: ${ultimoNumeroPedido}`);
+    
+    // Buscar todas las sucursales que tienen el mismo número de calle
+    const todasSucursalesMismaCalle = sucursales.filter(sucursal => {
+      const direccionSuc = extraerDireccionReal(sucursal).toLowerCase();
+      const numerosSuc = direccionSuc.match(/\b(\d+)\b/g);
+      
+      // Verificar que el primer número coincide (ej: "49" en "CALLE 49 621" debe coincidir con "49" en "49 843" o "CALLE 49 120")
+      if (numerosSuc && numerosSuc.length >= 1 && numerosSuc[0] === numeroCallePedido) {
+        return true;
+      }
+      return false;
+    });
+    
+    if (todasSucursalesMismaCalle.length >= 2) {
+      console.log(`✅ Encontradas ${todasSucursalesMismaCalle.length} sucursales en la calle ${numeroCallePedido}`);
+      
+      // Encontrar la sucursal con el número más cercano
+      let sucursalMasCercana: AndreaniSucursalInfo | null = null;
+      let distanciaMinima = Infinity;
+      
+      for (const sucursal of todasSucursalesMismaCalle) {
+        const direccionSuc = extraerDireccionReal(sucursal);
+        const numerosSuc = direccionSuc.match(/\b(\d+)\b/g);
+        
+        if (numerosSuc && numerosSuc.length >= 2) {
+          const ultimoNumeroSuc = parseInt(numerosSuc[numerosSuc.length - 1]);
+          const distancia = Math.abs(ultimoNumeroPedido - ultimoNumeroSuc);
+          
+          console.log(`  - ${sucursal.nombre_sucursal}: número ${ultimoNumeroSuc}, distancia ${distancia}`);
+          
+          if (distancia < distanciaMinima) {
+            distanciaMinima = distancia;
+            sucursalMasCercana = sucursal;
+          }
+        }
+      }
+      
+      if (sucursalMasCercana && distanciaMinima !== Infinity) {
+        console.log(`✅ Sucursal más cercana encontrada: ${sucursalMasCercana.nombre_sucursal} (distancia: ${distanciaMinima})`);
+        return sucursalMasCercana.nombre_sucursal;
+      }
+    }
+  }
+
   // Si no hay coincidencias exactas, usar búsqueda difusa
   if (coincidenciasExactas.length === 0) {
     if (coincidenciasDifusas.length > 0) {
@@ -2197,7 +2250,21 @@ export const processVentasOrders = async (
     } else if (esSucursalVentas && !esDomicilioVentas) {
       console.log(`[SUCURSAL] Procesando pedido:`, numeroOrden);
       // Procesar envío a sucursal
-      const direccionCompleta = `${direccion} ${numero} ${piso} ${localidad} ${ciudad}`.trim();
+      // Extraer solo el número básico del campo número (antes de "entre", "Local", "y", etc.)
+      let numeroBasico = numero;
+      if (numero) {
+        // Eliminar texto después de palabras clave comunes
+        const textoAntes = numero.split(/entre|y|local|piso|depto|dto/i)[0].trim();
+        if (textoAntes) {
+          numeroBasico = textoAntes;
+        }
+        // Extraer solo números si hay texto adicional
+        const soloNumeros = numeroBasico.match(/\d+/);
+        if (soloNumeros && soloNumeros[0] && numeroBasico !== soloNumeros[0]) {
+          numeroBasico = soloNumeros[0];
+        }
+      }
+      const direccionCompleta = `${direccion} ${numeroBasico} ${piso} ${localidad} ${ciudad}`.trim();
       const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales, codigoPostal, provincia);
 
       console.log(`🔍 DEBUG: Resultado búsqueda sucursal para pedido ${numeroOrden}:`, nombreSucursal);
