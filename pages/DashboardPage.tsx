@@ -203,25 +203,26 @@ const DashboardPage: React.FC = () => {
         </svg>
       ),
     },
-    {
-      id: 'stock',
-      title: 'Gestión de Stock',
-      description: 'Administra tu inventario de productos. Registra SKUs con sus cantidades y descontá automáticamente desde la sección de rótulos.',
-      path: '/stock',
-      color: 'orange',
-      stats: 'Control de Inventario',
-      requiredLevel: 3,
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-          />
-        </svg>
-      ),
-    },
+    // TEMPORALMENTE OCULTO - Gestión de Stock
+    // {
+    //   id: 'stock',
+    //   title: 'Gestión de Stock',
+    //   description: 'Administra tu inventario de productos. Registra SKUs con sus cantidades y descontá automáticamente desde la sección de rótulos.',
+    //   path: '/stock',
+    //   color: 'orange',
+    //   stats: 'Control de Inventario',
+    //   requiredLevel: 3,
+    //   icon: (
+    //     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //       <path
+    //         strokeLinecap="round"
+    //         strokeLinejoin="round"
+    //         strokeWidth={2}
+    //         d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+    //       />
+    //     </svg>
+    //   ),
+    // },
     {
       id: 'historial',
       title: 'Historial de Archivos',

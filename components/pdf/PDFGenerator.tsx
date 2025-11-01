@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import { PDFDocument, rgb } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -138,11 +138,17 @@ const PDFGenerator = () => {
       try {
         const pdfDoc = await PDFDocument.load(pdfBytesForLib);
         setOriginalPdfDoc(pdfDoc);
-        console.log('PDF cargado con pdf-lib para manipulación');
+        console.log('✅ PDF cargado con pdf-lib para manipulación');
+        console.log('📄 Estado después de cargar PDF:', {
+          originalPdfDoc: pdfDoc !== null,
+          pdfPages: pdfDoc.getPageCount(),
+          canGenerate: csvData.length > 1 && pdfDoc !== null
+        });
       } catch (pdfLibError) {
-        console.error('Error cargando PDF con pdf-lib:', pdfLibError);
+        console.error('❌ Error cargando PDF con pdf-lib:', pdfLibError);
         showMessage('error', 'PDF analizado pero puede haber problemas al generar el PDF final');
-        return;
+        // No hacer return aquí, permitir que el PDF se establezca si es posible
+        setOriginalPdfDoc(null);
       }
       
       const foundNumbers = pagesData.filter(page => page.orderNumber).length;
@@ -500,6 +506,16 @@ const PDFGenerator = () => {
 
   const canGenerate = csvData.length > 1 && originalPdfDoc !== null;
 
+  // Debug: Log estado de archivos cargados
+  useEffect(() => {
+    console.log('🔍 [PDFGenerator] Estado de archivos:', {
+      csvLoaded: csvData.length > 1,
+      csvRows: csvData.length,
+      pdfLoaded: originalPdfDoc !== null,
+      canGenerate
+    });
+  }, [csvData.length, originalPdfDoc, canGenerate]);
+
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-6xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
@@ -846,15 +862,48 @@ const PDFGenerator = () => {
           </div>
         )}
 
-        {/* Generate Button */}
-        {canGenerate && (
-          <button
-            onClick={generatePDFs}
-            disabled={processing}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center"
-          >
-            {processing ? 'Procesando...' : 'Generar PDF'}
-          </button>
+        {/* Generate Button - Siempre mostrar si hay archivos cargados */}
+        {(csvData.length > 1 || pdfTemplate) && (
+          <div className="space-y-3">
+            {!canGenerate && (
+              <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-yellow-400 font-medium mb-1">Faltan archivos para generar el PDF</p>
+                    <ul className="text-sm text-yellow-300 space-y-1">
+                      {csvData.length <= 1 && <li>• Carga un archivo CSV con datos</li>}
+                      {!originalPdfDoc && <li>• Carga un archivo PDF plantilla</li>}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+            <button
+              onClick={generatePDFs}
+              disabled={!canGenerate || processing}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 disabled:hover:scale-100 flex items-center justify-center gap-2"
+            >
+              {processing ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Generar y Descargar PDF
+                </>
+              )}
+            </button>
+          </div>
         )}
         
         <footer className="text-center mt-6 text-gray-500 text-xs sm:text-sm">
