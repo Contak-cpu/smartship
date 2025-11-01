@@ -88,15 +88,65 @@ const PDFGenerator = () => {
     setPdfTemplate(arrayBuffer);
     setPdfTemplateBytes(new Uint8Array(arrayBuffer));
     
-    // Analizar el PDF para extraer números de orden automáticamente
+    // Primero intentar cargar con pdf-lib (más importante para generar el PDF)
     try {
-      showMessage('info', 'Analizando PDF...');
-
-      // Configurar PDF.js con worker local
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+      showMessage('info', 'Cargando PDF...');
+      const pdfDoc = await PDFDocument.load(pdfBytesForLib);
+      setOriginalPdfDoc(pdfDoc);
+      console.log('✅ PDF cargado con pdf-lib para manipulación');
+      console.log('📄 Estado después de cargar PDF:', {
+        originalPdfDoc: pdfDoc !== null,
+        pdfPages: pdfDoc.getPageCount(),
+        canGenerate: csvData.length > 1 && pdfDoc !== null
+      });
       
-      // Cargar el PDF con PDF.js para análisis
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      // Mostrar mensaje de éxito básico
+      showMessage('success', `PDF cargado correctamente: ${pdfDoc.getPageCount()} páginas`);
+    } catch (pdfLibError) {
+      console.error('❌ Error cargando PDF con pdf-lib:', pdfLibError);
+      showMessage('error', 'No se pudo cargar el archivo PDF. Verifica que sea un PDF válido.');
+      setOriginalPdfDoc(null);
+      return;
+    }
+    
+    // Intentar analizar el PDF con PDF.js para extraer números de orden (opcional)
+    try {
+      showMessage('info', 'Analizando PDF para extraer números de orden...');
+
+      // Configurar PDF.js con worker - múltiples opciones para compatibilidad
+      // Primero intentar con worker local, luego usar CDN como fallback
+      const baseUrl = window.location.origin;
+      let workerSrc = pdfjsLib.GlobalWorkerOptions.workerSrc;
+      
+      if (!workerSrc || workerSrc === '') {
+        // Preferir worker local si está disponible
+        workerSrc = '/pdf.worker.min.mjs';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+        console.log('🔧 Configurando PDF.js worker (local):', workerSrc);
+      }
+      
+      // Función auxiliar para intentar cargar PDF con un worker específico
+      const tryLoadPDF = async (workerUrl: string) => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+        return await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      };
+      
+      // Cargar el PDF con PDF.js para análisis - intentar con diferentes workers
+      let pdf;
+      try {
+        pdf = await tryLoadPDF(workerSrc);
+      } catch (workerError) {
+        console.warn('⚠️ Worker local falló, intentando con CDN...', workerError);
+        // Intentar con CDN como fallback
+        try {
+          const cdnWorker = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+          pdf = await tryLoadPDF(cdnWorker);
+          console.log('✅ Worker CDN funcionando correctamente');
+        } catch (cdnError) {
+          console.error('❌ También falló el worker CDN:', cdnError);
+          throw new Error('No se pudo cargar el worker de PDF.js');
+        }
+      }
       const numPages = pdf.numPages;
       const pagesData = [];
       
@@ -133,30 +183,27 @@ const PDFGenerator = () => {
       }
       
       setPdfPagesData(pagesData);
+      const foundNumbers = pagesData.filter(page => page.orderNumber).length;
       
-      // Ahora cargar con pdf-lib para uso posterior
-      try {
-        const pdfDoc = await PDFDocument.load(pdfBytesForLib);
-        setOriginalPdfDoc(pdfDoc);
-        console.log('✅ PDF cargado con pdf-lib para manipulación');
-        console.log('📄 Estado después de cargar PDF:', {
-          originalPdfDoc: pdfDoc !== null,
-          pdfPages: pdfDoc.getPageCount(),
-          canGenerate: csvData.length > 1 && pdfDoc !== null
-        });
-      } catch (pdfLibError) {
-        console.error('❌ Error cargando PDF con pdf-lib:', pdfLibError);
-        showMessage('error', 'PDF analizado pero puede haber problemas al generar el PDF final');
-        // No hacer return aquí, permitir que el PDF se establezca si es posible
-        setOriginalPdfDoc(null);
+      if (foundNumbers > 0) {
+        showMessage('success', `PDF analizado: ${numPages} páginas, ${foundNumbers} números de orden encontrados`);
+      } else {
+        showMessage('info', `PDF cargado: ${numPages} páginas. No se encontraron números de orden automáticamente, pero puedes generar el PDF manualmente.`);
       }
       
-      const foundNumbers = pagesData.filter(page => page.orderNumber).length;
-      showMessage('success', `PDF analizado: ${numPages} páginas, ${foundNumbers} números de orden encontrados`);
-      
-    } catch (error) {
-      console.error('Error al analizar PDF:', error);
-      showMessage('error', 'No se pudo analizar el archivo PDF');
+    } catch (pdfjsError) {
+      console.warn('⚠️ No se pudo analizar el PDF con PDF.js (opcional):', pdfjsError);
+      // No es crítico si falla el análisis con PDF.js, el PDF ya está cargado con pdf-lib
+      // Crear páginas vacías para que la interfaz funcione
+      if (originalPdfDoc) {
+        const numPages = originalPdfDoc.getPageCount();
+        const pagesData = Array.from({ length: numPages }, (_, i) => ({
+          pageNumber: i + 1,
+          orderNumber: null
+        }));
+        setPdfPagesData(pagesData);
+      }
+      showMessage('info', 'PDF cargado correctamente. El análisis automático de números de orden no está disponible, pero puedes generar el PDF normalmente.');
     }
   };
 
