@@ -70,6 +70,14 @@ const fixEncoding = (text: string): string => {
       .replace(new RegExp(`([Rr])[${charReemplazo}]([Oo] Negro)`, 'g'), '$1í$2');
   }
   
+  // Correcciones adicionales para casos específicos del archivo
+  // Estas se aplican después de todas las correcciones de caracteres de reemplazo
+  cleanText = cleanText
+    // Nombre de archivo específico - detectar "Lanús" sin tilde
+    .replace(/Lanus\b/gi, 'Lanús')
+    // Detectar y corregir "Crdoba" sin acento
+    .replace(/\bCrdoba\b/gi, 'Córdoba');
+  
   return cleanText;
 };
 
@@ -513,7 +521,7 @@ export const processOrdersCorreoArgentino = async (
         console.log(`   - Provincia original: "${provincia}"`);
         console.log(`   - Localidad para búsqueda: "${localidadParaBusqueda}"`);
         
-        const sucursalCodigo = findSucursalCorreoArgentino(
+        let sucursalCodigo = findSucursalCorreoArgentino(
           direccion, 
           codigoPostal, 
           provincia, 
@@ -521,7 +529,20 @@ export const processOrdersCorreoArgentino = async (
           correoArgentinoSucursales
         );
         
-        console.log(`   - Resultado búsqueda: "${sucursalCodigo || 'NO ENCONTRADO'}"`);
+        console.log(`   - Resultado búsqueda con localidad "${localidadParaBusqueda}": "${sucursalCodigo || 'NO ENCONTRADO'}"`);
+        
+        // Si no se encontró y tenemos una ciudad diferente, intentar con la ciudad
+        if (!sucursalCodigo && ciudadLimpia && ciudadLimpia !== localidadLimpia && ciudadNormalizada !== 'CAPITAL') {
+          console.log(`   🔄 No se encontró con localidad, intentando con ciudad "${ciudadLimpia}"`);
+          sucursalCodigo = findSucursalCorreoArgentino(
+            direccion, 
+            codigoPostal, 
+            provincia, 
+            ciudadLimpia,
+            correoArgentinoSucursales
+          );
+          console.log(`   - Resultado búsqueda con ciudad: "${sucursalCodigo || 'NO ENCONTRADO'}"`);
+        }
         
         if (!sucursalCodigo) {
           contadorNoProcesados++;

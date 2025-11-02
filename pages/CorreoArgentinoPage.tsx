@@ -47,14 +47,41 @@ const CorreoArgentinoPage: React.FC = () => {
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
-        const csvText = event.target?.result as string;
+        let csvText = event.target?.result as string;
         if (!csvText) {
           throw new Error('El archivo está vacío o no se pudo leer.');
         }
+        
+        // Si el texto contiene caracteres mal codificados comunes, intentar con ISO-8859-1 (Latin-1)
+        if (csvText.includes('Ã') || csvText.includes('Â')) {
+          console.log('Detectados caracteres mal codificados, reintentando con ISO-8859-1...');
+          // Releer con ISO-8859-1
+          const reader2 = new FileReader();
+          reader2.onload = async (event2) => {
+            try {
+              csvText = event2.target?.result as string;
+              console.log('Starting to process CSV for Correo Argentino...');
+              const processedData = await processOrdersCorreoArgentino(csvText, config);
+              console.log('Processing completed:', processedData);
+              setResults(processedData);
+              setStatus(ProcessStatus.SUCCESS);
+            } catch (err2) {
+              const errorMessage = err2 instanceof Error ? err2.message : 'Ocurrió un error desconocido.';
+              console.error('Processing error:', err2);
+              setError(errorMessage);
+              setStatus(ProcessStatus.ERROR);
+            }
+          };
+          reader2.onerror = () => {
+            setError('Error al leer el archivo.');
+            setStatus(ProcessStatus.ERROR);
+          };
+          reader2.readAsText(selectedFile, 'ISO-8859-1');
+          return;
+        }
+        
         console.log('Starting to process CSV for Correo Argentino...');
-        
         const processedData = await processOrdersCorreoArgentino(csvText, config);
-        
         console.log('Processing completed:', processedData);
         setResults(processedData);
         setStatus(ProcessStatus.SUCCESS);
