@@ -185,6 +185,25 @@ const DashboardPage: React.FC = () => {
       ),
     },
     {
+      id: 'correo-argentino',
+      title: 'Correo Argentino',
+      description: 'Procesa y transforma archivos CSV de pedidos para Correo Argentino automáticamente. Genera archivos de carga masiva en formato CP (PAQ.AR CLASICO).',
+      path: '/correo-argentino',
+      color: 'blue',
+      stats: 'Procesador de Pedidos',
+      requiredLevel: 2,
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+          />
+        </svg>
+      ),
+    },
+    {
       id: 'pdf-generator',
       title: 'Integrar SKU en Rótulos Andreani',
       description: 'Integra automáticamente los SKUs de tus productos en los rótulos de envío de Andreani. Genera PDFs personalizados con códigos SKU para identificación rápida.',

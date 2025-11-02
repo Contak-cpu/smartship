@@ -5,6 +5,7 @@ import PaidProtectedRoute from '../components/routing/PaidProtectedRoute';
 import PublicRoute from '../components/routing/PublicRoute';
 import SmartRedirect from '../components/routing/SmartRedirect';
 import HomePage from '../pages/HomePage';
+import CorreoArgentinoPage from '../pages/CorreoArgentinoPage';
 import PDFGeneratorPage from '../pages/PDFGeneratorPage';
 import LandingPage from '../pages/LandingPage';
 import DashboardPage from '../pages/DashboardPage';
@@ -99,6 +100,14 @@ export const routes: RouteObject[] = [
     element: (
       <LevelProtectedRoute requiredLevel={2} sectionName="SmartShip - Transformador de Pedidos">
         <HomePage />
+      </LevelProtectedRoute>
+    ),
+  },
+  {
+    path: '/correo-argentino',
+    element: (
+      <LevelProtectedRoute requiredLevel={2} sectionName="Correo Argentino - Transformador de Pedidos">
+        <CorreoArgentinoPage />
       </LevelProtectedRoute>
     ),
   },
