@@ -474,15 +474,15 @@ export const processOrdersCorreoArgentino = async (
         // ENVÍO A SUCURSAL
         contadorSucursal++;
         
-        // Lógica para determinar la localidad a buscar:
-        // Si la ciudad es "Capital" y la provincia/localidad es el nombre de la provincia (ej: Córdoba),
-        // entonces usar el nombre de la provincia como localidad (CORDOBA en el CSV)
-        let localidadParaBusqueda = localidad || ciudad || '';
-        
         // Normalizar para comparar - usar fixEncoding primero para corregir caracteres mal codificados
         const ciudadLimpia = ciudad ? fixEncoding(ciudad) : '';
         const localidadLimpia = localidad ? fixEncoding(localidad) : '';
         const provinciaLimpia = fixEncoding(provincia);
+        
+        // Lógica para determinar la localidad a buscar usando valores ya limpiados
+        // Si la ciudad es "Capital" y la provincia/localidad es el nombre de la provincia (ej: Córdoba),
+        // entonces usar el nombre de la provincia como localidad (CORDOBA en el CSV)
+        let localidadParaBusqueda = localidadLimpia || ciudadLimpia || '';
         
         const ciudadNormalizada = ciudadLimpia ? normalizarNombre(ciudadLimpia).toUpperCase() : '';
         const localidadNormalizada = localidadLimpia ? normalizarNombre(localidadLimpia).toUpperCase() : '';
