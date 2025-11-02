@@ -66,6 +66,38 @@ export const fixEncodingSoft = (text: string): string => {
   return cleanText;
 };
 
+// Función para limpiar campos de Piso y Departamento, eliminando caracteres inválidos
+// Solo permite letras (a-z, A-Z, incluyendo acentos), números (0-9) y espacios
+export const limpiarPisoDepto = (text: string): string => {
+  if (!text) return '';
+  
+  // Normalizar acentos primero
+  let cleanText = text
+    .replace(/[áàäâ]/g, 'a')
+    .replace(/[éèëê]/g, 'e')
+    .replace(/[íìïî]/g, 'i')
+    .replace(/[óòöô]/g, 'o')
+    .replace(/[úùüû]/g, 'u')
+    .replace(/[ñ]/g, 'n')
+    .replace(/[ÁÀÄÂ]/g, 'A')
+    .replace(/[ÉÈËÊ]/g, 'E')
+    .replace(/[ÍÌÏÎ]/g, 'I')
+    .replace(/[ÓÒÖÔ]/g, 'O')
+    .replace(/[ÚÙÜÛ]/g, 'U')
+    .replace(/[Ñ]/g, 'N')
+    .replace(/[ç]/g, 'c')
+    .replace(/[Ç]/g, 'C');
+  
+  // Eliminar todos los caracteres que NO sean letras, números o espacios
+  // Esto elimina: . , * - _ / \ ( ) [ ] { } : ; " ' ! ? @ # $ % ^ & + = | ~ ` y cualquier otro carácter especial
+  cleanText = cleanText.replace(/[^a-zA-Z0-9\s]/g, '');
+  
+  // Limpiar espacios múltiples y espacios al inicio/final
+  cleanText = cleanText.replace(/\s+/g, ' ').trim();
+  
+  return cleanText;
+};
+
 // Función para corregir CSVs con encabezados multilínea
 const fixMultilineHeaderCSV = (csvText: string): string => {
   console.log('Aplicando corrección para CSV con encabezados multilínea...');
@@ -381,6 +413,21 @@ const parseCSV = <T,>(csvText: string): Promise<T[]> => {
   });
 };
 
+// Función para escapar valores CSV correctamente
+const escapeCSVValue = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  
+  const str = String(value);
+  
+  // Si contiene comillas, punto y coma, o saltos de línea, necesita estar entre comillas
+  if (str.includes('"') || str.includes(';') || str.includes('\n') || str.includes('\r')) {
+    // Escapar comillas duplicándolas (estándar CSV)
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  
+  return str;
+};
+
 const unparseCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]): string => {
   if (data.length === 0) return "";
   
@@ -393,8 +440,8 @@ const unparseCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]):
       .trim();
   });
   
-  // Crear el CSV manualmente para tener control total
-  const csvLines = [headers.join(';')];
+  // Crear el CSV manualmente para tener control total, escapando correctamente
+  const csvLines = [headers.map(escapeCSVValue).join(';')];
   
   data.forEach(row => {
     const values = headers.map(header => {
@@ -402,7 +449,9 @@ const unparseCSV = (data: (AndreaniDomicilioOutput | AndreaniSucursalOutput)[]):
       const originalKey = Object.keys(row).find(key => 
         key.replace(/ Ej:.*$/, '').replace(/\n.*$/, '').trim() === header
       );
-      return row[originalKey as keyof typeof row] || '';
+      const value = row[originalKey as keyof typeof row] || '';
+      // Escapar el valor correctamente
+      return escapeCSVValue(value);
     });
     csvLines.push(values.join(';'));
   });
@@ -1411,8 +1460,8 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     const apellido = apellidoParts.join(' ');
     
     // Normalizar nombres y apellidos para evitar caracteres inválidos
-    const nombreNormalizado = normalizarNombre(nombre);
-    const apellidoNormalizado = normalizarNombre(apellido);
+    let nombreNormalizado = normalizarNombre(nombre);
+    let apellidoNormalizado = normalizarNombre(apellido);
 
     // Helper function to split phone number based on province and phone number
     const telefono = getColumnValue(order, 13); // Teléfono
@@ -1640,6 +1689,33 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       console.warn(`Formato de DNI/CUIT no reconocido: ${dniCuit} (${dniCuit.length} dígitos)`);
     }
     
+    // Validar campos obligatorios antes de procesar
+    const emailOrder = getColumnValue(order, 1);
+    if (!emailOrder || !emailOrder.trim()) {
+      console.warn(`⚠️ Pedido #${getColumnValue(order, 0)}: Email vacío, omitiendo pedido`);
+      contadorNoProcesados++;
+      continue;
+    }
+    
+    if (!dniProcesado || dniProcesado.trim() === '') {
+      console.warn(`⚠️ Pedido #${getColumnValue(order, 0)}: DNI vacío, usando placeholder`);
+      dniProcesado = '00000000';
+    }
+    
+    if (!nombreNormalizado || !nombreNormalizado.trim()) {
+      console.warn(`⚠️ Pedido #${getColumnValue(order, 0)}: Nombre vacío, usando placeholder`);
+      nombreNormalizado = 'SIN NOMBRE';
+    }
+    
+    if (!apellidoNormalizado || !apellidoNormalizado.trim()) {
+      console.warn(`⚠️ Pedido #${getColumnValue(order, 0)}: Apellido vacío, usando placeholder`);
+      apellidoNormalizado = 'SIN APELLIDO';
+    }
+    
+    // Asegurar que código de área y número de teléfono no estén vacíos
+    const celularCodigoFinal = celularCodigo && celularCodigo.trim() ? celularCodigo.trim() : '11';
+    const celularNumeroFinal = celularNumero && celularNumero.trim() ? celularNumero.trim() : '00000000';
+    
     const baseData = {
       'Paquete Guardado Ej:': '', // Siempre vacío
       'Peso (grs)': 400,
@@ -1648,12 +1724,12 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
       'Profundidad (cm)': 10,
       'Valor declarado ($ C/IVA) *': 6000,
       'Numero Interno': `#${getColumnValue(order, 0)}`, // Número de orden con #
-      'Nombre *': nombreNormalizado || '',
-      'Apellido *': apellidoNormalizado || '',
+      'Nombre *': nombreNormalizado || 'SIN NOMBRE',
+      'Apellido *': apellidoNormalizado || 'SIN APELLIDO',
       'DNI *': dniProcesado, // DNI procesado (convertido desde CUIT si es necesario)
-      'Email *': getColumnValue(order, 1), // Email
-      'Celular código *': celularCodigo,
-      'Celular número *': celularNumero,
+      'Email *': emailOrder.trim(),
+      'Celular código *': celularCodigoFinal,
+      'Celular número *': celularNumeroFinal,
     };
     
     const medioEnvio = getColumnValue(order, 24); // Medio de envío
@@ -1797,6 +1873,21 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
           console.warn(`Número de calle no válido: "${numeroCalle}" - usando "0" como fallback`);
           numeroCalle = '0';
         }
+      }
+      
+      // Validar formato de Provincia / Localidad / CP
+      if (!formatoProvinciaLocalidadCP || formatoProvinciaLocalidadCP.trim() === '') {
+        console.warn(`⚠️ Pedido ${baseData['Numero Interno']}: Formato de Provincia/Localidad/CP vacío, omitiendo pedido`);
+        contadorNoProcesados++;
+        continue;
+      }
+      
+      // Validar que el formato tenga exactamente 3 partes separadas por /
+      const partesFormato = formatoProvinciaLocalidadCP.split('/').map(p => p.trim());
+      if (partesFormato.length !== 3) {
+        console.warn(`⚠️ Pedido ${baseData['Numero Interno']}: Formato de Provincia/Localidad/CP inválido: "${formatoProvinciaLocalidadCP}"`);
+        contadorNoProcesados++;
+        continue;
       }
       
       domicilios.push({
@@ -1983,8 +2074,8 @@ export const processVentasOrders = async (
     }
     
     const nombreComprador = values[11]?.replace(/"/g, '') || '';
-    const apellidoComprador = nombreComprador.split(' ')[0] || '';
-    const nombreCompleto = nombreComprador.split(' ').slice(1).join(' ') || '';
+    let apellidoComprador = nombreComprador.split(' ')[0] || '';
+    let nombreCompleto = nombreComprador.split(' ').slice(1).join(' ') || '';
     const dni = values[12]?.replace(/"/g, '') || '';
     const email = values[1]?.replace(/"/g, '') || '';
     const telefono = values[13]?.replace(/"/g, '') || '';
@@ -1999,7 +2090,12 @@ export const processVentasOrders = async (
     const valorDeclarado = values[9]?.replace(/"/g, '') || '6000';
 
     // Separar código de área y número de teléfono
-    let telefonoLimpio = telefono.replace(/[^\d]/g, '');
+    let telefonoLimpio = (telefono || '').replace(/[^\d]/g, '');
+    
+    // Si no hay teléfono o es muy corto, usar valores por defecto
+    if (!telefonoLimpio || telefonoLimpio.length < 6) {
+      telefonoLimpio = '1100000000'; // Teléfono por defecto (11 + 8 dígitos)
+    }
     
     // Remover el prefijo internacional +54 si existe
     if (telefonoLimpio.startsWith('54')) {
@@ -2056,6 +2152,36 @@ export const processVentasOrders = async (
       console.warn(`Formato de DNI/CUIT no reconocido: ${dniCuitLimpio} (${dniCuitLimpio.length} dígitos)`);
     }
 
+    // Validar campos obligatorios antes de procesar
+    if (!email || !email.trim()) {
+      console.warn(`⚠️ Pedido ${numeroOrden}: Email vacío, omitiendo pedido`);
+      contadorNoProcesados++;
+      continue;
+    }
+    
+    if (!dniProcesado || dniProcesado.trim() === '') {
+      console.warn(`⚠️ Pedido ${numeroOrden}: DNI vacío, usando placeholder`);
+      dniProcesado = '00000000';
+    }
+    
+    if (!nombreCompleto || !nombreCompleto.trim()) {
+      console.warn(`⚠️ Pedido ${numeroOrden}: Nombre vacío, usando placeholder`);
+      nombreCompleto = 'SIN NOMBRE';
+    }
+    
+    if (!apellidoComprador || !apellidoComprador.trim()) {
+      console.warn(`⚠️ Pedido ${numeroOrden}: Apellido vacío, usando placeholder`);
+      apellidoComprador = 'SIN APELLIDO';
+    }
+    
+    // Asegurar que código de área y número de teléfono no estén vacíos
+    const codigoAreaFinal = codigoArea && codigoArea.trim() ? codigoArea.trim() : '11';
+    const numeroTelefonoFinal = numeroTelefono && numeroTelefono.trim() ? numeroTelefono.trim() : '00000000';
+    
+    // Normalizar nombre y apellido (remover acentos y caracteres especiales)
+    const nombreCompletoNormalizado = normalizarNombre(nombreCompleto) || 'SIN NOMBRE';
+    const apellidoCompradorNormalizado = normalizarNombre(apellidoComprador) || 'SIN APELLIDO';
+    
     // Datos base para ambos tipos
     const baseData = {
       'Paquete Guardado \nEj: 1': '',
@@ -2065,12 +2191,12 @@ export const processVentasOrders = async (
       'Profundidad (cm)\nEj: ': String(finalConfig.profundidad),
       'Valor declarado ($ C/IVA) *\nEj: ': valorDeclarado || String(finalConfig.valorDeclarado),
       'Numero Interno\nEj: ': `#${numeroOrden}`,
-      'Nombre *\nEj: ': nombreCompleto,
-      'Apellido *\nEj: ': apellidoComprador,
+      'Nombre *\nEj: ': nombreCompletoNormalizado,
+      'Apellido *\nEj: ': apellidoCompradorNormalizado,
       'DNI *\nEj: ': dniProcesado,
-      'Email *\nEj: ': email,
-      'Celular código *\nEj: ': codigoArea,
-      'Celular número *\nEj: ': numeroTelefono,
+      'Email *\nEj: ': email.trim(),
+      'Celular código *\nEj: ': codigoAreaFinal,
+      'Celular número *\nEj: ': numeroTelefonoFinal,
     };
 
     // Normalizar medio de envío para detectar tipo
@@ -2135,25 +2261,46 @@ export const processVentasOrders = async (
         .replace(/[…]/g, '...')
         .replace(/[]/g, '');
 
-      const pisoNormalizado = piso.replace(/[áàäâ]/g, 'a')
-        .replace(/[éèëê]/g, 'e')
-        .replace(/[íìïî]/g, 'i')
-        .replace(/[óòöô]/g, 'o')
-        .replace(/[úùüû]/g, 'u')
-        .replace(/[ñ]/g, 'n')
-        .replace(/[ÁÀÄÂ]/g, 'A')
-        .replace(/[ÉÈËÊ]/g, 'E')
-        .replace(/[ÍÌÏÎ]/g, 'I')
-        .replace(/[ÓÒÖÔ]/g, 'O')
-        .replace(/[ÚÙÜÛ]/g, 'U')
-        .replace(/[Ñ]/g, 'N')
-        .replace(/[ç]/g, 'c')
-        .replace(/[Ç]/g, 'C')
-        .replace(/['']/g, '')
-        .replace(/[""]/g, '"')
-        .replace(/[–—]/g, '-')
-        .replace(/[…]/g, '...')
-        .replace(/[]/g, '');
+      // Limpiar campo de Piso: eliminar caracteres inválidos (. , * - _ etc.) y solo dejar letras, números y espacios
+      // Primero extraer el departamento antes de limpiar todo, para poder identificarlo correctamente
+      let departamentoNormalizado = '';
+      let pisoSinDepto = piso;
+      
+      // Buscar patrones comunes de departamento (antes de limpiar caracteres)
+      // Estos patrones deben ser flexibles para encontrar depto/dto con diferentes formatos
+      const deptoPatterns = [
+        /([\.\-\s]*depto[\.\-\s]*[a-z0-9]+)/i,
+        /([\.\-\s]*dto[\.\-\s]*[a-z0-9]+)/i,
+        /([\.\-\s]*departamento[\.\-\s]*[a-z0-9]+)/i,
+        /([\.\-\s]*apto[\.\-\s]*[a-z0-9]+)/i,
+        /([\.\-\s]*apartamento[\.\-\s]*[a-z0-9]+)/i,
+      ];
+      
+      let deptoEncontrado = false;
+      for (const pattern of deptoPatterns) {
+        const match = piso.match(pattern);
+        if (match && match[0]) {
+          // Extraer solo el valor del departamento (número o letra)
+          const deptoMatch = match[0].match(/([a-z0-9]+)$/i);
+          if (deptoMatch && deptoMatch[1]) {
+            departamentoNormalizado = limpiarPisoDepto(deptoMatch[1]);
+            // Remover la parte del departamento del texto del piso antes de limpiarlo
+            pisoSinDepto = piso.replace(pattern, '').trim();
+            deptoEncontrado = true;
+            console.log(`✅ Departamento extraído del piso para pedido ${numeroOrden}: "${departamentoNormalizado}" (piso original: "${piso}")`);
+            break;
+          }
+        }
+      }
+      
+      // Limpiar el campo piso (sin la parte del departamento si se extrajo)
+      const pisoNormalizado = limpiarPisoDepto(pisoSinDepto);
+      
+      // Si no se encontró departamento explícito, usar vacío (no copiar el piso completo)
+      if (!deptoEncontrado) {
+        departamentoNormalizado = '';
+        console.log(`ℹ️ No se encontró departamento explícito en el piso para pedido ${numeroOrden}, usando campo vacío`);
+      }
 
       // Procesar número de calle - debe ser SOLO números
       let numeroCalleVentas = numero.trim();
@@ -2237,12 +2384,27 @@ export const processVentasOrders = async (
         }
       }
 
+      // Validar formato de Provincia / Localidad / CP
+      if (!formatoProvinciaLocalidadCP || formatoProvinciaLocalidadCP.trim() === '') {
+        console.warn(`⚠️ Pedido ${numeroOrden}: Formato de Provincia/Localidad/CP vacío, omitiendo pedido`);
+        contadorNoProcesados++;
+        continue;
+      }
+      
+      // Validar que el formato tenga exactamente 3 partes separadas por /
+      const partesFormato = formatoProvinciaLocalidadCP.split('/').map(p => p.trim());
+      if (partesFormato.length !== 3) {
+        console.warn(`⚠️ Pedido ${numeroOrden}: Formato de Provincia/Localidad/CP inválido: "${formatoProvinciaLocalidadCP}"`);
+        contadorNoProcesados++;
+        continue;
+      }
+      
       domicilios.push({
         ...baseData,
         'Calle *\nEj: ': calleNormalizada,
         'Número *\nEj: ': numeroCalleVentas,
         'Piso\nEj: ': pisoNormalizado,
-        'Departamento\nEj: ': pisoNormalizado,
+        'Departamento\nEj: ': departamentoNormalizado,
         'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657': formatoProvinciaLocalidadCP,
         'Observaciones\nEj: ': '',
       });
