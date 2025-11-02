@@ -60,12 +60,18 @@ class CoinbaseCommerceService {
 
   constructor() {
     // La API key se debe obtener de las variables de entorno
-    this.apiKey = import.meta.env.VITE_COINBASE_COMMERCE_API_KEY || '';
+    const rawApiKey = import.meta.env.VITE_COINBASE_COMMERCE_API_KEY;
+    console.log('🔍 [CoinbaseCommerce] Raw API key from env:', rawApiKey ? `${rawApiKey.substring(0, 10)}...` : 'undefined');
+    
+    this.apiKey = rawApiKey || '';
     
     if (!this.apiKey) {
-      console.warn('⚠️ [CoinbaseCommerce] API Key no configurada');
+      console.error('⚠️ [CoinbaseCommerce] API Key no configurada');
+      console.error('   Verifica que VITE_COINBASE_COMMERCE_API_KEY esté configurada en Vercel');
     } else {
-      console.log('✅ [CoinbaseCommerce] API Key cargada:', this.apiKey.substring(0, 10) + '...');
+      console.log('✅ [CoinbaseCommerce] API Key cargada correctamente:', this.apiKey.substring(0, 15) + '...');
+      console.log('📏 [CoinbaseCommerce] Longitud de API key:', this.apiKey.length);
+      
       // Validar que sea una API key de Coinbase Commerce (no de CDP)
       if (this.apiKey.startsWith('prj_') || this.apiKey.includes('coinbase.com')) {
         console.error('❌ [CoinbaseCommerce] Esta parece ser una API key del CDP, no de Coinbase Commerce');
@@ -99,10 +105,25 @@ class CoinbaseCommerceService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ [CoinbaseCommerce] Error creando charge:', errorText);
+        console.error('❌ [CoinbaseCommerce] Error creando charge:');
+        console.error('   Status:', response.status, response.statusText);
+        console.error('   Response:', errorText);
+        console.error('   API Key usada:', this.apiKey.substring(0, 20) + '...');
+        
+        let errorMessage = `Error ${response.status}: ${response.statusText}`;
+        
+        // Mensajes más específicos según el código de error
+        if (response.status === 401) {
+          errorMessage = 'API Key inválida o expirada';
+        } else if (response.status === 403) {
+          errorMessage = 'API Key sin permisos o cuenta no verificada';
+        } else if (response.status === 404) {
+          errorMessage = 'Endpoint no encontrado. Verifica la URL de la API';
+        }
+        
         return {
           success: false,
-          error: `Error al crear charge: ${response.statusText}`
+          error: errorMessage
         };
       }
 
