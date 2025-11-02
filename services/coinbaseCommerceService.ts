@@ -64,6 +64,13 @@ class CoinbaseCommerceService {
     
     if (!this.apiKey) {
       console.warn('⚠️ [CoinbaseCommerce] API Key no configurada');
+    } else {
+      console.log('✅ [CoinbaseCommerce] API Key cargada:', this.apiKey.substring(0, 10) + '...');
+      // Validar que sea una API key de Coinbase Commerce (no de CDP)
+      if (this.apiKey.startsWith('prj_') || this.apiKey.includes('coinbase.com')) {
+        console.error('❌ [CoinbaseCommerce] Esta parece ser una API key del CDP, no de Coinbase Commerce');
+        console.error('   La API key de Coinbase Commerce debe obtenerse de commerce.coinbase.com');
+      }
     }
   }
 
