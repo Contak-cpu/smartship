@@ -9,6 +9,7 @@ Una suite completa de herramientas profesionales para gestionar y optimizar tu e
 - **🔄 SmartShip**: Transforma archivos CSV de Tiendanube al formato Andreani
 - **📍 Integración SKU**: Integra SKUs en rótulos de envío de Andreani (Nivel Admin)
 - **💼 Gastos Personalizados**: Agrega y gestiona gastos adicionales en tus cálculos
+- **💰 Pagos con Criptomonedas**: Integración con Coinbase Commerce para pagos instantáneos
 - **💻 Interfaz Moderna**: Diseño responsive y armónico con Tailwind CSS
 - **🔐 Sistema de Niveles**: Control de acceso por planes (Invitado, Starter, Basic, Pro)
 - **⚡ Procesamiento Rápido**: Optimizado para manejar grandes volúmenes de datos
@@ -64,13 +65,19 @@ El proyecto está configurado para deploy automático en Vercel:
 - ✅ **Rutas SPA**: Configuradas para React Router
 - ✅ **Assets optimizados**: Chunks separados para mejor performance
 
-### Variables de Entorno (Opcional)
-Si necesitas configurar variables de entorno en Vercel:
+### Variables de Entorno Requeridas
+Para producción, configura estas variables en Vercel:
+
 ```
-NODE_ENV=production
-VITE_APP_NAME=FACIL.UNO - Herramientas para Ecommerce
-VITE_APP_VERSION=2.0.0
+VITE_SUPABASE_URL=tu_url_de_supabase
+VITE_SUPABASE_ANON_KEY=tu_clave_anon_de_supabase
+VITE_COINBASE_COMMERCE_API_KEY=tu_api_key_de_coinbase_commerce
 ```
+
+**Guías de configuración:**
+- [Configuración de Supabase](./docs/SUPABASE_SETUP.md)
+- [Configuración de Coinbase Commerce](./docs/COINBASE_COMMERCE_SETUP.md)
+- [Configurar API Key en Vercel](./docs/COINFIGURAR_API_KEY_COINBASE.md)
 
 ## 📋 Cómo Usar la Aplicación
 
@@ -164,6 +171,11 @@ Si encuentras problemas con caracteres especiales:
 ### Problemas de Rendimiento
 - Para archivos muy grandes (>10,000 pedidos), considera procesar en lotes
 - La aplicación está optimizada para manejar archivos de hasta 50MB
+
+### Error de Configuración de Coinbase Commerce
+- Verifica que `VITE_COINBASE_COMMERCE_API_KEY` esté configurada en Vercel
+- Verifica que hayas hecho redeploy después de agregar la variable
+- Ver [Configurar API Key en Vercel](./docs/COINFIGURAR_API_KEY_COINBASE.md)
 
 ## 🤝 Contribuciones
 

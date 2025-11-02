@@ -7,6 +7,7 @@ Para que la aplicación funcione correctamente con Supabase, necesitas crear un 
 ```env
 VITE_SUPABASE_URL=https://rycifekzklqsnuczawub.supabase.co
 VITE_SUPABASE_ANON_KEY=tu_clave_anon_aqui
+VITE_COINBASE_COMMERCE_API_KEY=tu_api_key_aqui
 ```
 
 ## 🔧 Pasos para Configurar
@@ -31,7 +32,10 @@ Pega las credenciales en tu archivo `.env.local`:
 ```env
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_COINBASE_COMMERCE_API_KEY=tu_api_key_de_coinbase_commerce
 ```
+
+**Nota:** Para obtener la API key de Coinbase Commerce, sigue la guía en `docs/COINBASE_COMMERCE_SETUP.md`
 
 ### 4. Reiniciar el servidor de desarrollo
 
@@ -74,6 +78,7 @@ Para configurar las variables en Vercel:
 - [Documentación de Supabase](https://supabase.com/docs)
 - [Variables de entorno en Vite](https://vitejs.dev/guide/env-and-mode.html)
 - [Dashboard de Supabase](https://supabase.com/dashboard)
+- [Configuración de Coinbase Commerce](./COINBASE_COMMERCE_SETUP.md)
 
 ---
 

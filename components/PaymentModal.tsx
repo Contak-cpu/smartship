@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { coinbaseCommerceService } from '../services/coinbaseCommerceService';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -24,16 +25,57 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [chargeId, setChargeId] = useState<string | null>(null);
+  const [chargeUrl, setChargeUrl] = useState<string | null>(null);
+  const [isCreatingCharge, setIsCreatingCharge] = useState(false);
+
+  // Crear charge en Coinbase Commerce cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && !chargeId) {
+      createCharge();
+    }
+  }, [isOpen]);
+
+  const createCharge = async () => {
+    setIsCreatingCharge(true);
+    setError('');
+
+    try {
+      console.log('💰 [PaymentModal] Creando charge en Coinbase Commerce');
+      
+      const result = await coinbaseCommerceService.createCharge({
+        name: `Plan ${selectedPlan} - FACIL.UNO`,
+        description: `Pago mensual del plan ${selectedPlan} en FACIL.UNO. Acceso completo a todas las funciones del plan.`,
+        local_price: {
+          amount: planPrice.toString(),
+          currency: 'USD',
+        },
+        pricing_type: 'fixed_price',
+        metadata: {
+          plan: selectedPlan,
+          plan_price: planPrice.toString(),
+        },
+      });
+
+      if (result.success && result.charge) {
+        console.log('✅ [PaymentModal] Charge creado:', result.charge.id);
+        setChargeId(result.charge.id);
+        setChargeUrl(result.charge.hosted_url);
+      } else {
+        console.error('❌ [PaymentModal] Error creando charge:', result.error);
+        setError('Error al generar el link de pago. Por favor intenta nuevamente.');
+      }
+    } catch (error: any) {
+      console.error('❌ [PaymentModal] Excepción al crear charge:', error);
+      setError('Error inesperado al generar el link de pago.');
+    } finally {
+      setIsCreatingCharge(false);
+    }
+  };
 
   const validateForm = () => {
     if (!email || !password || !username) {
       setError('Por favor completa todos los campos');
-      return false;
-    }
-
-    if (!paymentConfirmed) {
-      setError('Debes confirmar que realizaste el pago');
       return false;
     }
 
@@ -65,10 +107,29 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setError('');
 
     try {
-      console.log('📝 [PaymentModal] Registrando usuario con pago pendiente:', email);
+      // Verificar el estado del charge antes de registrar
+      if (chargeId) {
+        console.log('🔍 [PaymentModal] Verificando estado del charge:', chargeId);
+        const chargeResult = await coinbaseCommerceService.getCharge(chargeId);
+
+        if (chargeResult.success && chargeResult.charge) {
+          const isCompleted = coinbaseCommerceService.isChargeCompleted(chargeResult.charge);
+          const isPending = coinbaseCommerceService.isChargePending(chargeResult.charge);
+          
+          console.log('📊 [PaymentModal] Estado del charge:', chargeResult.charge.timeline[chargeResult.charge.timeline.length - 1]?.status);
+
+          if (!isCompleted && !isPending) {
+            setError('El pago no ha sido completado. Por favor completa el pago primero.');
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
+      console.log('📝 [PaymentModal] Registrando usuario:', email);
       
-      // Registrar usuario con pago pendiente
-      const { error: signUpError } = await signUp(email, password, username, selectedPlan, 'pending');
+      // Registrar usuario
+      const { error: signUpError } = await signUp(email, password, username, selectedPlan, 'approved');
 
       if (signUpError) {
         console.error('❌ [PaymentModal] Error en registro:', signUpError);
@@ -81,7 +142,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         
         setError(errorMessage);
       } else {
-        console.log('✅ [PaymentModal] Usuario registrado exitosamente con pago pendiente');
+        console.log('✅ [PaymentModal] Usuario registrado exitosamente');
         
         setSuccess(true);
         
@@ -105,7 +166,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       setConfirmPassword('');
       setUsername('');
       setError('');
-      setPaymentConfirmed(false);
+      setChargeId(null);
+      setChargeUrl(null);
       onClose();
     }
   };
@@ -172,20 +234,48 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Columna izquierda - QR */}
+            {/* Columna izquierda - Coinbase Commerce Payment */}
             <div>
               <h3 className="text-2xl font-bold text-center text-white mb-4">
-                Realiza el pago
+                Realiza el pago con criptomonedas
               </h3>
               
-              {/* QR Code */}
+              {/* Logo Coinbase Commerce */}
               <div className="flex justify-center mb-6">
-                <div className="bg-white p-4 rounded-xl shadow-2xl">
-                  <img 
-                    src="/binance-qr.png" 
-                    alt="Binance QR Code" 
-                    className="w-64 h-64"
-                  />
+                <div className="bg-white p-8 rounded-xl shadow-2xl">
+                  {isCreatingCharge ? (
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-gray-700 font-semibold">Generando link de pago...</p>
+                    </div>
+                  ) : chargeUrl ? (
+                    <div className="flex flex-col items-center gap-4">
+                      <img 
+                        src="https://www.coinbase.com/assets/coinbase-commerce-logo.svg" 
+                        alt="Coinbase Commerce" 
+                        className="w-48 h-12"
+                      />
+                      <button
+                        onClick={() => window.open(chargeUrl, '_blank')}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16c-.169 0-.341.021-.515.064v-.001c-1.003.18-1.851 1.057-2.136 2.163-.278 1.056-.165 2.186.293 3.206.45.999 1.181 1.81 2.09 2.359.912.55 1.978.824 3.021.834v.001c.169 0 .34-.018.511-.055-.892-1.736-1.577-3.478-2.037-5.233-.478-1.813-.723-3.609-.753-5.337h-.004c-.272-.054-.549-.091-.838-.099h-.22zm-1.183 7.226c-.754.481-1.69.739-2.673.739-.97 0-1.888-.253-2.616-.714-.73-.461-1.348-1.152-1.803-2.07-.452-.911-.635-2.013-.524-3.177.107-1.124.544-2.152 1.284-2.978.728-.816 1.704-1.38 2.828-1.61.226-.046.459-.071.693-.071 1.696 0 3.234 1.046 3.834 2.653.403 1.088.462 2.275.169 3.542-.29 1.246-.904 2.428-1.792 3.476-.113.132-.227.266-.34.4-.338.402-.701.758-1.064 1.31z"/>
+                        </svg>
+                        Pagar con Coinbase Commerce
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <p className="text-red-600 font-semibold">Error generando link de pago</p>
+                      <button
+                        onClick={createCharge}
+                        className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                      >
+                        Reintentar
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -208,10 +298,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   Pasos a seguir
                 </h4>
                 <ol className="text-gray-300 text-xs space-y-2 list-decimal list-inside">
-                  <li>Escanea el código QR con Binance</li>
-                  <li>Realiza el pago de ${planPrice} USD</li>
-                  <li>Completa tus datos a la derecha</li>
-                  <li>Confirma que realizaste el pago</li>
+                  <li>Haz clic en el botón de arriba para pagar</li>
+                  <li>Selecciona tu criptomoneda preferida</li>
+                  <li>Completa el pago y vuelve aquí</li>
+                  <li>Completa tus datos y confirma</li>
                 </ol>
               </div>
             </div>
@@ -282,21 +372,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     className="w-full bg-gray-800 border-2 border-green-500/50 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors"
                     disabled={isLoading}
                   />
-                </div>
-
-                {/* Checkbox de confirmación de pago */}
-                <div className="flex items-center gap-3 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="paymentConfirmed"
-                    checked={paymentConfirmed}
-                    onChange={(e) => setPaymentConfirmed(e.target.checked)}
-                    className="w-5 h-5 text-green-600 bg-gray-800 border-gray-600 rounded focus:ring-green-500"
-                    disabled={isLoading}
-                  />
-                  <label htmlFor="paymentConfirmed" className="text-gray-300 text-sm">
-                    Confirmo que he realizado el pago a través de Binance
-                  </label>
                 </div>
 
                 {/* Error message */}
