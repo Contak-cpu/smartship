@@ -232,3 +232,5 @@ class CoinbaseCommerceService {
 // Exportar instancia singleton
 export const coinbaseCommerceService = new CoinbaseCommerceService();
 
+console.log('🚀 [CoinbaseCommerce] Servicio inicializado');
+
