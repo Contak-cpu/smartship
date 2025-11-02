@@ -480,9 +480,10 @@ export const processOrdersCorreoArgentino = async (
         const provinciaLimpia = fixEncoding(provincia);
         
         // Lógica para determinar la localidad a buscar usando valores ya limpiados
+        // PRIORIZAR CIUDAD sobre localidad - la ciudad suele ser más específica y confiable
         // Si la ciudad es "Capital" y la provincia/localidad es el nombre de la provincia (ej: Córdoba),
         // entonces usar el nombre de la provincia como localidad (CORDOBA en el CSV)
-        let localidadParaBusqueda = localidadLimpia || ciudadLimpia || '';
+        let localidadParaBusqueda = ciudadLimpia || localidadLimpia || '';
         
         const ciudadNormalizada = ciudadLimpia ? normalizarNombre(ciudadLimpia).toUpperCase() : '';
         const localidadNormalizada = localidadLimpia ? normalizarNombre(localidadLimpia).toUpperCase() : '';
