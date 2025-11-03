@@ -67,14 +67,14 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md mx-auto bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 border border-gray-700/50 animate-fadeIn">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ backgroundColor: '#b5b5b5' }}>
+      <div className="w-full max-w-md mx-auto rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 border-2 border-blue-400 animate-fadeIn" style={{ backgroundColor: '#3f3f3f' }}>
         {/* Botón Volver */}
         {onGoBack && (
           <div className="flex justify-start">
             <button
               onClick={onGoBack}
-              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm"
+              className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors text-sm"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -89,16 +89,22 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
             <img 
               src="/facil-uno.png" 
               alt="FACIL.UNO Logo" 
-              className="w-80 h-80 drop-shadow-lg"
+              className="drop-shadow-lg"
+              style={{ 
+                width: '200px', 
+                height: 'auto', 
+                maxWidth: '100%',
+                objectFit: 'contain',
+                display: 'block'
+              }}
             />
           </div>
-          <p className="text-blue-400 font-medium text-sm sm:text-base">Herramientas para Ecommerce</p>
-          <p className="text-gray-500 text-xs sm:text-sm mt-2">Inicia sesión para continuar</p>
+          <p className="text-gray-300 text-xs sm:text-sm mt-2">Inicia sesión para continuar</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-200 mb-2">
               Email
             </label>
             <input
@@ -106,7 +112,8 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+              className="w-full px-4 py-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300"
+              style={{ backgroundColor: '#2a2a2a', border: '1px solid #4a4a4a' }}
               placeholder="tu@email.com"
               autoComplete="email"
               disabled={isLoading}
@@ -114,7 +121,7 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-200 mb-2">
               Contraseña
             </label>
             <input
@@ -122,7 +129,8 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+              className="w-full px-4 py-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300"
+              style={{ backgroundColor: '#2a2a2a', border: '1px solid #4a4a4a' }}
               placeholder="Ingresa tu contraseña"
               autoComplete="current-password"
               disabled={isLoading}
@@ -138,10 +146,11 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 disabled:transform-none flex items-center justify-center text-sm sm:text-base relative overflow-hidden"
+            className="w-full disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 disabled:transform-none flex items-center justify-center text-sm sm:text-base relative overflow-hidden hover:opacity-90"
+            style={{ backgroundColor: isLoading ? '#4a4a4a' : '#1e40af' }}
           >
             {isLoading && (
-              <div className="absolute inset-0 bg-blue-700 animate-pulse" />
+              <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: '#4a4a4a' }} />
             )}
             <span className="relative flex items-center">
               {isLoading ? (
@@ -174,15 +183,7 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
           </button>
         </div>
 
-        {/* Info de acceso temporal (eliminar en producción) */}
-        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 text-xs text-gray-400">
-          <p className="text-center">
-            💡 <span className="text-blue-400 font-medium">Para testing:</span> Crea tu cuenta en Supabase Dashboard
-          </p>
-        </div>
-
-
-        <footer className="text-center mt-8 text-gray-500 text-sm">
+        <footer className="text-center mt-8 text-gray-300 text-sm">
           <p>Herramientas profesionales para tu ecommerce.</p>
         </footer>
       </div>
