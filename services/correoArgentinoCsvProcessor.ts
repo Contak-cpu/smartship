@@ -480,10 +480,9 @@ export const processOrdersCorreoArgentino = async (
         const provinciaLimpia = fixEncoding(provincia);
         
         // Lógica para determinar la localidad a buscar usando valores ya limpiados
-        // PRIORIZAR CIUDAD sobre localidad - la ciudad suele ser más específica y confiable
-        // Si la ciudad es "Capital" y la provincia/localidad es el nombre de la provincia (ej: Córdoba),
-        // entonces usar el nombre de la provincia como localidad (CORDOBA en el CSV)
-        let localidadParaBusqueda = ciudadLimpia || localidadLimpia || '';
+        // PRIORIZAR LOCALIDAD sobre ciudad - la localidad es más específica para Correo Argentino
+        // Si la localidad está vacía, usar ciudad como fallback
+        let localidadParaBusqueda = localidadLimpia || ciudadLimpia || '';
         
         const ciudadNormalizada = ciudadLimpia ? normalizarNombre(ciudadLimpia).toUpperCase() : '';
         const localidadNormalizada = localidadLimpia ? normalizarNombre(localidadLimpia).toUpperCase() : '';
@@ -500,7 +499,7 @@ export const processOrdersCorreoArgentino = async (
           console.log(`   ℹ️ Localidad es "Capital", usando provincia "${provinciaLimpia}" como localidad`);
         }
         // Si la localidad está vacía pero hay ciudad y no es "Capital", usar ciudad
-        else if (!localidadParaBusqueda && ciudadLimpia && ciudadNormalizada !== 'CAPITAL') {
+        else if (!localidadLimpia && ciudadLimpia && ciudadNormalizada !== 'CAPITAL') {
           localidadParaBusqueda = ciudadLimpia;
         }
         // Si la localidad es igual a la provincia (ej: Córdoba = Córdoba), usar la provincia directamente
