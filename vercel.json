@@ -34,10 +34,17 @@
       }
     },
     {
+      "src": "/facil-uno.png",
+      "dest": "/facil-uno.png",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      }
+    },
+    {
       "src": "/(.*\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))$",
       "dest": "/$1",
       "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
+        "Cache-Control": "public, max-age=86400"
       }
     },
     {
