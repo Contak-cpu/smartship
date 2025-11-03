@@ -87,7 +87,7 @@ export const Login: React.FC<LoginProps> = ({ onGoBack, onLogin }) => {
         <div className="text-center">
           <div className="flex justify-center mb-3">
             <img 
-              src="/facil-uno.png" 
+              src="/facil-uno.png?v=2" 
               alt="FACIL.UNO Logo" 
               className="drop-shadow-lg"
               style={{ 

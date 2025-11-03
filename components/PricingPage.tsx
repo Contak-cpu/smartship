@@ -88,7 +88,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
             {/* Logo arriba del título */}
             <div className="flex justify-center items-center mb-0.5" style={{ height: 'auto', minHeight: '0' }}>
               <img 
-                src="/facil-uno.png" 
+                src="/facil-uno.png?v=2" 
                 alt="FACIL.UNO Logo" 
                 className="drop-shadow-lg"
                 style={{ 
