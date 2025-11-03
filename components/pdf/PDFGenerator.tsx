@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 // Importar el worker directamente desde el paquete (Vite lo manejará correctamente)
 // @ts-ignore - pdfjs-dist puede no tener tipos completos para el worker
@@ -74,30 +74,159 @@ const PDFGenerator = () => {
     setTimeout(() => setMessage(null), 5000);
   };
 
+  // Función para normalizar texto eliminando TODOS los caracteres inválidos para WinAnsi
+  // Elimina acentos, tildes, emojis y cualquier carácter especial - solo deja ASCII básico
+  const normalizarTextoWinAnsi = (text: string): string => {
+    if (!text) return '';
+    
+    try {
+      // Paso 1: Convertir a string
+      let normalized = String(text);
+      
+      // Paso 2: Normalizar y descomponer TODOS los caracteres (NFKD es más agresivo)
+      // Esto separa acentos de letras base (ej: "é" -> "e" + "́")
+      normalized = normalized.normalize('NFKD');
+      
+      // Paso 3: Eliminar TODAS las marcas diacríticas (acentos, tildes, etc.)
+      // Esto incluye U+0301 (acento agudo combinado) y todas las demás marcas
+      normalized = normalized.replace(/[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/g, '');
+      
+      // Paso 4: Eliminar emojis y símbolos especiales
+      normalized = normalized.replace(/[\u{1F300}-\u{1F9FF}]/gu, ''); // Emojis (🚚🎁⚡)
+      normalized = normalized.replace(/[\u{2600}-\u{26FF}]/gu, ''); // Símbolos varios
+      normalized = normalized.replace(/[\u{2700}-\u{27BF}]/gu, ''); // Símbolos decorativos
+      
+      // Paso 5: Reemplazar caracteres acentuados comunes por sus equivalentes sin acento
+      // Esto cubre casos donde la normalización no funcionó correctamente
+      normalized = normalized
+        .replace(/[áàäâãåăą]/gi, 'a')
+        .replace(/[éèëêęě]/gi, 'e')
+        .replace(/[íìïîįı]/gi, 'i')
+        .replace(/[óòöôõø]/gi, 'o')
+        .replace(/[úùüûů]/gi, 'u')
+        .replace(/[ýÿ]/gi, 'y')
+        .replace(/[ñň]/gi, 'n')
+        .replace(/[çč]/gi, 'c');
+      
+      // Paso 6: Filtrar carácter por carácter - SOLO permitir ASCII básico (0x20-0x7E)
+      // Esto asegura compatibilidad total con WinAnsi
+      // Permitir: letras (A-Z, a-z), números (0-9), espacios (0x20) y caracteres básicos de puntuación
+      let result = '';
+      for (let i = 0; i < normalized.length; i++) {
+        const char = normalized[i];
+        const charCode = char.charCodeAt(0);
+        // Solo permitir caracteres ASCII imprimibles (0x20-0x7E) + algunos caracteres extendidos comunes
+        // Excluir explícitamente caracteres combinados y fuera del rango seguro
+        if (charCode >= 0x20 && charCode <= 0x7E) {
+          // ASCII básico imprimible (espacios, letras, números, puntuación básica)
+          result += char;
+        } else if (charCode === 0x0A || charCode === 0x0D) {
+          // Permitir saltos de línea básicos
+          result += ' ';
+        }
+        // Todos los demás caracteres se ignoran (incluyendo 0x0301, emojis, acentos, etc.)
+      }
+      
+      // Paso 7: Limpiar espacios múltiples y espacios al inicio/final
+      result = result.replace(/\s+/g, ' ').trim();
+      
+      return result;
+    } catch (error) {
+      console.error('Error en normalizarTextoWinAnsi:', error);
+      // Fallback: eliminar todo lo que no sea ASCII básico
+      return String(text).replace(/[^\x20-\x7E]/g, '').trim().replace(/\s+/g, ' ');
+    }
+  };
+
   const handleCSVUpload = (file: File) => {
     setCsvFileName(file.name);
     Papa.parse(file, {
       complete: (results) => {
         const data = results.data as string[][];
-        setCsvData(data);
         
-        // Auto-seleccionar columna SKU si existe
-        const headers = data[0];
-        const skuIndex = headers.findIndex(header => 
-          header.toLowerCase().includes('sku')
+        // Normalizar todos los datos del CSV para eliminar caracteres inválidos
+        const dataNormalizada = data.map(row => 
+          row.map(cell => normalizarTextoWinAnsi(cell || ''))
         );
-        if (skuIndex !== -1) {
-          setSelectedColumn(skuIndex);
+        
+        setCsvData(dataNormalizada);
+        
+        // Auto-seleccionar columna "Lineitem sku" si existe (usar headers normalizados)
+        const headers = dataNormalizada[0];
+        // Buscar específicamente "Lineitem sku" primero, luego cualquier columna con "sku"
+        const lineitemSkuIndex = headers.findIndex(header => 
+          header.toLowerCase().includes('lineitem sku') || 
+          header.toLowerCase().includes('lineitem_sku')
+        );
+        if (lineitemSkuIndex !== -1) {
+          setSelectedColumn(lineitemSkuIndex);
+        } else {
+          // Fallback: buscar cualquier columna con "sku"
+          const skuIndex = headers.findIndex(header => 
+            header.toLowerCase().includes('sku')
+          );
+          if (skuIndex !== -1) {
+            setSelectedColumn(skuIndex);
+          }
         }
         
         // Auto-seleccionar columna Número de orden si existe
-        const orderIndex = headers.findIndex(header => 
-          header.toLowerCase().includes('número de orden') || 
-          header.toLowerCase().includes('numero de orden') ||
-          header.toLowerCase().includes('orden')
-        );
+        // IMPORTANTE: En CSV de Shopify, "Name" (primera columna, índice 0) contiene números como "#3579"
+        console.log('🔍 Buscando columna de número de orden...');
+        console.log('📋 Primeras 10 columnas:', headers.slice(0, 10).map((h, i) => `${i}: "${h}"`).join(', '));
+        
+        let orderIndex = -1;
+        
+        // Prioridad 1: "Name" (Shopify - primera columna con números de orden)
+        const nameIndex = headers.findIndex((header, idx) => {
+          const h = header.toLowerCase().trim();
+          // Si es "Name" y está en las primeras columnas, probablemente sea la correcta
+          return h === 'name' && idx < 5;
+        });
+        
+        if (nameIndex !== -1) {
+          orderIndex = nameIndex;
+          console.log(`✅ Encontrada columna "Name" en índice ${nameIndex}`);
+        }
+        
+        // Prioridad 2: "Número de orden" o variantes
+        if (orderIndex === -1) {
+          orderIndex = headers.findIndex(header => {
+            const h = header.toLowerCase().trim();
+            return h.includes('número de orden') || 
+                   h.includes('numero de orden');
+          });
+          if (orderIndex !== -1) {
+            console.log(`✅ Encontrada columna "Número de orden" en índice ${orderIndex}`);
+          }
+        }
+        
+        // Prioridad 3: Cualquier columna con "orden", "number" o "id"
+        if (orderIndex === -1) {
+          orderIndex = headers.findIndex(header => {
+            const h = header.toLowerCase().trim();
+            return h.includes('orden') ||
+                   h.includes('number') ||
+                   h === 'id';
+          });
+          if (orderIndex !== -1) {
+            console.log(`⚠️ Encontrada columna genérica en índice ${orderIndex}`);
+          }
+        }
+        
         if (orderIndex !== -1) {
           setSelectedOrderColumn(orderIndex);
+          console.log(`✅ Columna de orden seleccionada: "${headers[orderIndex]}" (índice ${orderIndex})`);
+          // Mostrar algunas filas de ejemplo de esa columna
+          const dataNormalizada = data.map(row => 
+            row.map(cell => normalizarTextoWinAnsi(cell || ''))
+          );
+          const sampleRows = dataNormalizada.slice(1, 4).map(r => r[orderIndex]);
+          console.log(`📊 Ejemplo de valores en esa columna (primeras 3 filas):`, sampleRows);
+        } else {
+          console.warn('⚠️ No se encontró columna de número de orden, usando columna 0 por defecto');
+          console.log(`📋 Todas las columnas:`, headers.map((h, i) => `${i}: "${h}"`).join(', '));
+          setSelectedOrderColumn(0);
         }
         
         // Auto-seleccionar columna Cantidad del producto si existe
@@ -122,7 +251,7 @@ const PDFGenerator = () => {
     const arrayBuffer = await file.arrayBuffer();
     
     // Crear una copia independiente para pdf-lib
-    const pdfBytesForLib = new Uint8Array(arrayBuffer.slice());
+    const pdfBytesForLib = new Uint8Array(arrayBuffer);
     
     setPdfTemplate(arrayBuffer);
     setPdfTemplateBytes(new Uint8Array(arrayBuffer));
@@ -397,50 +526,177 @@ const PDFGenerator = () => {
   };
 
   const generatePDFs = async () => {
+    // Usar múltiples métodos de logging para asegurar que se vean
+    const log = (...args: any[]) => {
+      console.log(...args);
+      console.error('LOG:', ...args); // También como error para forzar visibilidad
+      console.warn('LOG:', ...args); // Y como warning
+    };
+    
+    log('🚀 ===== INICIANDO GENERACIÓN DE PDF =====');
+    
+    // También imprimir directamente en el DOM
+    const debugDiv = document.createElement('div');
+    debugDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:red;color:white;padding:20px;z-index:9999;font-size:14px;max-width:300px;';
+    debugDiv.id = 'pdf-debug-info';
+    document.body.appendChild(debugDiv);
+    
+    const updateDebug = (text: string) => {
+      const div = document.getElementById('pdf-debug-info');
+      if (div) {
+        div.innerHTML += '<br>' + text;
+      }
+    };
+    
+    updateDebug('Función iniciada');
+    
+    log('📋 Estado inicial:', {
+      tienePDF: !!originalPdfDoc,
+      tieneCSV: csvData.length > 0,
+      filasCSV: csvData.length,
+      columnasSeleccionadas: {
+        sku: selectedColumn,
+        orden: selectedOrderColumn,
+        cantidad: selectedQuantityColumn
+      },
+      paginasPDF: pdfPagesData.length
+    });
+    
+    updateDebug(`CSV: ${csvData.length} filas, PDF: ${pdfPagesData.length} páginas`);
+
     if (!originalPdfDoc || csvData.length < 2) {
+      log('❌ Faltan archivos necesarios');
+      updateDebug('ERROR: Faltan archivos');
       showMessage('error', 'Carga el CSV y el PDF antes de continuar');
       return;
     }
 
+    updateDebug('Archivos OK, procesando...');
     setProcessing(true);
     const headers = csvData[0];
     const rows = csvData.slice(1);
 
+    // ✅ Verificar valores de configuración al inicio
+    log('📐 CONFIGURACIÓN DE POSICIÓN:', {
+      posX: posX,
+      posY: posY,
+      fontSize: fontSize
+    });
+    updateDebug(`Config: X=${posX}px, Y=${posY}px, Tamaño=${fontSize}pt`);
+
+    log('📊 Headers del CSV:', headers);
+    log('📊 Columna SKU seleccionada:', selectedColumn, `("${headers[selectedColumn]}")`);
+    log('📊 Columna ORDEN seleccionada:', selectedOrderColumn, `("${headers[selectedOrderColumn]}")`);
+    log('📊 Columna CANTIDAD seleccionada:', selectedQuantityColumn, `("${headers[selectedQuantityColumn] || 'N/A'}")`);
+    
+    updateDebug(`SKU col: ${selectedColumn}, ORDEN col: ${selectedOrderColumn}`);
+
     try {
-      console.log('Iniciando generación de PDF combinado...');
+      log('🔄 Iniciando generación de PDF combinado...');
+      updateDebug('Creando PDF documento...');
 
       const originalPages = originalPdfDoc.getPages();
       const finalPdfDoc = await PDFDocument.create();
+      
+      // Embed una fuente estándar para asegurar que el texto se renderice correctamente
+      const helveticaFont = await finalPdfDoc.embedFont(StandardFonts.Helvetica);
+      log('✅ Fuente Helvetica embebida correctamente');
       
       const copiedPages = await finalPdfDoc.copyPages(originalPdfDoc, 
         originalPages.map((_: any, index: number) => index)
       );
       
+      // Agregar las páginas copiadas al documento final
       copiedPages.forEach((page: any) => finalPdfDoc.addPage(page));
+      
+      log(`✅ ${copiedPages.length} páginas copiadas al nuevo documento`);
+      log(`📊 Páginas en finalPdfDoc después de agregar: ${finalPdfDoc.getPageCount()}`);
+      log(`🔗 Usando referencias directas de copiedPages para dibujar texto`);
 
       // Array para almacenar stock despachado
       const stockDespachado: StockDespachado[] = [];
       const hoy = new Date().toISOString().split('T')[0];
 
+      log(`📄 Procesando ${pdfPagesData.length} páginas del PDF...`);
+      updateDebug(`Procesando ${pdfPagesData.length} páginas...`);
+      
+      let paginasConTexto = 0;
+      
       for (let i = 0; i < pdfPagesData.length; i++) {
         const pageData = pdfPagesData[i];
         const orderNumber = pageData.orderNumber;
         
-        if (!orderNumber) continue;
+        log(`\n📄 === PÁGINA ${i + 1}/${pdfPagesData.length} ===`);
+        log(`   Número de orden del PDF: "${orderNumber}"`);
+        updateDebug(`Página ${i + 1}: Orden "${orderNumber}"`);
+        
+        if (!orderNumber) {
+          log(`   ⚠️ Sin número de orden, saltando página`);
+          continue;
+        }
 
-        const matchingRows = rows.filter(row => {
+        // Log para debugging - SIEMPRE mostrar para primera página
+        if (i === 0) {
+          log(`🔍 Buscando orden "${orderNumber}" en columna ${selectedOrderColumn} ("${headers[selectedOrderColumn]}")`);
+          log(`📊 Primeras 10 filas de esa columna:`, rows.slice(0, 10).map((r, idx) => `Fila ${idx + 1}: "${r[selectedOrderColumn]}"`));
+          log(`📊 Valores únicos en columna ${selectedOrderColumn} (primeros 10):`, 
+            [...new Set(rows.slice(0, 20).map(r => r[selectedOrderColumn]).filter(Boolean))].slice(0, 10)
+          );
+        }
+        
+        const matchingRows = rows.filter((row, rowIdx) => {
           const rowOrderNumber = row[selectedOrderColumn];
-          return rowOrderNumber && rowOrderNumber.trim() === orderNumber.trim();
+          if (!rowOrderNumber) {
+            if (i === 0 && rowIdx < 5) {
+              log(`   Fila ${rowIdx + 1}: valor vacío en columna ${selectedOrderColumn}`);
+            }
+            return false;
+          }
+          
+          // Normalizar el número de orden del CSV: quitar "#", espacios y cualquier carácter no numérico al inicio
+          let rowOrderNormalized = String(rowOrderNumber).trim();
+          // Quitar "#" si está al inicio
+          rowOrderNormalized = rowOrderNormalized.replace(/^#\s*/, '').trim();
+          // Extraer solo los números (por si hay texto adicional)
+          const rowOrderNumbers = rowOrderNormalized.match(/\d+/);
+          const csvOrderClean = rowOrderNumbers ? rowOrderNumbers[0] : rowOrderNormalized;
+          
+          // Normalizar el número de orden del PDF (solo números)
+          const pdfOrderNormalized = orderNumber.trim();
+          const pdfOrderNumbers = pdfOrderNormalized.match(/\d+/);
+          const pdfOrderClean = pdfOrderNumbers ? pdfOrderNumbers[0] : pdfOrderNormalized;
+          
+          // Comparar los números limpios
+          const match = csvOrderClean === pdfOrderClean;
+          
+          // Log detallado para TODAS las filas de la primera página
+          if (i === 0) {
+            log(`   Fila ${rowIdx + 1}: CSV="${rowOrderNumber}" -> "${csvOrderClean}" vs PDF="${pdfOrderNormalized}" -> "${pdfOrderClean}" => ${match ? '✅ MATCH' : '❌ NO MATCH'}`);
+          }
+          
+          return match;
         });
 
-        if (matchingRows.length === 0) continue;
+        if (matchingRows.length === 0) {
+          log(`❌ No se encontraron filas para orden "${orderNumber}"`);
+          const valoresUnicos = [...new Set(rows.slice(0, 20).map(r => r[selectedOrderColumn]).filter(Boolean))].slice(0, 10);
+          log(`💡 Valores únicos en columna de orden (primeros 10):`, valoresUnicos);
+          log(`💡 ¿Está buscando en la columna correcta? Verifica que "${headers[selectedOrderColumn]}" contenga los números de orden`);
+          updateDebug(`Página ${i + 1}: SIN MATCH para "${orderNumber}"`);
+          continue;
+        }
+        
+        log(`✅ Encontradas ${matchingRows.length} fila(s) para orden "${orderNumber}"`);
+        updateDebug(`Página ${i + 1}: ${matchingRows.length} fila(s) encontrada(s)`);
 
         // Procesar cada fila y separar productos que vengan unidos con " + "
         const allProducts: string[] = [];
         
-        matchingRows.forEach(row => {
+        matchingRows.forEach((row, matchIdx) => {
           const sku = row[selectedColumn] || '';
           const quantity = row[selectedQuantityColumn] || '';
+          
+          log(`   📦 Fila ${matchIdx + 1}: SKU="${sku}", Cantidad="${quantity}"`);
           
           if (sku.trim() !== '') {
             // Separar SKUs que contengan " + " (productos múltiples en un solo SKU)
@@ -448,10 +704,16 @@ const PDFGenerator = () => {
             
             skuParts.forEach(skuPart => {
               if (skuPart) {
+                // Normalizar el SKU antes de procesarlo (por si acaso hay caracteres residuales)
+                const skuPartNormalizado = normalizarTextoWinAnsi(skuPart);
+                // Verificar que la normalización funcionó
+                if (skuPart !== skuPartNormalizado) {
+                  console.log(`SKU normalizado: "${skuPart}" -> "${skuPartNormalizado}"`);
+                }
                 // Agregar cantidad solo si existe y no está ya incluida en el SKU
-                const productText = quantity.trim() !== '' && !skuPart.includes('(x') 
-                  ? `${skuPart} (x${quantity})` 
-                  : skuPart;
+                const productText = quantity.trim() !== '' && !skuPartNormalizado.includes('(x') 
+                  ? normalizarTextoWinAnsi(`${skuPartNormalizado} (x${quantity})`)
+                  : skuPartNormalizado;
                 allProducts.push(productText);
 
                 // Registrar para stock despachado
@@ -459,8 +721,8 @@ const PDFGenerator = () => {
                 stockDespachado.push({
                   user_id: userId,
                   username,
-                  sku: skuPart,
-                  nombreproducto: skuPart, // Usar nombre en minúsculas para coincidir con la BD
+                  sku: skuPartNormalizado,
+                  nombreproducto: skuPartNormalizado, // Usar nombre en minúsculas para coincidir con la BD
                   cantidad: cantidadNumerica,
                   numeropedido: orderNumber || '', // Usar nombre en minúsculas
                   fechadespacho: hoy, // Usar nombre en minúsculas
@@ -471,69 +733,253 @@ const PDFGenerator = () => {
           }
         });
 
-        if (allProducts.length === 0) continue;
+        if (allProducts.length === 0) {
+          log(`⚠️ No hay productos para orden ${orderNumber}`);
+          updateDebug(`Página ${i + 1}: Sin productos`);
+          continue;
+        }
+
+        log(`✅ Total productos para orden ${orderNumber}: ${allProducts.length}`);
+        log(`📋 Productos extraídos:`, allProducts);
+        updateDebug(`Página ${i + 1}: ${allProducts.length} productos`);
 
         const pageIndex = pageData.pageNumber - 1;
-        if (pageIndex < finalPdfDoc.getPageCount()) {
-          const page = finalPdfDoc.getPage(pageIndex);
-          
-          // Agrupar productos de 2 en 2 y crear líneas
-          const lines: string[] = [];
-          for (let i = 0; i < allProducts.length; i += 2) {
-            const line = allProducts.slice(i, i + 2).join(', ');
+        log(`🔍 Verificando página: pageNumber=${pageData.pageNumber}, pageIndex=${pageIndex}, copiedPages=${copiedPages.length}`);
+        
+        // ✅ USAR LA REFERENCIA DIRECTA DE copiedPages - Esta es la página EN finalPdfDoc
+        if (pageIndex < 0 || pageIndex >= copiedPages.length) {
+          log(`⚠️ Índice de página ${pageIndex} fuera de rango (copiedPages: ${copiedPages.length})`);
+          updateDebug(`Página ${i + 1}: ERROR - índice fuera de rango`);
+          continue;
+        }
+        
+        // ✅ OBTENER LA PÁGINA DIRECTAMENTE DE copiedPages - Esta es la página correcta en finalPdfDoc
+        const page = copiedPages[pageIndex];
+        log(`📖 Página obtenida directamente de copiedPages[${pageIndex}]: ${page ? 'OK' : 'ERROR'}`);
+        
+        if (!page) {
+          log(`❌ ERROR: No se pudo obtener la página ${pageIndex} de copiedPages`);
+          updateDebug(`Página ${i + 1}: ERROR - no se puede obtener de copiedPages`);
+          continue;
+        }
+        
+        // Verificar que la página está en el documento final
+        const pageInDoc = finalPdfDoc.getPage(pageIndex);
+        if (!pageInDoc) {
+          log(`❌ ERROR: La página ${pageIndex} no existe en finalPdfDoc`);
+          continue;
+        }
+        log(`✅ Verificado: página ${pageIndex} existe tanto en copiedPages como en finalPdfDoc`);
+        
+        const { width, height } = page.getSize();
+        log(`📄 Página ${pageData.pageNumber} (índice ${pageIndex}): ${width}x${height}`);
+        log(`📏 Dimensiones página: ancho=${width}, alto=${height}`);
+        
+        // Agrupar productos de 2 en 2 y crear líneas
+        const lines: string[] = [];
+        log(`🔄 Agrupando ${allProducts.length} productos en líneas...`);
+        for (let j = 0; j < allProducts.length; j += 2) {
+          const productosEnLinea = allProducts.slice(j, j + 2);
+          const line = normalizarTextoWinAnsi(productosEnLinea.join(', '));
+          log(`   Línea ${lines.length + 1}: "${line}" (de productos: ${productosEnLinea.join(', ')})`);
+          if (line && line.trim()) {
             lines.push(line);
+          } else {
+            log(`   ⚠️ Línea vacía después de normalizar`);
+          }
+        }
+        log(`✅ Total líneas creadas: ${lines.length}`);
+        
+        if (lines.length === 0) {
+          log(`⚠️ No hay líneas para dibujar en orden ${orderNumber}`);
+          updateDebug(`Página ${i + 1}: Sin líneas para dibujar`);
+          continue;
+        }
+        
+        // ✅ IMPORTANTE: La configuración de formato (posX, posY, fontSize, fuente) se aplica
+        // SIEMPRE igual, sin importar qué columna del CSV se haya seleccionado para insertar.
+        // La columna seleccionada (selectedColumn) solo determina QUÉ DATOS se insertan,
+        // pero CÓMO se insertan (posición, tamaño, fuente) es siempre la misma configuración.
+        
+        // ✅ Usar siempre el tamaño de fuente seleccionado por el usuario
+        // No sobrescribir con tamaño dinámico - respetar la configuración del usuario
+        const finalFontSize = fontSize;
+        
+        // Dibujar cada línea: la primera línea en posY (configuración del usuario), las siguientes bajan
+        // Espaciado de 8px entre líneas (en PDF, menor Y = más abajo)
+        const lineSpacing = 8;
+        
+        log(`✅ Orden ${orderNumber}: ${allProducts.length} productos en ${lines.length} líneas`);
+        log('📦 Productos individuales:', allProducts);
+        log('📝 Líneas agrupadas:', lines);
+        log(`🔤 Tamaño de fuente (configurado): ${finalFontSize}pt`);
+        log(`📍 Posición base configurada: X=${posX}, Y=${posY}`);
+        log(`📍 Primera línea en Y=${posY}, segunda en Y=${posY - lineSpacing}, etc.`);
+        updateDebug(`Página ${i + 1}: ${lines.length} línea(s) para dibujar`);
+        let lineasDibujadas = 0;
+        
+        // FORZAR logs múltiples veces para asegurar visibilidad
+        log(`🎨 INICIANDO BUCLE DE DIBUJADO - Total líneas: ${lines.length}`);
+        log(`🎨 Verificando: lines.length=${lines.length}, pageIndex=${pageIndex}, helveticaFont=${helveticaFont ? 'existe' : 'NO EXISTE'}`);
+        updateDebug(`Iniciando dibujado de ${lines.length} línea(s)`);
+        
+        // Validar que tenemos todo lo necesario
+        if (!helveticaFont) {
+          log(`❌ ERROR CRÍTICO: helveticaFont no está disponible!`);
+          updateDebug(`ERROR: Fuente no disponible`);
+          continue;
+        }
+        
+        if (lines.length === 0) {
+          log(`⚠️ No hay líneas para procesar (pero debería haberlas)`);
+          continue;
+        }
+        
+        for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+          const line = lines[lineIndex];
+          log(`🔄 [ITERACIÓN ${lineIndex}] Procesando línea ${lineIndex + 1}/${lines.length}: "${line}"`);
+          
+          // ✅ VERIFICAR VALORES DE CONFIGURACIÓN antes de calcular
+          log(`   🔍 Valores de configuración: posX=${posX}, posY=${posY}, fontSize=${fontSize}`);
+          log(`   🔍 Dimensiones página: width=${width}, height=${height}`);
+          
+          // ✅ CORREGIDO: En PDF, Y más alto = más arriba. La primera línea va en posY, las siguientes BAJAN (menor Y)
+          // Línea 0: posY (más alta), Línea 1: posY - lineSpacing (8px más abajo), etc.
+          const yPosition = posY - (lineSpacing * lineIndex);
+          log(`   🔍 Cálculo Y: posY=${posY} - (lineSpacing=${lineSpacing} * lineIndex=${lineIndex}) = ${yPosition}`);
+          
+          // Normalizar el texto antes de dibujarlo para asegurar compatibilidad WinAnsi
+          const lineNormalizada = normalizarTextoWinAnsi(line);
+          
+          // Verificar que la línea no esté vacía
+          if (!lineNormalizada || !lineNormalizada.trim()) {
+            log(`⚠️ Línea ${lineIndex + 1} está vacía después de normalizar, saltando...`);
+            continue;
           }
           
-          // Si hay más de 2 líneas, reducir el tamaño de fuente a 8
-          const dynamicFontSize = lines.length > 2 ? 8 : fontSize;
+          // ✅ CORREGIDO: Usar SIEMPRE las coordenadas configuradas por el usuario
+          // No ajustar automáticamente - respetar la configuración del usuario
+          let finalX = posX;
+          let finalY = yPosition;
           
-          console.log(`Orden ${orderNumber}: ${allProducts.length} productos en ${lines.length} líneas`);
-          console.log('Productos individuales:', allProducts);
-          console.log('Líneas agrupadas:', lines);
-          console.log(`Tamaño de fuente: ${dynamicFontSize}pt`);
+          // Solo verificar y advertir si están fuera de rango, pero USAR las coordenadas configuradas de todas formas
+          const isOutOfBounds = yPosition < 0 || yPosition > height || posX < 0 || posX > width;
           
-          // Dibujar cada línea: la primera línea arriba (Y=714), las siguientes bajan
-          // Espaciado de 8px entre líneas para que línea 2 quede en Y=706
-          const lineSpacing = 8;
-          lines.forEach((line, lineIndex) => {
-            // La línea 1 está en la posición más alta, las siguientes bajan
-            const yPosition = posY + (lineSpacing * (lines.length - 1 - lineIndex));
-            console.log(`Dibujando línea ${lineIndex + 1} en Y=${yPosition}: "${line}"`);
-            page.drawText(line, {
-              x: posX,
-              y: yPosition,
-              size: dynamicFontSize,
+          if (isOutOfBounds) {
+            log(`⚠️ ADVERTENCIA: Coordenadas configuradas están fuera del rango de la página: X=${posX}, Y=${yPosition} (página: ${width}x${height})`);
+            log(`   ℹ️ Usando coordenadas configuradas de todas formas: X=${posX}, Y=${yPosition}`);
+            updateDebug(`⚠️ Advertencia: Y=${yPosition} fuera de rango (0-${height}), pero usando valor configurado`);
+          } else {
+            log(`✅ Coordenadas dentro de rango, usando posición exacta: X=${posX}, Y=${yPosition}`);
+          }
+          
+          // ✅ SIEMPRE usar las coordenadas configuradas, sin ajustes automáticos
+          // El usuario sabe mejor dónde quiere colocar el texto
+          
+          log(`✏️ Dibujando línea ${lineIndex + 1} en Y=${finalY} (desde base Y=${posY}, offset=${lineSpacing * lineIndex}): "${lineNormalizada}"`);
+          log(`   Coordenadas: X=${finalX}, Y=${finalY}, Tamaño=${finalFontSize}pt, Página=${width}x${height}`);
+          log(`   ✅ Usando coordenadas: posX=${posX}, posY base=${posY} -> finalX=${finalX}, finalY=${finalY}`);
+          
+          // ✅ Mostrar información de formato en el frontend
+          updateDebug(`Línea ${lineIndex + 1}: X=${finalX}px, Y=${finalY}px, Fuente=Helvetica, Tamaño=${finalFontSize}pt`);
+          updateDebug(`Texto: "${lineNormalizada.substring(0, 30)}..."`);
+          
+          try {
+            // ✅ USAR LA REFERENCIA DIRECTA DE LA PÁGINA COPIADA - Esta es la página correcta
+            const targetPage = copiedPages[pageIndex];
+            log(`   📄 Usando página copiada directamente copiedPages[${pageIndex}]: ${targetPage ? 'OK' : 'ERROR'}`);
+            
+            if (!targetPage) {
+              log(`   ❌ ERROR: No se pudo obtener la página ${pageIndex} de copiedPages para dibujar`);
+              continue;
+            }
+            
+            // Verificar que esta página está realmente en finalPdfDoc
+            const pageInDoc = finalPdfDoc.getPage(pageIndex);
+            if (!pageInDoc) {
+              log(`   ❌ ERROR: La página ${pageIndex} no está en finalPdfDoc`);
+              continue;
+            }
+            log(`   ✅ Confirmado: página ${pageIndex} está en finalPdfDoc`);
+            
+            // Usar la fuente embebida explícitamente para asegurar renderizado
+            log(`   📝 Llamando drawText en página COPIADA con: x=${finalX}, y=${finalY}, size=${finalFontSize}, texto="${lineNormalizada.substring(0, 30)}..."`);
+            log(`   🔤 Fuente: Helvetica, Tamaño: ${finalFontSize}pt (configurado: ${fontSize}pt)`);
+            
+            // ✅ DIBUJAR EN LA PÁGINA COPIADA - Esta es la página que está en finalPdfDoc
+            // Usar las coordenadas finales (finalX, finalY) y el tamaño de fuente configurado
+            targetPage.drawText(lineNormalizada, {
+              x: finalX,
+              y: finalY,
+              size: finalFontSize,
+              font: helveticaFont,
               color: rgb(0, 0, 0),
             });
-          });
+            
+            // Verificar inmediatamente después de dibujar
+            log(`   ✅ drawText ejecutado sin errores`);
+            
+            lineasDibujadas++;
+            log(`✅ Línea ${lineIndex + 1} dibujada exitosamente en página ${pageIndex + 1} con fuente Helvetica`);
+            log(`   📊 Progreso: ${lineIndex + 1}/${lines.length} líneas procesadas, ${lineasDibujadas} dibujadas`);
+            updateDebug(`✅ Completado (${lineasDibujadas}/${lines.length})`);
+            
+            // Añadir un pequeño delay para asegurar que el proceso no se bloquea
+            await new Promise(resolve => setTimeout(resolve, 10));
+            
+          } catch (drawError: any) {
+            log(`❌ Error al dibujar línea ${lineIndex + 1}:`, drawError);
+            log(`   Error detalle:`, drawError?.message, drawError?.stack);
+            updateDebug(`ERROR dibujando: ${drawError?.message || drawError}`);
+          }
         }
+        
+        log(`🏁 FIN DEL BUCLE DE DIBUJADO - Líneas dibujadas: ${lineasDibujadas}/${lines.length}`);
+        updateDebug(`Bucle completado: ${lineasDibujadas}/${lines.length} líneas`);
+        
+        if (lineasDibujadas > 0) {
+          paginasConTexto++;
+          log(`✅ Página ${pageData.pageNumber}: ${lineasDibujadas} línea(s) dibujada(s) exitosamente`);
+          updateDebug(`Página ${pageData.pageNumber}: ✅ ${lineasDibujadas} líneas`);
+        } else {
+          log(`⚠️ Página ${pageData.pageNumber}: No se dibujaron líneas`);
+          updateDebug(`Página ${pageData.pageNumber}: ⚠️ Sin líneas`);
+        }
+        
+        log(`🔄 Continuando con siguiente página... (${i + 1}/${pdfPagesData.length})`);
       }
+      
+      log(`✅ TODAS LAS PÁGINAS PROCESADAS: ${paginasConTexto} páginas con texto de ${pdfPagesData.length} totales`);
+      updateDebug(`✅ Procesamiento completo: ${paginasConTexto} páginas con texto`);
 
       // Agregar página de resumen al final
       const summaryPage = finalPdfDoc.addPage([595, 842]); // A4 size
       const { width, height } = summaryPage.getSize();
       
-      // Título del resumen
-      summaryPage.drawText('RESUMEN DE PRODUCTOS DESPACHADOS', {
+      // Título del resumen (normalizado) - Valores hardcodeados (no usa configuración)
+      summaryPage.drawText(normalizarTextoWinAnsi('RESUMEN DE PRODUCTOS DESPACHADOS'), {
         x: 50,
         y: height - 50,
         size: 16,
+        font: helveticaFont,
         color: rgb(0, 0, 0),
       });
       
       // Información general
       const fechaActual = new Date().toLocaleDateString('es-ES');
-      summaryPage.drawText(`Fecha: ${fechaActual}`, {
+      summaryPage.drawText(normalizarTextoWinAnsi(`Fecha: ${fechaActual}`), {
         x: 50,
         y: height - 80,
         size: 12,
+        font: helveticaFont,
         color: rgb(0, 0, 0),
       });
       
-      summaryPage.drawText(`Total de productos únicos: ${stockDespachado.length}`, {
+      summaryPage.drawText(normalizarTextoWinAnsi(`Total de productos unicos: ${stockDespachado.length}`), {
         x: 50,
         y: height - 100,
         size: 12,
+        font: helveticaFont,
         color: rgb(0, 0, 0),
       });
       
@@ -552,22 +998,24 @@ const PDFGenerator = () => {
       const sortedSkus = Array.from(skuSummary.entries())
         .sort((a, b) => b[1] - a[1]);
       
-      // Dibujar tabla de resumen
+      // Dibujar tabla de resumen - Valores hardcodeados (no usa configuración)
       let yPosition = height - 140;
       const lineHeight = 20;
       
-      // Encabezados de la tabla
-      summaryPage.drawText('SKU', {
+      // Encabezados de la tabla (normalizados)
+      summaryPage.drawText(normalizarTextoWinAnsi('SKU'), {
         x: 50,
         y: yPosition,
         size: 10,
+        font: helveticaFont,
         color: rgb(0, 0, 0),
       });
       
-      summaryPage.drawText('Cantidad Total', {
+      summaryPage.drawText(normalizarTextoWinAnsi('Cantidad Total'), {
         x: 300,
         y: yPosition,
         size: 10,
+        font: helveticaFont,
         color: rgb(0, 0, 0),
       });
       
@@ -584,56 +1032,127 @@ const PDFGenerator = () => {
       yPosition -= 10;
       
       // Datos de la tabla
+      let currentSummaryPage = summaryPage; // Mantener referencia a la página actual
       sortedSkus.forEach(([sku, cantidad]) => {
         if (yPosition < 100) {
           // Si no hay espacio, crear nueva página
-          const newPage = finalPdfDoc.addPage([595, 842]);
-          yPosition = newPage.getSize().height - 50;
+          currentSummaryPage = finalPdfDoc.addPage([595, 842]);
+          yPosition = currentSummaryPage.getSize().height - 50;
         }
         
-        // SKU
-        summaryPage.drawText(sku, {
+        // SKU (normalizado para WinAnsi)
+        const skuNormalizado = normalizarTextoWinAnsi(sku);
+        currentSummaryPage.drawText(skuNormalizado, {
           x: 50,
           y: yPosition,
           size: 9,
+          font: helveticaFont,
           color: rgb(0, 0, 0),
         });
         
         // Cantidad
-        summaryPage.drawText(cantidad.toString(), {
+        currentSummaryPage.drawText(cantidad.toString(), {
           x: 300,
           y: yPosition,
           size: 9,
+          font: helveticaFont,
           color: rgb(0, 0, 0),
         });
         
         yPosition -= lineHeight;
       });
       
-      // Pie de página
+      // Pie de página - Valores hardcodeados (no usa configuración)
       const finalY = Math.max(yPosition - 20, 50);
-      summaryPage.drawText(`Generado por: ${username || 'Usuario'}`, {
+      const usernameNormalizado = normalizarTextoWinAnsi(username || 'Usuario');
+      currentSummaryPage.drawText(normalizarTextoWinAnsi(`Generado por: ${usernameNormalizado}`), {
         x: 50,
         y: finalY,
         size: 8,
+        font: helveticaFont,
         color: rgb(0.5, 0.5, 0.5),
       });
       
-      summaryPage.drawText(`Archivo fuente: ${csvFileName || 'documento'}`, {
+      const nombreArchivoNormalizado = normalizarTextoWinAnsi(csvFileName || 'documento');
+      currentSummaryPage.drawText(normalizarTextoWinAnsi(`Archivo fuente: ${nombreArchivoNormalizado}`), {
         x: 50,
         y: finalY - 15,
         size: 8,
+        font: helveticaFont,
         color: rgb(0.5, 0.5, 0.5),
       });
 
-      const pdfBytes = await finalPdfDoc.save();
+      log(`💾 INICIANDO GUARDADO DE PDF...`);
+      log(`📊 Resumen antes de guardar: ${finalPdfDoc.getPageCount()} páginas totales, ${paginasConTexto} con texto`);
+      
+      // ✅ VERIFICACIÓN CRÍTICA: Asegurar que las modificaciones están en finalPdfDoc
+      log(`🔍 VERIFICANDO PÁGINAS ANTES DE GUARDAR:`);
+      log(`   - Páginas en finalPdfDoc: ${finalPdfDoc.getPageCount()}`);
+      log(`   - Páginas copiadas: ${copiedPages.length}`);
+      log(`   - Páginas con texto: ${paginasConTexto}`);
+      
+      // Verificar que podemos obtener las páginas modificadas
+      for (let i = 0; i < Math.min(3, finalPdfDoc.getPageCount()); i++) {
+        try {
+          const testPage = finalPdfDoc.getPage(i);
+          const size = testPage.getSize();
+          log(`   - Página ${i}: ${size.width}x${size.height} ✅`);
+        } catch (err: any) {
+          log(`   - Página ${i}: ERROR - ${err?.message || err}`);
+        }
+      }
+      
+      updateDebug(`Guardando PDF (${paginasConTexto} páginas con texto)...`);
+      
+      // Forzar actualización antes de guardar
+      log(`🔄 Forzando actualización del documento antes de guardar...`);
+      updateDebug(`Convirtiendo a bytes...`);
+      
+      let pdfBytes: Uint8Array;
+      try {
+        pdfBytes = await finalPdfDoc.save();
+        log(`💾 PDF guardado, tamaño: ${pdfBytes.length} bytes`);
+        updateDebug(`PDF guardado: ${Math.round(pdfBytes.length / 1024)} KB`);
+        
+        // Verificar que el PDF tiene el tamaño esperado
+        if (pdfBytes.length < 1000) {
+          log(`⚠️ ADVERTENCIA: PDF muy pequeño (${pdfBytes.length} bytes), podría estar vacío`);
+        }
+      } catch (saveError: any) {
+        log(`❌ ERROR al guardar PDF: ${saveError?.message || saveError}`);
+        updateDebug(`ERROR guardando: ${saveError?.message || 'Error desconocido'}`);
+        throw saveError;
+      }
+      
+      log(`📦 Creando blob...`);
+      updateDebug(`Creando blob...`);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      
+      log(`🔗 Creando URL del objeto...`);
+      updateDebug(`Preparando descarga...`);
       const url = URL.createObjectURL(blob);
+      
+      log(`⬇️ Iniciando descarga...`);
+      updateDebug(`Descargando...`);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'documentos_combinados.pdf';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      
+      log(`✅ PDF DESCARGADO EXITOSAMENTE`);
+      updateDebug(`✅ PDF descargado correctamente`);
+      
+      updateDebug(`✅ PDF descargado (${paginasConTexto} páginas con texto)`);
+      log(`✅ PDF generado y descargado exitosamente. ${paginasConTexto} páginas tuvieron texto insertado.`);
+      
+      // Mantener el div de debug por más tiempo para ver el resultado final
+      setTimeout(() => {
+        const div = document.getElementById('pdf-debug-info');
+        if (div) div.remove();
+      }, 10000);
 
       // Guardar en historial
       try {
@@ -713,9 +1232,17 @@ const PDFGenerator = () => {
       
       showMessage('success', `PDF generado con ${finalPdfDoc.getPageCount()} páginas (incluye resumen de productos)`);
     } catch (error) {
-      console.error('Error al generar PDF:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      log('❌ ERROR al generar PDF:', error);
+      log('❌ Stack:', error instanceof Error ? error.stack : 'No disponible');
+      updateDebug(`ERROR: ${errorMessage}`);
       showMessage('error', `Error al generar el PDF: ${errorMessage}`);
+      
+      // Mantener el div de debug para ver el error
+      setTimeout(() => {
+        const div = document.getElementById('pdf-debug-info');
+        if (div) div.remove();
+      }, 15000);
     } finally {
       setProcessing(false);
     }
@@ -1024,6 +1551,39 @@ const PDFGenerator = () => {
               <div className="p-6 pt-2 border-t border-gray-600">
                 {isEditingPosition ? (
                   <>
+                    {/* Selector de perfiles predefinidos */}
+                    <div className="mb-4 space-y-2">
+                      <label className="text-sm font-medium text-gray-300">Perfil predefinido</label>
+                      <select
+                        value={
+                          (posX === 14 && posY === 212 && fontSize === 7) ? 'rotulos' :
+                          (posX === 20 && posY === 706 && fontSize === 9) ? 'a4' :
+                          'personalizado'
+                        }
+                        onChange={(e) => {
+                          const profile = e.target.value;
+                          if (profile === 'rotulos') {
+                            setPosX(14);
+                            setPosY(212);
+                            setFontSize(7);
+                          } else if (profile === 'a4') {
+                            setPosX(20);
+                            setPosY(706);
+                            setFontSize(9);
+                          }
+                          // Si es 'personalizado', no hacer nada (dejar valores actuales)
+                        }}
+                        className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
+                      >
+                        <option value="rotulos">Impresora de Rotulos (X=14, Y=212, Tamaño=7pt)</option>
+                        <option value="a4">Hoja A4 Comun (X=20, Y=706, Tamaño=9pt)</option>
+                        <option value="personalizado">Personalizado (X={posX}, Y={posY}, Tamaño={fontSize}pt)</option>
+                      </select>
+                      <p className="text-xs text-gray-400">
+                        💡 Selecciona un perfil para aplicar automáticamente la configuración
+                      </p>
+                    </div>
+                    
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-300">Posición X (px)</label>
