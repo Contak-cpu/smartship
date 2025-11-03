@@ -8,6 +8,7 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import { guardarEnHistorialSmartShip } from '../src/utils/historialStorage';
 import { useAuth } from '../hooks/useAuth';
 import { guardarPedidosDesdeCSV, PedidoProcesado } from '../services/informacionService';
+import SmartShipConfig, { SmartShipConfigValues } from '../components/SmartShipConfig';
 
 // Función para normalizar caracteres problemáticos en el CSV final
 const normalizarCSVFinal = (content: string): string => {
@@ -159,7 +160,7 @@ const HomePage: React.FC = () => {
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{ domicilioCSV: string; sucursalCSV: string; processingInfo: ProcessingInfo } | null>(null);
-  const [config] = useState({
+  const [config, setConfig] = useState<SmartShipConfigValues>({
     peso: 400,
     alto: 10,
     ancho: 10,
@@ -313,7 +314,7 @@ const HomePage: React.FC = () => {
       setStatus(ProcessStatus.ERROR);
     };
     reader.readAsText(selectedFile, 'UTF-8');
-  }, [selectedFile]);
+  }, [selectedFile, config]);
   
   const downloadCSV = (csvContent: string, fileName: string) => {
     let cleanContent = fixEncoding(csvContent);
@@ -348,10 +349,17 @@ const HomePage: React.FC = () => {
     document.body.removeChild(link);
   };
 
+  const handleConfigChange = (newConfig: SmartShipConfigValues) => {
+    setConfig(newConfig);
+  };
+
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative">
+        <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 relative">
+          {/* Componente de configuración */}
+          <SmartShipConfig onConfigChange={handleConfigChange} />
+          
           <div className="text-center mb-4">
             <div className="flex items-center justify-center gap-3 mb-2">
               <div className="text-green-500 size-8 sm:size-10">

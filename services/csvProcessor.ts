@@ -1080,11 +1080,23 @@ const isShopifyCSV = (text: string): boolean => {
 };
 
 // Procesador específico para CSV de Shopify (todos los envíos a domicilio)
-const processShopifyOrders = async (csvText: string): Promise<{
+const processShopifyOrders = async (
+  csvText: string,
+  config?: { peso: number; alto: number; ancho: number; profundidad: number; valorDeclarado: number }
+): Promise<{
   domicilioCSV: string;
   sucursalCSV: string;
   processingInfo: any;
 }> => {
+  // Valores por defecto
+  const defaultConfig = {
+    peso: 400,
+    alto: 10,
+    ancho: 10,
+    profundidad: 10,
+    valorDeclarado: 6000,
+  };
+  const finalConfig = config || defaultConfig;
   // Cargar datos auxiliares
   const [codigosPostales] = await Promise.all([
     fetchCodigosPostales(),
@@ -1354,11 +1366,11 @@ const processShopifyOrders = async (csvText: string): Promise<{
       contadorDomicilios++;
       domicilios.push({
         'Paquete Guardado Ej:': '',
-        'Peso (grs)': 400,
-        'Alto (cm)': 10,
-        'Ancho (cm)': 10,
-        'Profundidad (cm)': 10,
-        'Valor declarado ($ C/IVA) *': 6000,
+        'Peso (grs)': finalConfig.peso,
+        'Alto (cm)': finalConfig.alto,
+        'Ancho (cm)': finalConfig.ancho,
+        'Profundidad (cm)': finalConfig.profundidad,
+        'Valor declarado ($ C/IVA) *': finalConfig.valorDeclarado,
         'Numero Interno': numeroOrden,
         'Nombre *': nombre ? normalizarNombre(nombre) : '',
         'Apellido *': apellido ? normalizarNombre(apellido) : '',
@@ -1401,11 +1413,24 @@ const processShopifyOrders = async (csvText: string): Promise<{
   };
 };
 
-export const processOrders = async (tiendanubeCsvText: string): Promise<{ domicilioCSV: string; sucursalCSV: string; processingInfo: any; }> => {
+export const processOrders = async (
+  tiendanubeCsvText: string,
+  config?: { peso: number; alto: number; ancho: number; profundidad: number; valorDeclarado: number }
+): Promise<{ domicilioCSV: string; sucursalCSV: string; processingInfo: any; }> => {
+  // Valores por defecto
+  const defaultConfig = {
+    peso: 400,
+    alto: 10,
+    ancho: 10,
+    profundidad: 10,
+    valorDeclarado: 6000,
+  };
+  const finalConfig = config || defaultConfig;
+  
   // Ruta Shopify
   if (isShopifyCSV(tiendanubeCsvText)) {
     console.log('CSV de Shopify detectado. Procesando como Shopify (envíos a domicilio).');
-    return await processShopifyOrders(tiendanubeCsvText);
+    return await processShopifyOrders(tiendanubeCsvText, finalConfig);
   }
   const [sucursales, codigosPostales, tiendanubeOrders] = await Promise.all([
     fetchSucursales(),
@@ -1718,11 +1743,11 @@ export const processOrders = async (tiendanubeCsvText: string): Promise<{ domici
     
     const baseData = {
       'Paquete Guardado Ej:': '', // Siempre vacío
-      'Peso (grs)': 400,
-      'Alto (cm)': 10,
-      'Ancho (cm)': 10,
-      'Profundidad (cm)': 10,
-      'Valor declarado ($ C/IVA) *': 6000,
+      'Peso (grs)': finalConfig.peso,
+      'Alto (cm)': finalConfig.alto,
+      'Ancho (cm)': finalConfig.ancho,
+      'Profundidad (cm)': finalConfig.profundidad,
+      'Valor declarado ($ C/IVA) *': finalConfig.valorDeclarado,
       'Numero Interno': `#${getColumnValue(order, 0)}`, // Número de orden con #
       'Nombre *': nombreNormalizado || 'SIN NOMBRE',
       'Apellido *': apellidoNormalizado || 'SIN APELLIDO',

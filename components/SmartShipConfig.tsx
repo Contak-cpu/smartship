@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from 'react';
 
-export type PlatformType = 'tiendanube' | 'shopify';
-
 export interface SmartShipConfigValues {
   peso: number;
   alto: number;
   ancho: number;
   profundidad: number;
   valorDeclarado: number;
-  platform: PlatformType;
 }
 
 interface SmartShipConfigProps {
   onConfigChange: (config: SmartShipConfigValues) => void;
-  onPlatformChange?: (platform: PlatformType) => void;
 }
 
-const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange, onPlatformChange }) => {
+const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [config, setConfig] = useState<SmartShipConfigValues>({
     peso: 400,
@@ -24,113 +20,78 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange, onPla
     ancho: 10,
     profundidad: 10,
     valorDeclarado: 6000,
-    platform: 'tiendanube',
   });
 
   // Cargar configuración guardada al iniciar
   useEffect(() => {
     const savedConfig = localStorage.getItem('smartship-config');
-    const savedPlatform = localStorage.getItem('smartship-platform');
     
     if (savedConfig) {
       try {
         const parsedConfig = JSON.parse(savedConfig);
-        // Asegurar que platform esté presente
-        if (!parsedConfig.platform) {
-          parsedConfig.platform = savedPlatform === 'shopify' ? 'shopify' : 'tiendanube';
-        }
-        setConfig(parsedConfig);
-        onConfigChange(parsedConfig);
-        if (onPlatformChange) {
-          onPlatformChange(parsedConfig.platform);
-        }
+        // Eliminar platform si existe (para compatibilidad con versiones anteriores)
+        const { platform, ...configSinPlatform } = parsedConfig;
+        setConfig(configSinPlatform);
+        onConfigChange(configSinPlatform);
       } catch (error) {
         console.error('Error al cargar configuración:', error);
         onConfigChange(config);
       }
     } else {
-      // Si hay plataforma guardada, usarla
-      if (savedPlatform) {
-        const platform = savedPlatform === 'shopify' ? 'shopify' : 'tiendanube';
-        config.platform = platform;
-        if (onPlatformChange) {
-          onPlatformChange(platform);
-        }
-      }
       onConfigChange(config);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
-  // Manejar cambio de plataforma
-  const handlePlatformChange = (platform: PlatformType) => {
-    const newConfig = { ...config, platform };
-    setConfig(newConfig);
-    localStorage.setItem('smartship-config', JSON.stringify(newConfig));
-    localStorage.setItem('smartship-platform', platform);
-    onConfigChange(newConfig);
-    if (onPlatformChange) {
-      onPlatformChange(platform);
-    }
-  };
 
-  // Guardar configuración cuando cambie
-  const handleConfigChange = (field: keyof SmartShipConfigValues, value: number) => {
-    const newConfig = { ...config, [field]: value };
-    setConfig(newConfig);
-    localStorage.setItem('smartship-config', JSON.stringify(newConfig));
-    onConfigChange(newConfig);
+  // Estado temporal para inputs (permite valores vacíos durante la edición)
+  const [tempValues, setTempValues] = useState<Partial<Record<keyof SmartShipConfigValues, string>>>({});
+
+  // Guardar configuración cuando cambie (solo actualiza tempValues durante edición)
+  const handleInputChange = (field: keyof SmartShipConfigValues, value: string) => {
+    setTempValues({ ...tempValues, [field]: value });
+  };
+  
+  // Aplicar configuración al cerrar el modal
+  const handleApply = () => {
+    // Usar valores temporales si existen, sino usar los de config
+    const finalConfig: SmartShipConfigValues = {
+      peso: tempValues.peso !== undefined && tempValues.peso !== '' ? parseInt(tempValues.peso) || 400 : (config.peso || 400),
+      alto: tempValues.alto !== undefined && tempValues.alto !== '' ? parseInt(tempValues.alto) || 10 : (config.alto || 10),
+      ancho: tempValues.ancho !== undefined && tempValues.ancho !== '' ? parseInt(tempValues.ancho) || 10 : (config.ancho || 10),
+      profundidad: tempValues.profundidad !== undefined && tempValues.profundidad !== '' ? parseInt(tempValues.profundidad) || 10 : (config.profundidad || 10),
+      valorDeclarado: tempValues.valorDeclarado !== undefined && tempValues.valorDeclarado !== '' ? parseInt(tempValues.valorDeclarado) || 6000 : (config.valorDeclarado || 6000),
+    };
+    setConfig(finalConfig);
+    setTempValues({}); // Limpiar valores temporales
+    localStorage.setItem('smartship-config', JSON.stringify(finalConfig));
+    onConfigChange(finalConfig);
+    setIsOpen(false);
+  };
+  
+  // Obtener valor mostrado en el input (tempValues tiene prioridad)
+  const getInputValue = (field: keyof SmartShipConfigValues): string => {
+    if (tempValues[field] !== undefined) {
+      return tempValues[field] || '';
+    }
+    return config[field] ? String(config[field]) : '';
   };
 
   return (
     <>
-      {/* Selector de plataforma */}
-      <div className="absolute top-4 left-4 flex items-center gap-3">
-        <div className="bg-gray-800 rounded-lg p-2 border border-gray-700">
-          <label className="text-sm text-gray-300 mr-2">Plataforma:</label>
-          <select
-            value={config.platform}
-            onChange={(e) => handlePlatformChange(e.target.value as PlatformType)}
-            className="bg-gray-700 text-white px-3 py-1 rounded border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="tiendanube">Tiendanube</option>
-            <option value="shopify">Shopify</option>
-          </select>
-        </div>
-      </div>
-      
-      {/* Botón para abrir configuración con ícono de información */}
-      <div className="absolute top-4 right-4 flex items-center gap-3">
-        {/* Ícono de información */}
-        <div className="group relative">
-          <div className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-all duration-300 cursor-help shadow-lg">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-            </svg>
-          </div>
-          {/* Tooltip */}
-          <div className="hidden group-hover:block absolute right-0 top-10 z-50 w-80 bg-gray-900 text-white text-sm rounded-lg shadow-xl p-4 border border-gray-700">
-            <strong className="text-blue-400">ℹ️ Configuración de Valores Predeterminados</strong>
-            <div className="mt-3 space-y-2 text-gray-300">
-              <p><strong>Valor Declarado:</strong> Valor asegurado del paquete que Andreani usará para calcular el costo del seguro (incluye IVA).</p>
-              <p><strong>Peso:</strong> Peso total del paquete en gramos. Andreani cobra según el peso del paquete.</p>
-              <p><strong>Dimensiones:</strong> Alto, ancho y profundidad del paquete en centímetros. Importantes para calcular el volumen del envío.</p>
-              <p className="text-xs text-gray-400 mt-2">Estos valores se aplicarán automáticamente a todos los paquetes procesados.</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Botón de configuración */}
-        <button
-          onClick={() => setIsOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 shadow-lg"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Configurar Valores
-        </button>
-      </div>
+      {/* Botón compacto de configuración - Ruedita */}
+      <button
+        onClick={() => {
+          setIsOpen(true);
+          setTempValues({}); // Resetear valores temporales al abrir
+        }}
+        className="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white p-2.5 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl group"
+        title="Configurar medidas y peso del paquete"
+      >
+        <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
 
       {/* Modal de configuración */}
       {isOpen && (
@@ -143,7 +104,10 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange, onPla
                 <p className="text-gray-400 text-sm mt-1">Define los valores predeterminados para el procesamiento</p>
               </div>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  setTempValues({});
+                  setIsOpen(false);
+                }}
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,10 +126,11 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange, onPla
                 <div className="flex items-center gap-3">
                   <input
                     type="number"
-                    value={config.valorDeclarado}
-                    onChange={(e) => handleConfigChange('valorDeclarado', parseInt(e.target.value) || 6000)}
+                    value={getInputValue('valorDeclarado')}
+                    onChange={(e) => handleInputChange('valorDeclarado', e.target.value)}
                     className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     min="0"
+                    placeholder="6000"
                   />
                   <span className="text-gray-400 text-sm">$</span>
                 </div>
@@ -180,10 +145,11 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange, onPla
                 <div className="flex items-center gap-3">
                   <input
                     type="number"
-                    value={config.peso}
-                    onChange={(e) => handleConfigChange('peso', parseInt(e.target.value) || 400)}
+                    value={getInputValue('peso')}
+                    onChange={(e) => handleInputChange('peso', e.target.value)}
                     className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     min="0"
+                    placeholder="400"
                   />
                   <span className="text-gray-400 text-sm">g</span>
                 </div>
@@ -199,10 +165,11 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange, onPla
                   <div className="flex items-center gap-3">
                     <input
                       type="number"
-                      value={config.alto}
-                      onChange={(e) => handleConfigChange('alto', parseInt(e.target.value) || 10)}
+                      value={getInputValue('alto')}
+                      onChange={(e) => handleInputChange('alto', e.target.value)}
                       className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       min="0"
+                      placeholder="10"
                     />
                     <span className="text-gray-400 text-sm">cm</span>
                   </div>
@@ -215,10 +182,11 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange, onPla
                   <div className="flex items-center gap-3">
                     <input
                       type="number"
-                      value={config.ancho}
-                      onChange={(e) => handleConfigChange('ancho', parseInt(e.target.value) || 10)}
+                      value={getInputValue('ancho')}
+                      onChange={(e) => handleInputChange('ancho', e.target.value)}
                       className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       min="0"
+                      placeholder="10"
                     />
                     <span className="text-gray-400 text-sm">cm</span>
                   </div>
@@ -231,10 +199,11 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange, onPla
                   <div className="flex items-center gap-3">
                     <input
                       type="number"
-                      value={config.profundidad}
-                      onChange={(e) => handleConfigChange('profundidad', parseInt(e.target.value) || 10)}
+                      value={getInputValue('profundidad')}
+                      onChange={(e) => handleInputChange('profundidad', e.target.value)}
                       className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       min="0"
+                      placeholder="10"
                     />
                     <span className="text-gray-400 text-sm">cm</span>
                   </div>
@@ -243,13 +212,43 @@ const SmartShipConfig: React.FC<SmartShipConfigProps> = ({ onConfigChange, onPla
             </div>
 
             {/* Botones */}
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setIsOpen(false)}
-                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
-              >
-                Aplicar
-              </button>
+            <div className="flex justify-between items-center gap-3">
+              {/* Ícono de información */}
+              <div className="group relative">
+                <div className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-all duration-300 cursor-help shadow-lg">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                {/* Tooltip */}
+                <div className="hidden group-hover:block absolute left-0 bottom-full mb-2 z-50 w-80 bg-gray-900 text-white text-sm rounded-lg shadow-xl p-4 border border-gray-700">
+                  <strong className="text-blue-400">ℹ️ Configuración de Valores Predeterminados</strong>
+                  <div className="mt-3 space-y-2 text-gray-300">
+                    <p><strong>Valor Declarado:</strong> Valor asegurado del paquete que Andreani usará para calcular el costo del seguro (incluye IVA).</p>
+                    <p><strong>Peso:</strong> Peso total del paquete en gramos. Andreani cobra según el peso del paquete.</p>
+                    <p><strong>Dimensiones:</strong> Alto, ancho y profundidad del paquete en centímetros. Importantes para calcular el volumen del envío.</p>
+                    <p className="text-xs text-gray-400 mt-2">Estos valores se aplicarán automáticamente a todos los paquetes procesados.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setTempValues({});
+                    setIsOpen(false);
+                  }}
+                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleApply}
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Aplicar
+                </button>
+              </div>
             </div>
           </div>
         </div>
