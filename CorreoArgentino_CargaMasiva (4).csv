@@ -1,0 +1,78 @@
+﻿tipo_producto(obligatorio);largo(obligatorio en CM);ancho(obligatorio en CM);altura(obligatorio en CM);peso(obligatorio en KG);valor_del_contenido(obligatorio en pesos argentinos);provincia_destino(obligatorio);sucursal_destino(obligatorio solo en caso de no ingresar localidad de destino);localidad_destino(obligatorio solo en caso de no ingresar sucursal de destino);calle_destino(obligatorio solo en caso de no ingresar sucursal de destino);altura_destino(obligatorio solo en caso de no ingresar sucursal de destino);piso(opcional solo en caso de no ingresar sucursal de destino);dpto(opcional solo en caso de no ingresar sucursal de destino);codpostal_destino(obligatorio solo en caso de no ingresar sucursal de destino);destino_nombre(obligatorio);destino_email(obligatorio, debe ser un email valido);cod_area_tel(opcional);tel(opcional);cod_area_cel(opcional);cel(opcional);numero_orden(opcional)
+CP;10;10;10;1.000;58990.00;E;;Colonia Caseros;Ruta 23 km 4;4;Uruguay;Uruguay;3262;Marina Joannas;marinajoannas@hotmail.com;34;42623220;34;42623220;232
+CP;10;10;10;1.000;58990.00;B;;Coronel Granada;Dorrego;168;;;6062;Luciana Dallochio;luladallochio@gmail.com;23;55443326;23;55443326;231
+CP;10;10;10;1.000;58990.00;R;;Borsani;24 de Junio;137;;;8336;Patricia Valgoi;patriciavalgoi1@gmail.com;29;84314232;29;84314232;229
+CP;10;10;10;1.000;53091.00;B;;Altos de San Fernando;Suipacha;1261;Torre 13 depto 4d;Torre 13 depto 4d;1646;Sabrina Silva;sabrinasilvatablet@gmail.com;11;41581427;11;41581427;228
+CP;10;10;10;1.000;53091.00;S;SDC;;;;;;;Marta Dahan;martadahan@gmail.com;341;6193815;341;6193815;226
+CP;10;10;10;1.000;53091.00;R;;El Portal 200 viviendas;Neuquen;295;;;8328;Teresita Haydee Pedreira;lapilcheriadetere@gmail.com;29;84599827;29;84599827;225
+CP;10;10;10;1.000;53091.00;E;;Rosario del tala;12 De Octubre;241;;;3174;Maria Celeste Mendizabal;celdiju@hotmail.com;34;45438971;34;45438971;224
+CP;10;10;10;1.000;53091.00;X;XFZ;;;;;;;Marisabel Reynoso;marisabelrr1971@gmail.com;351;2800967;351;2800967;223
+CP;10;10;10;1.000;159273.00;C;;almagro;Corrientes;4666;local;local;1195;Ana goldstein;anamartagg@hotmail.com;11;53290494;11;53290494;222
+CP;10;10;10;1.000;58990.00;X;;Sur entre calles Moreno y Concejal Alonso;24 De Septiembre;545;Duplex portn de garaje blanco;Duplex portn de garaje blanco;5186;Viviana Carullo;viviana.carullo570@gmail.com;35;47570745;35;47570745;220
+CP;10;10;10;1.000;58990.00;X;;Ro Cuarto;Jos Manuel Estrada Norte;62;;;5800;Rosa Ana Gloria Culasso;roxiarbillaga@gmail.com;358;4347819;358;4347819;219
+CP;10;10;10;1.000;58990.00;X;;Barrio Centro;Gral Paz;547;Villa Dolores;Villa Dolores;5870;Natalia Moschni;moschini.natalia@gmail.com;35;44443141;35;44443141;218
+CP;10;10;10;1.000;58990.00;U;UAN;;;;;;;Martha Barrera;mabarrera112@gmail.com;297;4751881;297;4751881;217
+CP;10;10;10;1.000;58990.00;B;;Villa Francia;Olazabal;932;;;6706;Patricia Jacob;jacobpatricia602@gmail.com;23;23540292;23;23540292;215
+CP;10;10;10;1.000;58990.00;B;;Coronel Surez;Brandenberg;452;;;7540;Cristina Chiappano;gracri58@gmail.com;29;26498470;29;26498470;214
+CP;10;10;10;1.000;58990.00;B;;General Piran;Juan Bautista Alverdi;270;;;7172;Malvina neron;neronmalvina@gmail.com;223;6569886;223;6569886;212
+CP;10;10;10;1.000;53091.00;X;;Centro.supermercado los pinos;S228 ruta pcial;0;Calamuchita;Calamuchita;5197;Patricia cecilia Musumeci;patomusu1978@gmail.com;35;46522517;35;46522517;211
+CP;10;10;10;1.000;58990.00;B;;San Miguel del Monte;Pedro Nolasco Rojas;1284;;;7220;Perla Shwarztberg;perlademonte@hotmail.com;22;26683464;22;26683464;210
+CP;10;10;10;1.000;58990.00;L;LAR;;;;;;;Silvia Claudia de Petralanda;silcladp@gmail.com;2954;609750;2954;609750;209
+CP;10;10;10;1.000;58990.00;A;;La Merced;Maipu;228;;;4421;Silvia Sanchez;silisadelvalle@gmail.com;387;5168807;387;5168807;208
+CP;10;10;10;1.000;58990.00;B;;Saladillo;Bartolome Mitre;3551;;;7260;Patricia Alejandra Almada;patricia.almada12@hotmail.com;23;45684822;23;45684822;207
+CP;10;10;10;1.000;53091.00;X;;los platanos anexo;Pascual De Rogatis;3719;;;5010;Andrea Blazquez;andreablaz@hotmail.com;;;;;206
+CP;10;10;10;1.000;53091.00;C;;Capital Federal;Billinghurst;436;Pb b;Pb b;1174;Mara Camila Caracciolo;camilacaracciolo@hotmail.com;11;35694357;11;35694357;205
+CP;10;10;10;1.000;58990.00;B;;La Lucila;Salta;4080;;;1636;Mara Alejandra Fernndez Pedemonte;mariaalejandraf8@gmail.com;11;61699994;11;61699994;204
+CP;10;10;10;1.000;53091.00;B;;Pinamar;Pasco;1005;Ostende;Ostende;7167;Paola Pisiati;paolapisiati78@gmail.com;22;54442918;22;54442918;203
+CP;10;10;10;1.000;58990.00;B;;San Nicols De Los Arroyos;Italia;98;;;2900;Sandra Graciela Vanni;sandragracielavanni@gmail.com;33;64007109;33;64007109;202
+CP;10;10;10;1.000;58990.00;B;;San fernando;Ingeniero White;796;;;1644;Mirta Peruggini;mirtaperuggini@live.com.ar;11;40311940;11;40311940;201
+CP;10;10;10;1.000;58990.00;M;;La floresta Villanueva;Rioja;5133;;;5521;Susana Cocconi;susicocconi@hotmail.com;261;6050072;261;6050072;199
+CP;10;10;10;1.000;58990.00;B;;Malvinas;Puerto Argentino;469;;;2804;Silvia lililiana Velazquez;silvitavelazquez24@gmail.com;34;89524817;34;89524817;198
+CP;10;10;10;1.000;53091.00;M;;La Posta;Ghilino;0;;;5573;Adriana Gonzalez;porogonzalez23@yahoo.com;26;34527152;26;34527152;197
+CP;10;10;10;1.000;58990.00;U;;Puerto madryn;Luis maria campos;51;;;9120;Ana Ponce de len;anaponcedeleonchaves@gmail.com;28;04209788;28;04209788;196
+CP;10;10;10;1.000;58990.00;B;;Casanova;El Lazo;691;;;1765;Aurora Avila;aurorarolonavila@gmail.com;11;61126800;11;61126800;194
+CP;10;10;10;1.000;58990.00;B;;El Gualicho;Rosario vera;724;;;7200;Victoria Husson;victoriam_husson@hotmail.com;22;44427737;22;44427737;193
+CP;10;10;10;1.000;58990.00;B;;Natatorio club Olimpo;Rodrguez;43;;;8000;Mara Vernica Elizabet Trossero;memogyv@yahoo.com.ar;291;4124018;291;4124018;192
+CP;10;10;10;1.000;58990.00;B;;Villa Martelli;Araoz de Lamadrid;590;;;1603;Susana Gironacci;susanagironacci@gmail.com;11;23774256;11;23774256;191
+CP;10;10;10;1.000;58990.00;X;;San vicente;Solares;758;;;5006;Silvia Ortiz;silvia-ortiz@hotmail.com.ar;351;5573070;351;5573070;189
+CP;10;10;10;1.000;53091.00;Q;;Neuquen;Fortn Confluencia;3989;;;8300;Pamela Sala;pamesala@hotmail.com;299;6335145;299;6335145;188
+CP;10;10;10;1.000;58990.00;B;;La Plata;68;969;;;1900;Vernica Aristiqui;verastiqui12@gmail.com;221;5615860;221;5615860;186
+CP;10;10;10;1.000;53091.00;D;;San Luis;Riobamba;2184;;;5700;Graciela Albornoz;farfleming@yahoo.com.ar;26;64508761;26;64508761;185
+CP;10;10;10;1.000;58990.00;S;;Rosario;Bordabehere;4015;Casa;Casa;2000;Iris Vallortigara;irisva6@hotmail.com;341;5036170;341;5036170;184
+CP;10;10;10;1.000;53091.00;B;;Santa Teresita La Costa;Calle 46;844;;;7107;Graciela Provenzano;provenzanograciela@gmail.com;22;46556398;22;46556398;181
+CP;10;10;10;1.000;58990.00;B;;Bragado;Rivadavia;1351;;;6640;Analia Belardo;analiabelardo1983@gmail.com;23;42532383;23;42532383;180
+CP;10;10;10;1.000;53091.00;Z;;Nuevos Pobladores;Esperanza Patagonica;1677;;;9011;Barbra Denholm;barbracarolinadenholm@gmail.com;297;4586954;297;4586954;179
+CP;10;10;10;1.000;53091.00;W;WCF;;;;;;;Cristina Roman;romancristinaliliana@gmail.com;362;4718095;362;4718095;178
+CP;10;10;10;1.000;58990.00;S;;Belgrano;Tucuman;7253;;;2000;Mara Mossi;maresmovi2@gmail.com;341;2775647;341;2775647;177
+CP;10;10;10;1.000;58990.00;N;NAA;;;;;;;Nancy Fuchs;nanci03co@gmail.com;376;4861523;376;4861523;176
+CP;10;10;10;1.000;53091.00;B;;Mar Del Plata;Della paolera;1638;;;7600;Carla tajan;carlatajan@gmail.com;223;5562626;223;5562626;175
+CP;10;10;10;1.000;58990.00;Q;;Villa la angostura;Topa topa;246;;;8407;Yessika Valenzuela;yessikaenlinea@hotmail.com;2944;814952;2944;814952;174
+CP;10;10;10;1.000;58990.00;X;;Cordoba;Damin Osorio;327;;;5008;Ricardo Duran;durantrigo@gmail.com;351;8570001;351;8570001;173
+CP;10;10;10;1.000;58990.00;B;;Barrio Pueblo Nuevo;12 De Octubre;3545;;;7600;Pamela Garcia Molina;pamelagarciamolina@hotmail.com;223;5357031;223;5357031;172
+CP;10;10;10;1.000;58990.00;K;;Centro;Junin;420;;;4700;Alicia Pereyra;aliciapereyra920@gmail.com;55;3834239464;55;3834239464;171
+CP;10;10;10;1.000;58990.00;B;;Indio Rico;Avenida Libertador;426;;;7501;Valeria Plaza;valeriaplaza.com@gmail.com;29;83587554;29;83587554;170
+CP;10;10;10;1.000;55990.00;B;;San Andrs de Giles;25 de Mayo;534;;;6720;Alicia Estela Chertudi;aliciachertudi@gmail.com;23;25478529;23;25478529;169
+CP;10;10;10;1.000;55990.00;B;;Mar del Plata;Primera Junta;3127;;;7620;Mirta Noemi Bibbo;mirtubibbo@hotmail.com;223;5037223;223;5037223;167
+CP;10;10;10;1.000;55990.00;L;;Coronel hilario lagos La Pampa;25 De Mayo;718;Chapaleufu;Chapaleufu;6228;Paula Fernandez;paulasoledadfernandez.1986@gmail.com;358;4341715;358;4341715;166
+CP;10;10;10;1.000;55990.00;B;;Manzana 11. Lote 5;Agustn M Garca;6385;Bo. Santa Mara de Tigre;Bo. Santa Mara de Tigre;1648;Mara Cristina Vazquez;mcvdirse@yahoo.com.ar;11;58009711;11;58009711;165
+CP;10;10;10;1.000;50391.00;B;;Valentin Alsina;Paso de la patria;129;2;2;1822;Laura Gilgado;lau_gilgado@hotmail.com;11;65476430;11;65476430;160
+CP;10;10;10;1.000;55990.00;Q;;los radales;Las Palomas;153;;;8370;Julia Cabeza Meckert;julia.juan@smandes.com.ar;2944;647702;2944;647702;159
+CP;10;10;10;1.000;55990.00;X;;Hroes de Malvinas;Juan Diaz de Solis;1010;;;5850;Karina Noemi Ramirez;karinanoemiramirez5@gmail.com;35;71673368;35;71673368;158
+CP;10;10;10;1.000;55990.00;B;UXN;;;;;;;Elsa Cores;elsacores@gmail.com;11;40917026;11;40917026;156
+CP;10;10;10;1.000;50391.00;X;;Carlis paz;Av.carcano;1124;;;5152;Graciela Sanfelipe;gracielasanfelipe@gmail.com;3541;529976;3541;529976;154
+CP;10;10;10;1.000;55990.00;X;;San Francisco pcia de cordoba;9 De Julio;2365;;;2400;Mara Teresa Vagliente;matevag@hotmail.com;35;64598840;35;64598840;153
+CP;10;10;10;1.000;55990.00;B;;Ostende;Espinosa;682;;;7167;Mara Ins Iparraguirre;maiaiparraguirre1947@gmail.com;22;54422618;22;54422618;152
+CP;10;10;10;1.000;50391.00;B;;General Las Heras;Gutierrez 703;703;;;1741;Claudia Abal;claudia_2005os@hotmail.com;22;27471944;22;27471944;151
+CP;10;10;10;1.000;50391.00;C;;Colegiales;Pedro Conde;718;;;1426;Soledad Cofio;soledadcofino@gmail.com;11;11319329;11;11319329;150
+CP;10;10;10;1.000;55990.00;B;;Barrio Terminal;Caseros;874;Casa 140;Casa 140;7000;Candela Fittipaldi;candelafitti85@gmail.com;24;94642481;24;94642481;148
+CP;10;10;10;1.000;55990.00;P;QSP;;;;;;;Alejandra Barrios;alex012-012@hotmail.com;379;4688088;379;4688088;147
+CP;10;10;10;1.000;50391.00;S;;San Gregorio;Josefina de Alvear;256;;;2613;Silvia Elena Farjat;turcafarjat@gmail.com;2966;310095;2966;310095;146
+CP;10;10;10;1.000;50391.00;B;;Tapalque;Barrio Raul Alfonsin;64;Tapalqu;Tapalqu;7303;Marta Gabriela Vasquez;vasquezgabriela79@gmail.com;22;81476768;22;81476768;145
+CP;10;10;10;1.000;50391.00;X;XFZ;;;;;;;Daniela Rosset;danielarosset@yahoo.com.ar;351;5189352;351;5189352;144
+CP;10;10;10;1.000;50391.00;S;;Rosario;Dorrego;3857;1;1;2000;Liliana BACCHI;menadel_dan@hotmail.com;341;2745346;341;2745346;143
+CP;10;10;10;1.000;55990.00;L;;Macachin;Sarmiento;318;;;6307;Adriana Arhex;arhex_2007@hotmail.com;29;23641294;29;23641294;142
+CP;10;10;10;1.000;55990.00;Q;;Don Bosco;Entre Rios;200;;;8353;Sebastian Vallejos;heidbadi@gmail.com;29;42405113;29;42405113;141
+CP;10;10;10;1.000;55990.00;E;;San Salvador;Don Feliciano;783;;;3218;Daniela Challiol;danichalliol@gmail.com;34;54060380;34;54060380;140
+CP;10;10;10;1.000;55990.00;B;;Juan N Fernndez;7011;1911;Juan N Fernndez;Juan N Fernndez;7011;Vanina Marcolongo;marvanmarco@hotmail.com;22;62650657;22;62650657;139
+CP;10;10;10;1.000;55990.00;B;;Loberia;Domingo Berho;255;;;7635;Gladys Liliana Alvarez Alvarez;alvarezglalili59@gmail.com;22;62406839;22;62406839;138
+CP;10;10;10;1.000;55990.00;D;;San Luis;Caseros;1546;;;5700;Liliana Beatriz Nasso;lilibetynasso123@gmail.com;26;64888816;26;64888816;137

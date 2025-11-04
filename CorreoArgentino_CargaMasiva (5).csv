@@ -1,0 +1,10 @@
+﻿tipo_producto(obligatorio);largo(obligatorio en CM);ancho(obligatorio en CM);altura(obligatorio en CM);peso(obligatorio en KG);valor_del_contenido(obligatorio en pesos argentinos);provincia_destino(obligatorio);sucursal_destino(obligatorio solo en caso de no ingresar localidad de destino);localidad_destino(obligatorio solo en caso de no ingresar sucursal de destino);calle_destino(obligatorio solo en caso de no ingresar sucursal de destino);altura_destino(obligatorio solo en caso de no ingresar sucursal de destino);piso(opcional solo en caso de no ingresar sucursal de destino);dpto(opcional solo en caso de no ingresar sucursal de destino);codpostal_destino(obligatorio solo en caso de no ingresar sucursal de destino);destino_nombre(obligatorio);destino_email(obligatorio, debe ser un email valido);cod_area_tel(opcional);tel(opcional);cod_area_cel(opcional);cel(opcional);numero_orden(opcional)
+CP;10;10;10;1.000;58900.00;X;;Monte Buey;Urquiza 478;478;Casa;Casa;2589;Analia Rabbiosi;anarabbiosi797@gmail.com;34;67436831;34;67436831;#3305
+CP;10;10;10;1.000;60900.00;B;;Francisco Alvarez;Perito moreno 2122 entre Atuel y gral savio;2122;Casa;Casa;1746;Sergio Murakami;ser_hiro@msn.com;11;32332320;11;32332320;#3546
+CP;10;10;10;1.000;60900.00;C;;Caba;Ciudad de la Paz 2036;2036;2b;2b;1428;Paola Schlichter;paosch@hotmail.com;11;63242354;11;63242354;#3549
+CP;10;10;10;1.000;60900.00;D;;San Luis;Hipolito irigoyen 1026;1026;1026;1026;5700;Fadia Tarazi;tarazifadia@gmail.com;26;64300671;26;64300671;#3564
+CP;10;10;10;1.000;60900.00;X;;Cordoba;Campillo 113;113;3C;3C;5000;Reynaldo Javier Carini;javiercarini@yahoo.com.ar;351;3675528;351;3675528;#3570
+CP;10;10;10;1.000;60900.00;C;;Caba;Montevideo 1517;1517;2;2;1018;Lucia De campos;lulacampaz@gmail.com;11;54834731;11;54834731;#3574
+CP;10;10;10;1.000;71500.00;Q;;Centenario;Arturo Nahuel 35;35;;;8309;Federico Reguera;federicor47@gmail.com;299;5920896;299;5920896;#3579
+CP;10;10;10;1.000;60900.00;C;CRC;;;;;;;paulina cirigliano;paulina.cirigliano.azula@gmail.com;11;36385889;11;36385889;#3580
+CP;10;10;10;1.000;60900.00;X;XFZ;;;;;;;Angel Romero;aaromeroucc2017@gmail.com;351;3813503;351;3813503;#3589

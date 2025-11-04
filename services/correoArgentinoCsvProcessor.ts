@@ -5,6 +5,7 @@ import { getCodigoProvinciaCorreoArgentino } from './correoArgentinoProvincias';
 import { getDomiciliosMapping } from './domiciliosData';
 import { getSucursalesData } from './sucursalesData';
 import { loadCorreoArgentinoSucursales, findCodigoSucursalCorreoArgentino, type CorreoArgentinoSucursal } from './correoArgentinoSucursales';
+import { normalizarProvincia } from './sucursalesDataCorreoARG';
 
 // PapaParse is loaded from a CDN and available as a global variable.
 declare const Papa: any;
@@ -194,26 +195,25 @@ const unparseCSV = (data: CorreoArgentinoOutput[]): string => {
       };
       
       const fieldName = fieldMap[header];
-      let value = row[fieldName] || '';
+      let value = row[fieldName];
       
-      // Asegurar que todos los campos de texto estén normalizados (sin acentos, tildes ni caracteres especiales)
-      // NO normalizar: tipo_producto, largo, ancho, altura, peso, valor_del_contenido, provincia_destino, altura_destino, codpostal_destino, cod_area_tel, tel, cod_area_cel, cel, numero_orden
-      const camposTextuales = [
-        'sucursal_destino',
-        'localidad_destino',
-        'calle_destino',
-        'piso',
-        'dpto',
-        'destino_nombre'
-      ];
-      
-      if (fieldName && camposTextuales.includes(fieldName) && typeof value === 'string') {
-        value = normalizarNombre(value);
+      // Convertir undefined/null a cadena vacía
+      if (value === undefined || value === null) {
+        value = '';
       }
       
+      // Convertir a string si no lo es
+      value = String(value);
+      
+      // Los campos ya están normalizados en el objeto, solo necesitamos asegurarnos de que los valores estén correctos
       // Para destino_email, solo limpiar espacios y convertir a minúsculas (no normalizar porque los emails tienen caracteres especiales permitidos)
-      if (fieldName === 'destino_email' && typeof value === 'string') {
+      if (fieldName === 'destino_email') {
         value = value.toLowerCase().trim();
+      }
+      
+      // Asegurar que los valores vacíos sean realmente cadenas vacías
+      if (!value || value.trim() === '') {
+        value = '';
       }
       
       return value;
@@ -234,31 +234,40 @@ const normalizarNombre = (nombre: string): string => {
   // Primero, corregir cualquier carácter mal codificado que pueda quedar
   texto = fixEncoding(texto);
   
-  // Eliminar todos los acentos y tildes (minúsculas)
-  texto = texto
-    .replace(/[áàäâãå]/g, 'a')
-    .replace(/[éèëê]/g, 'e')
-    .replace(/[íìïî]/g, 'i')
-    .replace(/[óòöôõ]/g, 'o')
-    .replace(/[úùüû]/g, 'u')
-    .replace(/[ñ]/g, 'n')
-    .replace(/[ç]/g, 'c');
+  // Normalizar usando NFD (Normalization Form Decomposed) para separar caracteres base de sus diacríticos
+  texto = texto.normalize('NFD');
   
-  // Eliminar todos los acentos y tildes (mayúsculas)
-  texto = texto
-    .replace(/[ÁÀÄÂÃÅ]/g, 'A')
-    .replace(/[ÉÈËÊ]/g, 'E')
-    .replace(/[ÍÌÏÎ]/g, 'I')
-    .replace(/[ÓÒÖÔÕ]/g, 'O')
-    .replace(/[ÚÙÜÛ]/g, 'U')
-    .replace(/[Ñ]/g, 'N')
-    .replace(/[Ç]/g, 'C');
+  // Eliminar todos los diacríticos (acentos, tildes, etc.) - rango Unicode completo
+  texto = texto.replace(/[\u0300-\u036f]/g, '');
+  
+  // Mapeo explícito de caracteres acentuados a sus equivalentes sin acento
+  // Esto asegura que incluso si NFD falla, tengamos un fallback
+  const mapaAcentos: { [key: string]: string } = {
+    'á': 'a', 'à': 'a', 'ä': 'a', 'â': 'a', 'ã': 'a', 'å': 'a',
+    'é': 'e', 'è': 'e', 'ë': 'e', 'ê': 'e',
+    'í': 'i', 'ì': 'i', 'ï': 'i', 'î': 'i',
+    'ó': 'o', 'ò': 'o', 'ö': 'o', 'ô': 'o', 'õ': 'o',
+    'ú': 'u', 'ù': 'u', 'ü': 'u', 'û': 'u',
+    'ñ': 'n', 'ç': 'c', 'ý': 'y', 'ÿ': 'y',
+    'Á': 'A', 'À': 'A', 'Ä': 'A', 'Â': 'A', 'Ã': 'A', 'Å': 'A',
+    'É': 'E', 'È': 'E', 'Ë': 'E', 'Ê': 'E',
+    'Í': 'I', 'Ì': 'I', 'Ï': 'I', 'Î': 'I',
+    'Ó': 'O', 'Ò': 'O', 'Ö': 'O', 'Ô': 'O', 'Õ': 'O',
+    'Ú': 'U', 'Ù': 'U', 'Ü': 'U', 'Û': 'U',
+    'Ñ': 'N', 'Ç': 'C', 'Ý': 'Y'
+  };
+  
+  // Aplicar mapeo de acentos
+  for (const [acento, sinAcento] of Object.entries(mapaAcentos)) {
+    texto = texto.replace(new RegExp(acento, 'g'), sinAcento);
+  }
   
   // Eliminar caracteres especiales que Correo Argentino no acepta
   texto = texto
     .replace(/[''""]/g, '') // Eliminar comillas simples y dobles
     .replace(/[–—]/g, '-') // Reemplazar guiones especiales por guión simple
     .replace(/[…]/g, '...') // Reemplazar puntos suspensivos
+    .replace(/[™®©]/g, '') // Eliminar símbolos de marca
     .replace(/[^\w\s\-\.]/g, '') // Eliminar cualquier otro carácter que no sea letra, número, espacio, guión o punto
     .replace(/\s+/g, ' ') // Reemplazar múltiples espacios por uno solo
     .trim();
@@ -333,12 +342,353 @@ const findSucursalCorreoArgentino = (
   return codigoSucursal;
 };
 
+// Procesador específico para CSV de Shopify para Correo Argentino
+const processShopifyOrdersCorreoArgentino = async (
+  csvText: string,
+  config?: { peso: number; largo: number; ancho: number; altura: number; valorDeclarado: number }
+): Promise<{
+  correoArgentinoCSV: string;
+  domicilioCSV: string;
+  sucursalCSV: string;
+  processingInfo: any;
+}> => {
+  // Valores por defecto (convertir a las unidades de Correo Argentino)
+  const defaultConfig = {
+    peso: 1.0, // KG (Correo Argentino usa KG, no gramos)
+    largo: 10, // CM
+    ancho: 10, // CM
+    altura: 10, // CM
+    valorDeclarado: 100, // pesos argentinos
+  };
+  
+  const finalConfig = config || defaultConfig;
+  
+  // Cargar datos auxiliares
+  const [correoArgentinoSucursales] = await Promise.all([
+    loadCorreoArgentinoSucursales(), // Cargar códigos de sucursales de Correo Argentino
+  ]);
+
+  // Parsear con coma como delimitador (formato Shopify)
+  const parseWithPapa = (): Promise<any[]> => new Promise((resolve) => {
+    Papa.parse(csvText.replace(/^\uFEFF/, ''), {
+      header: true,
+      skipEmptyLines: true,
+      delimiter: ',',
+      quoteChar: '"',
+      complete: (results: { data: any[] }) => resolve(results.data),
+    });
+  });
+
+  const rows = await parseWithPapa();
+  const correoArgentinoOrders: CorreoArgentinoOutput[] = [];
+  const domiciliosOrders: CorreoArgentinoOutput[] = [];
+  const sucursalesOrders: CorreoArgentinoOutput[] = [];
+
+  let contadorDomicilio = 0;
+  let contadorSucursal = 0;
+  let contadorNoProcesados = 0;
+  const errores: string[] = [];
+  const droppedOrders: string[] = [];
+  const autofilledEmails: string[] = [];
+
+  const get = (row: any, key: string): string => (row?.[key] ?? '').toString().trim();
+
+  for (const row of rows) {
+    if (!row || Object.keys(row).length === 0) continue;
+
+    const numeroOrden = get(row, 'Name') || get(row, 'Id') || '';
+    let email = get(row, 'Email');
+    const telefono = get(row, 'Shipping Phone') || get(row, 'Phone');
+    const medioEnvio = get(row, 'Shipping Method');
+    const total = get(row, 'Total Price') || get(row, 'Total');
+
+    // Nombre y apellido desde dirección de envío (fallback a facturación)
+    const shippingName = get(row, 'Shipping Name') || get(row, 'Billing Name');
+    const [nombre, ...apParts] = shippingName.split(' ');
+    const apellido = apParts.join(' ');
+    const nombreDestinatario = `${nombre} ${apellido}`.trim();
+
+    // Dirección
+    const address1 = get(row, 'Shipping Address1');
+    const address2 = get(row, 'Shipping Address2');
+    let localidad = get(row, 'Shipping City');
+    let codigoPostal = get(row, 'Shipping Zip') || '';
+    // Limpiar código postal pero mantener formato si es válido (ej: X5000KDA -> 5000)
+    const codigoPostalSoloNumeros = codigoPostal.replace(/[^\d]/g, '');
+    if (codigoPostalSoloNumeros) {
+      codigoPostal = codigoPostalSoloNumeros;
+    }
+    let provincia = get(row, 'Shipping Province Name') || get(row, 'Shipping Province');
+    // Limpiar provincia de texto adicional como "(provincia)"
+    if (provincia) {
+      provincia = provincia.replace(/\s*\([^)]*\)\s*/g, '').trim();
+    }
+
+    // Extraer calle y número desde address1
+    let calle = address1 || '';
+    let alturaDestino = '0';
+    // Extraer número de la dirección (puede estar al final o en el medio)
+    const numMatch = address1.match(/\b(\d{1,6})\b/);
+    if (numMatch) {
+      alturaDestino = numMatch[1];
+      // Remover el número de la calle para obtener solo el nombre
+      calle = address1.replace(/\b\d{1,6}\b/, '').trim();
+    }
+    
+    // Normalizar la calle (sin acentos para Correo Argentino)
+    const calleNormalizada = normalizarNombre(calle);
+    const pisoNormalizado = normalizarNombre(address2 || '');
+
+    // Si falta email, autocompletar con un placeholder y registrar
+    if (!email) {
+      email = 'ejemplo@gmail.com';
+      if (numeroOrden) {
+        autofilledEmails.push(numeroOrden);
+      }
+    }
+
+    // Validar datos obligatorios
+    if (!numeroOrden || !email || !nombreDestinatario || !provincia) {
+      contadorNoProcesados++;
+      droppedOrders.push(`${numeroOrden || 'sin número'} - faltan datos obligatorios`);
+      continue;
+    }
+
+    // Obtener código de provincia
+    const codigoProvincia = getCodigoProvinciaCorreoArgentino(provincia);
+    if (!codigoProvincia) {
+      contadorNoProcesados++;
+      errores.push(`Orden ${numeroOrden}: Provincia no reconocida: ${provincia}`);
+      droppedOrders.push(`${numeroOrden} - provincia no reconocida: ${provincia}`);
+      continue;
+    }
+
+    // Separar teléfono
+    const { codigo: codigoArea, numero: numeroTelefono } = separarTelefono(telefono, provincia);
+
+    // Detectar tipo de envío (domicilio o sucursal)
+    const medioEnvioNormalizado = medioEnvio.toLowerCase().trim();
+    const esSucursal = medioEnvioNormalizado.includes('punto de retiro') || 
+                       medioEnvioNormalizado.includes('retiro') ||
+                       (medioEnvioNormalizado.includes('correo argentino') && medioEnvioNormalizado.includes('sucursal')) ||
+                       medioEnvioNormalizado.includes('envío a sucursal') ||
+                       medioEnvioNormalizado.includes('envio a sucursal');
+
+    // Valor del contenido fijo: 6000 pesos argentinos
+    const valorContenido = '6000.00';
+    
+    // Limpiar número de orden (remover # y otros caracteres especiales)
+    const numeroOrdenLimpio = numeroOrden.replace(/^#+/g, '').trim();
+
+    if (esSucursal) {
+      // ENVÍO A SUCURSAL
+      contadorSucursal++;
+      
+      // Normalizar para comparar
+      const ciudadLimpia = localidad || '';
+      const provinciaLimpia = provincia || '';
+      
+      // Lógica para determinar la localidad a buscar
+      let localidadParaBusqueda = ciudadLimpia || '';
+      
+      // Manejar casos especiales de nombres de ciudades
+      const ciudadNormalizada = ciudadLimpia ? normalizarNombre(ciudadLimpia).toUpperCase() : '';
+      if (ciudadNormalizada === 'CAPITAL' && provinciaLimpia) {
+        localidadParaBusqueda = provinciaLimpia;
+      }
+      
+      // Si la ciudad es "Caba" o similar, usar "Ciudad Autonoma de Buenos Aires"
+      if ((ciudadNormalizada === 'CABA' || ciudadNormalizada.includes('CABA')) && provinciaLimpia.includes('Buenos Aires')) {
+        localidadParaBusqueda = 'Ciudad Autonoma de Buenos Aires';
+      }
+      
+      // Si no tenemos localidad pero tenemos provincia, usar la provincia
+      if (!localidadParaBusqueda && provinciaLimpia) {
+        localidadParaBusqueda = provinciaLimpia;
+      }
+      
+      // Intentar buscar sucursal con diferentes variantes de localidad
+      let sucursalCodigo = findSucursalCorreoArgentino(
+        address1, 
+        codigoPostal, 
+        provinciaLimpia, 
+        localidadParaBusqueda,
+        correoArgentinoSucursales
+      );
+      
+      // Si no se encontró, intentar con la ciudad original sin normalizar
+      if (!sucursalCodigo && ciudadLimpia && ciudadLimpia !== localidadParaBusqueda) {
+        sucursalCodigo = findSucursalCorreoArgentino(
+          address1, 
+          codigoPostal, 
+          provinciaLimpia, 
+          ciudadLimpia,
+          correoArgentinoSucursales
+        );
+      }
+      
+      // Si aún no se encontró, intentar sin dirección (solo con localidad y provincia)
+      if (!sucursalCodigo) {
+        sucursalCodigo = findSucursalCorreoArgentino(
+          '', 
+          codigoPostal, 
+          provinciaLimpia, 
+          localidadParaBusqueda,
+          correoArgentinoSucursales
+        );
+      }
+      
+      if (!sucursalCodigo) {
+        contadorNoProcesados++;
+        errores.push(`Orden ${numeroOrden}: No se encontró código de sucursal para ${localidadParaBusqueda || 'sin localidad'}, ${provinciaLimpia}`);
+        droppedOrders.push(`${numeroOrden} - sin código de sucursal (${localidadParaBusqueda || 'sin localidad'}, ${provinciaLimpia})`);
+        continue;
+      }
+      
+      // Validar que el código de sucursal encontrado corresponde a la provincia correcta
+      // Y usar el código de provincia de la sucursal (no del pedido)
+      const sucursalEncontrada = correoArgentinoSucursales.find(s => s.codigo === sucursalCodigo);
+      let codigoProvinciaFinal = codigoProvincia;
+      
+      if (sucursalEncontrada) {
+        // Obtener el código de provincia de la sucursal encontrada (no del pedido)
+        const codigoProvinciaSucursal = getCodigoProvinciaCorreoArgentino(sucursalEncontrada.provincia);
+        
+        if (codigoProvinciaSucursal) {
+          // Usar el código de provincia de la sucursal
+          codigoProvinciaFinal = codigoProvinciaSucursal;
+          console.log(`   ℹ️ Usando código de provincia de sucursal: ${codigoProvinciaFinal} (${sucursalEncontrada.provincia}) en lugar de ${codigoProvincia} (${provinciaLimpia})`);
+        } else {
+          // Si no se puede obtener el código de provincia de la sucursal, usar el del pedido pero advertir
+          console.warn(`   ⚠️ No se pudo obtener código de provincia para ${sucursalEncontrada.provincia}, usando código del pedido: ${codigoProvincia}`);
+        }
+      }
+      
+      // Asegurar que TODOS los campos de texto estén completamente normalizados ANTES de crear el objeto
+      // NOTA: El código de sucursal NO debe normalizarse, es un código específico de 3 letras
+      const sucursalOrder: CorreoArgentinoOutput = {
+        tipo_producto: 'CP',
+        largo: finalConfig.largo.toString(),
+        ancho: finalConfig.ancho.toString(),
+        altura: finalConfig.altura.toString(),
+        peso: finalConfig.peso.toFixed(3),
+        valor_del_contenido: valorContenido,
+        provincia_destino: codigoProvinciaFinal,
+        sucursal_destino: sucursalCodigo.toUpperCase().trim(), // Código en mayúsculas, sin normalizar
+        localidad_destino: '',
+        calle_destino: '',
+        altura_destino: '',
+        piso: '',
+        dpto: '',
+        codpostal_destino: '',
+        destino_nombre: normalizarNombre(nombreDestinatario),
+        destino_email: email.toLowerCase().trim(),
+        cod_area_tel: codigoArea,
+        tel: numeroTelefono,
+        cod_area_cel: codigoArea,
+        cel: numeroTelefono,
+        numero_orden: numeroOrdenLimpio
+      };
+      
+      correoArgentinoOrders.push(sucursalOrder);
+      sucursalesOrders.push(sucursalOrder);
+    } else {
+      // ENVÍO A DOMICILIO
+      contadorDomicilio++;
+      
+      // Validar que tenemos los datos necesarios para domicilio
+      const localidadFinal = localidad || '';
+      if ((!localidadFinal || localidadFinal.trim() === '') && (!address1 || address1.trim() === '')) {
+        contadorNoProcesados++;
+        errores.push(`Orden ${numeroOrden}: Faltan datos para envío a domicilio (localidad o dirección)`);
+        droppedOrders.push(`${numeroOrden} - faltan datos de domicilio`);
+        continue;
+      }
+      
+      const codigoPostalFinal = codigoPostal || '';
+      const direccionFinal = address1 || localidadFinal;
+      
+      // Normalizar localidad (sin acentos pero mantener estructura)
+      // Validar si la localidad parece ser válida (no es un nombre de persona)
+      let localidadParaOutput = '';
+      if (localidadFinal && localidadFinal.trim()) {
+        const localidadNormalizadaTemp = normalizarNombre(localidadFinal);
+        // Si la localidad normalizada tiene al menos 3 caracteres y no parece ser solo un nombre
+        // (nombres de ciudades generalmente tienen más de 3 caracteres o son nombres conocidos)
+        if (localidadNormalizadaTemp.length >= 3) {
+          localidadParaOutput = localidadNormalizadaTemp;
+        }
+      }
+      
+      // Si la localidad está vacía o parece incorrecta después de normalizar, usar provincia normalizada
+      if (!localidadParaOutput || localidadParaOutput.length < 3) {
+        localidadParaOutput = normalizarNombre(provincia) || '';
+      }
+      
+      // Asegurar que TODOS los campos de texto estén completamente normalizados ANTES de crear el objeto
+      const domicilioOrder: CorreoArgentinoOutput = {
+        tipo_producto: 'CP',
+        largo: finalConfig.largo.toString(),
+        ancho: finalConfig.ancho.toString(),
+        altura: finalConfig.altura.toString(),
+        peso: finalConfig.peso.toFixed(3),
+        valor_del_contenido: valorContenido,
+        provincia_destino: codigoProvincia,
+        sucursal_destino: '',
+        localidad_destino: normalizarNombre(localidadParaOutput),
+        calle_destino: normalizarNombre(calleNormalizada || direccionFinal || ''),
+        altura_destino: alturaDestino,
+        piso: normalizarNombre(pisoNormalizado),
+        dpto: normalizarNombre(pisoNormalizado),
+        codpostal_destino: codigoPostalFinal,
+        destino_nombre: normalizarNombre(nombreDestinatario),
+        destino_email: email.toLowerCase().trim(),
+        cod_area_tel: codigoArea,
+        tel: numeroTelefono,
+        cod_area_cel: codigoArea,
+        cel: numeroTelefono,
+        numero_orden: numeroOrdenLimpio
+      };
+      
+      correoArgentinoOrders.push(domicilioOrder);
+      domiciliosOrders.push(domicilioOrder);
+    }
+  }
+
+  const processingInfo = {
+    totalOrders: rows.length,
+    procesados: contadorDomicilio + contadorSucursal,
+    domicilios: contadorDomicilio,
+    sucursales: contadorSucursal,
+    noProcesados: contadorNoProcesados,
+    processingLogs: [
+      `Total pedidos cargados: ${rows.length}`,
+      `Domicilios procesados: ${contadorDomicilio}`,
+      `Sucursales procesadas: ${contadorSucursal}`,
+      `No procesados: ${contadorNoProcesados}`,
+    ],
+    noProcessedReason: contadorNoProcesados > 0 ? 'Algunos pedidos no pudieron ser procesados. Ver errores.' : '',
+    errores: errores.length > 0 ? errores : undefined,
+    droppedOrders: droppedOrders.length > 0 ? droppedOrders : undefined,
+    autofilledEmails: autofilledEmails.length > 0 ? autofilledEmails : undefined,
+  };
+
+  return {
+    correoArgentinoCSV: unparseCSV(correoArgentinoOrders),
+    domicilioCSV: unparseCSV(domiciliosOrders),
+    sucursalCSV: unparseCSV(sucursalesOrders),
+    processingInfo,
+  };
+};
+
 // Procesar órdenes de TiendaNube/Shopify para Correo Argentino
 export const processOrdersCorreoArgentino = async (
   csvText: string,
   config?: { peso: number; largo: number; ancho: number; altura: number; valorDeclarado: number }
 ): Promise<{
   correoArgentinoCSV: string;
+  domicilioCSV: string;
+  sucursalCSV: string;
   processingInfo: any;
 }> => {
   // Valores por defecto (convertir a las unidades de Correo Argentino)
@@ -355,9 +705,7 @@ export const processOrdersCorreoArgentino = async (
   // Detectar Shopify
   if (isShopifyCSV(csvText)) {
     console.log('CSV de Shopify detectado. Procesando para Correo Argentino...');
-    // Por ahora, Shopify no está implementado específicamente para Correo Argentino
-    // Se puede extender en el futuro
-    throw new Error('Procesamiento de Shopify para Correo Argentino aún no está implementado');
+    return await processShopifyOrdersCorreoArgentino(csvText, finalConfig);
   }
   
   // Cargar datos auxiliares
@@ -443,14 +791,11 @@ export const processOrdersCorreoArgentino = async (
                          medioEnvioNormalizado.includes('retiro') ||
                          (medioEnvioNormalizado.includes('correo argentino') && medioEnvioNormalizado.includes('sucursal'));
       
-      // Determinar valor del contenido
-      let valorContenido = finalConfig.valorDeclarado.toString();
-      if (valorTotal) {
-        const valorNumerico = parseFloat(valorTotal.replace(/[^\d.,]/g, '').replace(',', '.'));
-        if (!isNaN(valorNumerico) && valorNumerico > 0) {
-          valorContenido = valorNumerico.toFixed(2);
-        }
-      }
+      // Valor del contenido fijo: 6000 pesos argentinos
+      const valorContenido = '6000.00';
+      
+      // Limpiar número de orden (remover # y otros caracteres especiales)
+      const numeroOrdenLimpio = numeroOrden.replace(/^#+/g, '').trim();
       
       // Procesar número de calle
       let alturaDestino = numero.trim();
@@ -550,6 +895,25 @@ export const processOrdersCorreoArgentino = async (
           continue;
         }
         
+        // Validar que el código de sucursal encontrado corresponde a la provincia correcta
+        // Y usar el código de provincia de la sucursal (no del pedido)
+        const sucursalEncontrada = correoArgentinoSucursales.find(s => s.codigo === sucursalCodigo);
+        let codigoProvinciaFinal = codigoProvincia;
+        
+        if (sucursalEncontrada) {
+          // Obtener el código de provincia de la sucursal encontrada (no del pedido)
+          const codigoProvinciaSucursal = getCodigoProvinciaCorreoArgentino(sucursalEncontrada.provincia);
+          
+          if (codigoProvinciaSucursal) {
+            // Usar el código de provincia de la sucursal
+            codigoProvinciaFinal = codigoProvinciaSucursal;
+            console.log(`   ℹ️ Usando código de provincia de sucursal: ${codigoProvinciaFinal} (${sucursalEncontrada.provincia}) en lugar de ${codigoProvincia} (${provincia})`);
+          } else {
+            // Si no se puede obtener el código de provincia de la sucursal, usar el del pedido pero advertir
+            console.warn(`   ⚠️ No se pudo obtener código de provincia para ${sucursalEncontrada.provincia}, usando código del pedido: ${codigoProvincia}`);
+          }
+        }
+        
         const sucursalOrder: CorreoArgentinoOutput = {
           tipo_producto: 'CP',
           largo: finalConfig.largo.toString(),
@@ -557,8 +921,8 @@ export const processOrdersCorreoArgentino = async (
           altura: finalConfig.altura.toString(),
           peso: finalConfig.peso.toFixed(3),
           valor_del_contenido: valorContenido,
-          provincia_destino: codigoProvincia,
-          sucursal_destino: normalizarNombre(sucursalCodigo || ''), // Normalizar código de sucursal también
+          provincia_destino: codigoProvinciaFinal,
+          sucursal_destino: sucursalCodigo.toUpperCase().trim(), // Código en mayúsculas, sin normalizar
           localidad_destino: '', // Vacío para sucursal
           calle_destino: '', // Vacío para sucursal
           altura_destino: '', // Vacío para sucursal
@@ -571,7 +935,7 @@ export const processOrdersCorreoArgentino = async (
           tel: numeroTelefono,
           cod_area_cel: codigoArea,
           cel: numeroTelefono,
-          numero_orden: numeroOrden
+          numero_orden: numeroOrdenLimpio
         };
         
         correoArgentinoOrders.push(sucursalOrder);
@@ -616,7 +980,7 @@ export const processOrdersCorreoArgentino = async (
           tel: numeroTelefono,
           cod_area_cel: codigoArea,
           cel: numeroTelefono,
-          numero_orden: numeroOrden
+          numero_orden: numeroOrdenLimpio
         };
         
         correoArgentinoOrders.push(domicilioOrder);

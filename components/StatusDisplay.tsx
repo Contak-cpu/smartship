@@ -6,9 +6,10 @@ interface StatusDisplayProps {
   status: ProcessStatus;
   error: string | null;
   processingInfo?: ProcessingInfo;
+  successMessage?: string; // Mensaje personalizado para cuando el procesamiento es exitoso
 }
 
-export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, processingInfo }) => {
+export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, processingInfo, successMessage }) => {
   const getStatusContent = () => {
     switch (status) {
       case ProcessStatus.IDLE:
@@ -39,7 +40,7 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, pro
       {status === ProcessStatus.SUCCESS && (
         <div className="text-center">
           <p className="text-gray-300 text-xs sm:text-sm font-medium mb-3">
-            ¡Ahora solo tienes que copiar los datos de cada hoja en la plantilla de Andreani Original!
+            {successMessage || '¡Ahora solo tienes que copiar los datos de cada hoja en la plantilla de Andreani Original!'}
           </p>
           
           {processingInfo && (

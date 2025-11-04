@@ -166,7 +166,8 @@ const CorreoArgentinoPage: React.FC = () => {
         <StatusDisplay 
           status={status} 
           error={error} 
-          processingInfo={results ? adaptProcessingInfo(results.processingInfo) : undefined} 
+          processingInfo={results ? adaptProcessingInfo(results.processingInfo) : undefined}
+          successMessage="Tu archivo está listo para subir en 'Envios Masivos' de Correo Argentino"
         />
         
         {status === ProcessStatus.SUCCESS && results && (
