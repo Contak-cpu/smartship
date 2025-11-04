@@ -1787,11 +1787,14 @@ export const processOrders = async (
     // - "Andreani Estándar" → domicilio
     // - "Andreani Despacho" → domicilio
     // - Cualquier cosa con "domicilio" → domicilio
+    // - "Envio Prioritario" o "Prioritario" → domicilio
     const esDomicilio = medioEnvioNormalizado && (
       medioEnvioNormalizado.includes("domicilio") ||
       medioEnvioNormalizado.includes("andreani") ||
       medioEnvioNormalizado.includes("envio a domicilio") ||
-      medioEnvioNormalizado.includes("a domicilio")
+      medioEnvioNormalizado.includes("a domicilio") ||
+      medioEnvioNormalizado.includes("envio prioritario") ||
+      medioEnvioNormalizado.includes("prioritario")
     );
     
     // Detectar envío a sucursal
@@ -2241,11 +2244,14 @@ export const processVentasOrders = async (
     // - "Andreani Estándar" → domicilio
     // - "Andreani Despacho" → domicilio
     // - Cualquier cosa con "domicilio" → domicilio
+    // - "Envio Prioritario" o "Prioritario" → domicilio
     const esDomicilioVentas = medioEnvioNorm && (
       medioEnvioNorm.includes("domicilio") ||
       medioEnvioNorm.includes("andreani") ||
       medioEnvioNorm.includes("envio a domicilio") ||
-      medioEnvioNorm.includes("a domicilio")
+      medioEnvioNorm.includes("a domicilio") ||
+      medioEnvioNorm.includes("envio prioritario") ||
+      medioEnvioNorm.includes("prioritario")
     );
     
     // Detectar envío a sucursal
