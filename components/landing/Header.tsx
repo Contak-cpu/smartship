@@ -11,9 +11,9 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <img 
-              src="/facil-uno.png" 
-              alt="Facil Uno Logo" 
-              className="h-8 w-8 object-contain"
+              src="/facil-uno.png?v=2" 
+              alt="FACIL.UNO Logo" 
+              className="h-8 w-auto object-contain drop-shadow-lg"
             />
             <span className="text-xl font-semibold text-gray-900 dark:text-white">Facil Uno - Soluciones Digitales</span>
           </div>
