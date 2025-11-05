@@ -721,7 +721,7 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
   console.log('=== DEBUG SUCURSAL ===');
   console.log('Buscando sucursal para dirección:', direccionNormalizada);
   console.log('Total sucursales disponibles:', sucursales.length);
-  console.log('Primeras 3 sucursales:', sucursales.slice(0, 3));
+  console.log('Código postal del pedido:', codigoPostal);
   
   // Extraer componentes específicos de la dirección del pedido
   const componentes = direccionPedido.split(',').map(c => c.trim());
@@ -778,6 +778,32 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
   console.log('Calle flexible:', calleNumeroFlexible);
   console.log('Buscando también con prefijo:', `PUNTO ANDREANI HOP ${calleNumero}`);
   
+  // Función para extraer el código postal de una dirección de sucursal
+  const extraerCodigoPostalSucursal = (direccion: string): string | null => {
+    if (!direccion) return null;
+    
+    // Buscar códigos postales en formato estándar (B8000, C1200, etc. o solo números)
+    // Patrón: letra opcional seguida de 4-5 dígitos
+    const matches = direccion.match(/\b([A-Z]?\d{4,5})\b/g);
+    if (matches && matches.length > 0) {
+      // Tomar el primer match (generalmente es el código postal)
+      const cp = matches[0];
+      // Si tiene letra prefijo, extraer solo el número
+      if (/^[A-Z]/.test(cp)) {
+        return cp.substring(1); // Quitar la letra (ej: B8000 -> 8000)
+      }
+      return cp;
+    }
+    
+    // Fallback: buscar solo números de 4-5 dígitos
+    const soloNumeros = direccion.match(/\b(\d{4,5})\b/);
+    if (soloNumeros) {
+      return soloNumeros[1];
+    }
+    
+    return null;
+  };
+  
   // Función para extraer la dirección real de la sucursal (después de "PUNTO ANDREANI HOP")
   const extraerDireccionReal = (sucursal: AndreaniSucursalInfo): string => {
     // Si la dirección está vacía, usar el nombre de la sucursal
@@ -798,71 +824,183 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
     // Si no, usar la dirección normal
     return sucursal.direccion;
   };
-
-  // Buscar coincidencias con múltiples estrategias
-  const coincidenciasExactas = sucursales.filter(sucursal => {
+  
+  // ⚠️ FLUJO CORRECTO: Buscar coincidencia EXACTA de dirección primero
+  // Luego validar según el tipo (HOP o oficial)
+  
+  console.log(`📊 Total sucursales: ${sucursales.length}`);
+  console.log(`🔍 Buscando coincidencia EXACTA para: "${calleNumero}"`);
+  
+  // Función para validar coincidencia EXACTA de dirección
+  // Debe ser IDÉNTICA: "BALCARCE 333" = "BALCARCE 333", NO "VALCARCE", "BALCARC", "334", "332"
+  const esCoincidenciaExacta = (direccionSucursal: string, calleNumeroPedido: string): boolean => {
+    if (!calleNumeroPedido || !direccionSucursal) return false;
+    
+    const direccionReal = direccionSucursal.toLowerCase().trim();
+    const calleNumeroNormalizado = calleNumeroPedido.toLowerCase().trim();
+    
+    // Extraer calle y número del pedido
+    const partesPedido = calleNumeroNormalizado.split(/\s+/);
+    const numeroPedido = partesPedido[partesPedido.length - 1];
+    const callePedido = partesPedido.slice(0, -1).join(' ');
+    
+    // Extraer números de la dirección de la sucursal
+    const numerosSucursal = direccionReal.match(/\d+/g) || [];
+    const numerosPedido = calleNumeroNormalizado.match(/\d+/g) || [];
+    
+    // Si los números no coinciden exactamente, descartar
+    // Ejemplo: pedido "BALCARCE 333" debe tener "333" en la sucursal, NO "334", "332", etc.
+    if (numerosPedido.length > 0) {
+      const numeroPrincipalPedido = numerosPedido[numerosPedido.length - 1];
+      const tieneNumeroExacto = numerosSucursal.some(num => num === numeroPrincipalPedido);
+      if (!tieneNumeroExacto) {
+        return false; // El número no coincide exactamente
+      }
+    }
+    
+    // Verificar que la calle coincida exactamente (palabra completa)
+    // "BALCARCE" debe coincidir, NO "VALCARCE" o "BALCARC"
+    const palabrasDireccion = direccionReal.split(/\s+/);
+    const palabrasPedido = callePedido.split(/\s+/);
+    
+    // Todas las palabras de la calle del pedido deben estar en la dirección
+    const todasLasPalabrasCoinciden = palabrasPedido.every(palabra => {
+      if (palabra.length < 2) return true; // Ignorar palabras muy cortas
+      return palabrasDireccion.some(palabraDir => palabraDir === palabra || palabraDir.startsWith(palabra) || palabra.startsWith(palabraDir));
+    });
+    
+    // Verificar que la dirección contiene exactamente la calle y número
+    // Debe estar como palabra completa, no como parte de otra palabra
+    const tieneCoincidenciaExacta = direccionReal === calleNumeroNormalizado ||
+      direccionReal.startsWith(calleNumeroNormalizado + ' ') ||
+      direccionReal.startsWith(calleNumeroNormalizado + ',') ||
+      direccionReal.includes(' ' + calleNumeroNormalizado + ' ') ||
+      direccionReal.includes(',' + calleNumeroNormalizado + ',') ||
+      direccionReal.endsWith(' ' + calleNumeroNormalizado);
+    
+    return tieneCoincidenciaExacta && todasLasPalabrasCoinciden;
+  };
+  
+  // Función para validar código postal
+  const validarCodigoPostal = (sucursal: AndreaniSucursalInfo): boolean => {
+    if (!codigoPostalFinal) return true;
+    const cpSucursal = extraerCodigoPostalSucursal(sucursal.direccion);
+    return cpSucursal === codigoPostalFinal || sucursal.direccion.includes(codigoPostalFinal);
+  };
+  
+  // PASO 1: Buscar coincidencias EXACTAS de dirección en TODAS las sucursales
+  console.log('🔍 PASO 1: Buscando coincidencias EXACTAS de dirección...');
+  
+  const todasCoincidenciasExactas = sucursales.filter(sucursal => {
     const direccionReal = extraerDireccionReal(sucursal);
-    const direccionRealNormalizada = normalizarDireccion(direccionReal);
-    const direccionSucursal = sucursal.direccion.toLowerCase().trim();
-    const direccionSucursalNormalizada = normalizarDireccion(sucursal.direccion);
-    const nombreSucursal = sucursal.nombre_sucursal.toLowerCase().trim();
-    const nombreSucursalNormalizado = normalizarDireccion(sucursal.nombre_sucursal);
-    
-    // 1. Coincidencia exacta normalizada en dirección real
-    const tieneCoincidenciaExacta = calleNumeroNormalizada && direccionRealNormalizada.includes(calleNumeroNormalizada);
-    
-    // 2. Coincidencia directa (sin normalizar) en dirección real
-    const tieneCoincidenciaDirecta = calleNumero && direccionReal.toLowerCase().includes(calleNumero.toLowerCase());
-    
-    // 3. Coincidencia flexible (maneja variaciones como RN40 vs Ruta 40) en dirección real
-    const tieneCoincidenciaFlexible = calleNumeroFlexible && direccionRealNormalizada.includes(calleNumeroFlexible);
-    
-    // 4. Coincidencia exacta normalizada en dirección original (fallback)
-    const tieneCoincidenciaExactaOriginal = calleNumeroNormalizada && direccionSucursalNormalizada.includes(calleNumeroNormalizada);
-    
-    // 5. Coincidencia directa en dirección original (fallback)
-    const tieneCoincidenciaDirectaOriginal = calleNumero && direccionSucursal.includes(calleNumero);
-    
-    // 6. NUEVA ESTRATEGIA: Buscar "PUNTO ANDREANI HOP" + dirección del pedido en nombre de sucursal
-    const direccionConPrefijo = `PUNTO ANDREANI HOP ${calleNumero}`.toLowerCase();
-    const direccionConPrefijoNormalizada = normalizarDireccion(direccionConPrefijo);
-    const tieneCoincidenciaConPrefijo = nombreSucursal.includes(direccionConPrefijo) || 
-                                       nombreSucursalNormalizado.includes(direccionConPrefijoNormalizada);
-    
-    // 7. Coincidencia por partes (busca cada palabra por separado) en dirección real
-    const partesCalle = calleNumeroNormalizada.split(/\s+/).filter(p => p.length > 1);
-    const tieneCoincidenciaPorPartes = partesCalle.length > 0 && 
-      partesCalle.every(parte => direccionRealNormalizada.includes(parte));
-    
-    // 8. Coincidencia por partes en nombre con prefijo
-    const tieneCoincidenciaPorPartesConPrefijo = partesCalle.length > 0 && 
-      partesCalle.every(parte => nombreSucursalNormalizado.includes(parte));
-    
-    // 9. Coincidencia con tolerancia a errores de tipeo (70% de palabras coinciden) en dirección real
-    const palabrasImportantes = partesCalle.filter(p => p.length > 2);
-    const coincidenciasPalabras = palabrasImportantes.filter(palabra => 
-      direccionRealNormalizada.includes(palabra)
-    );
-    const tieneCoincidenciaTolerante = palabrasImportantes.length > 0 && 
-      coincidenciasPalabras.length >= Math.ceil(palabrasImportantes.length * 0.7);
-    
-    // 10. Coincidencia con tolerancia a errores de tipeo en nombre con prefijo
-    const coincidenciasPalabrasConPrefijo = palabrasImportantes.filter(palabra => 
-      nombreSucursalNormalizado.includes(palabra)
-    );
-    const tieneCoincidenciaToleranteConPrefijo = palabrasImportantes.length > 0 && 
-      coincidenciasPalabrasConPrefijo.length >= Math.ceil(palabrasImportantes.length * 0.7);
-    
-    return tieneCoincidenciaExacta || tieneCoincidenciaDirecta || tieneCoincidenciaFlexible || 
-           tieneCoincidenciaExactaOriginal || tieneCoincidenciaDirectaOriginal ||
-           tieneCoincidenciaConPrefijo || tieneCoincidenciaPorPartes || tieneCoincidenciaPorPartesConPrefijo ||
-           tieneCoincidenciaTolerante || tieneCoincidenciaToleranteConPrefijo;
+    return esCoincidenciaExacta(direccionReal, calleNumero);
   });
   
-  // Si no hay coincidencias exactas, intentar búsqueda difusa
+  console.log(`✅ Coincidencias EXACTAS encontradas: ${todasCoincidenciasExactas.length}`);
+  
+  // PASO 2: Separar coincidencias en HOP y oficiales
+  const coincidenciasHop = todasCoincidenciasExactas.filter(suc => 
+    suc.nombre_sucursal.toLowerCase().startsWith('punto andreani hop')
+  );
+  const coincidenciasOficialesPorDireccion = todasCoincidenciasExactas.filter(suc => 
+    !suc.nombre_sucursal.toLowerCase().startsWith('punto andreani hop')
+  );
+  
+  console.log(`📊 Coincidencias HOP: ${coincidenciasHop.length}, Coincidencias oficiales: ${coincidenciasOficialesPorDireccion.length}`);
+  
+  // PASO 3: Si hay coincidencia en punto ANDREANI HOP → VÁLIDO (no validar CP)
+  if (coincidenciasHop.length > 0) {
+    console.log('✅ Coincidencia EXACTA encontrada en punto ANDREANI HOP (aceptada sin validar CP)');
+    if (coincidenciasHop.length === 1) {
+      console.log(`✅ Punto ANDREANI HOP: ${coincidenciasHop[0].nombre_sucursal}`);
+      return coincidenciasHop[0].nombre_sucursal;
+    } else {
+      console.log(`⚠️ Múltiples puntos HOP, usando el primero: ${coincidenciasHop[0].nombre_sucursal}`);
+      return coincidenciasHop[0].nombre_sucursal;
+    }
+  }
+  
+  // PASO 4: Si hay coincidencia en sucursal oficial → Validar código postal
+  if (coincidenciasOficialesPorDireccion.length > 0) {
+    console.log('🔍 PASO 4: Validando código postal en coincidencias oficiales...');
+    
+    // Filtrar solo las que tienen código postal coincidente
+    const coincidenciasOficialesValidas = coincidenciasOficialesPorDireccion.filter(sucursal => {
+      if (codigoPostalFinal && !validarCodigoPostal(sucursal)) {
+        console.log(`⚠️ Sucursal ${sucursal.nombre_sucursal} descartada: CP no coincide`);
+        return false;
+      }
+      return true;
+    });
+    
+    if (coincidenciasOficialesValidas.length > 0) {
+      console.log(`✅ Sucursal oficial válida (dirección exacta + CP): ${coincidenciasOficialesValidas[0].nombre_sucursal}`);
+      return coincidenciasOficialesValidas[0].nombre_sucursal;
+    } else {
+      // Si no coincide el CP, buscar sucursal oficial por código postal
+      console.log('🔄 CP no coincide, buscando sucursal oficial por código postal exacto...');
+      const todasSucursalesOficiales = sucursales.filter(suc => 
+        !suc.nombre_sucursal.toLowerCase().startsWith('punto andreani hop')
+      );
+      
+      const sucursalPorCP = todasSucursalesOficiales.find(sucursal => {
+        const cpSucursal = extraerCodigoPostalSucursal(sucursal.direccion);
+        return cpSucursal === codigoPostalFinal || sucursal.direccion.includes(codigoPostalFinal);
+      });
+      
+      if (sucursalPorCP) {
+        console.log(`✅ Sucursal oficial encontrada por código postal: ${sucursalPorCP.nombre_sucursal}`);
+        return sucursalPorCP.nombre_sucursal;
+      }
+    }
+  }
+  
+  // PASO 5: Si no hay coincidencia exacta de dirección, buscar por código postal
+  if (codigoPostalFinal && todasCoincidenciasExactas.length === 0) {
+    console.log('🔄 PASO 5: No hay coincidencia exacta de dirección, buscando por código postal...');
+    
+    const todasSucursalesOficiales = sucursales.filter(suc => 
+      !suc.nombre_sucursal.toLowerCase().startsWith('punto andreani hop')
+    );
+    
+    const sucursalPorCP = todasSucursalesOficiales.find(sucursal => {
+      const cpSucursal = extraerCodigoPostalSucursal(sucursal.direccion);
+      return cpSucursal === codigoPostalFinal || sucursal.direccion.includes(codigoPostalFinal);
+    });
+    
+    if (sucursalPorCP) {
+      console.log(`✅ Sucursal oficial encontrada por código postal: ${sucursalPorCP.nombre_sucursal}`);
+      return sucursalPorCP.nombre_sucursal;
+    } else {
+      console.error(`❌ ERROR: No se encontró sucursal oficial con código postal ${codigoPostalFinal}`);
+      console.log('Dirección buscada:', direccionNormalizada);
+      console.log('=== FIN DEBUG SUCURSAL ===');
+      return 'SUCURSAL NO ENCONTRADA';
+    }
+  }
+  
+  // Si llegamos aquí, no encontramos ninguna coincidencia
+  // Solo buscar por dirección si NO hay código postal (caso excepcional)
+  let coincidenciasExactas: AndreaniSucursalInfo[] = [];
+  if (!codigoPostalFinal) {
+    console.log('⚠️ No hay código postal, buscando por dirección en todas las sucursales...');
+    coincidenciasExactas = sucursales.filter(sucursal => {
+      const direccionReal = extraerDireccionReal(sucursal);
+      const direccionRealNormalizada = normalizarDireccion(direccionReal);
+      const direccionSucursal = sucursal.direccion.toLowerCase().trim();
+      const direccionSucursalNormalizada = normalizarDireccion(sucursal.direccion);
+      
+      const tieneCoincidenciaExacta = calleNumeroNormalizada && direccionRealNormalizada.includes(calleNumeroNormalizada);
+      const tieneCoincidenciaDirecta = calleNumero && direccionReal.toLowerCase().includes(calleNumero.toLowerCase());
+      
+      return tieneCoincidenciaExacta || tieneCoincidenciaDirecta;
+    });
+  }
+  
+  // Si no hay coincidencias exactas, intentar búsqueda difusa (solo si no hay código postal)
   let coincidenciasDifusas: { sucursal: AndreaniSucursalInfo; similitud: number }[] = [];
-  if (coincidenciasExactas.length === 0) {
-    console.log('No hay coincidencias exactas, intentando búsqueda difusa...');
+  if (coincidenciasExactas.length === 0 && !codigoPostalFinal) {
+    console.log('No hay coincidencias exactas y no hay código postal, intentando búsqueda difusa...');
     
     coincidenciasDifusas = sucursales.map(sucursal => {
       const direccionReal = extraerDireccionReal(sucursal);
@@ -894,24 +1032,24 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
   
   // Debug: mostrar sucursales que contienen la calle
   if (calleNumero) {
-    const sucursalesConCalle = sucursales.filter(sucursal => 
+    const sucursalesConCalle = sucursalesFiltradas.filter(sucursal => 
       sucursal.direccion.toLowerCase().includes(calleNumero.toLowerCase())
     );
     console.log(`Sucursales que contienen "${calleNumero}":`, sucursalesConCalle.slice(0, 5).map(s => s.nombre_sucursal));
   }
   
-  // NUEVA LÓGICA: Si hay múltiples números en la dirección, buscar sucursal más cercana por número
-  // Esta lógica se ejecuta ANTES de buscar por código postal para maximizar las posibilidades de encontrar la sucursal correcta
+  // LÓGICA: Si hay múltiples números en la dirección, buscar sucursal más cercana por número
+  // Esta lógica solo se ejecuta si ya hay coincidencias exactas pero múltiples
   const numeroPedidoMatch = calleNumero.match(/\b(\d+)\b/g);
-  if (numeroPedidoMatch && numeroPedidoMatch.length >= 2) {
+  if (numeroPedidoMatch && numeroPedidoMatch.length >= 2 && coincidenciasExactas.length > 1) {
     // Hay múltiples números (ej: "CALLE 49 621")
     const ultimoNumeroPedido = parseInt(numeroPedidoMatch[numeroPedidoMatch.length - 1]);
     const numeroCallePedido = numeroPedidoMatch[0]; // Primer número es el de la calle
     
     console.log(`🔍 Buscando sucursal más cercana: Calle "${numeroCallePedido}", Número pedido: ${ultimoNumeroPedido}`);
     
-    // Buscar todas las sucursales que tienen el mismo número de calle
-    const todasSucursalesMismaCalle = sucursales.filter(sucursal => {
+    // Buscar todas las sucursales que tienen el mismo número de calle (dentro de las coincidencias exactas)
+    const todasSucursalesMismaCalle = coincidenciasExactas.filter(sucursal => {
       const direccionSuc = extraerDireccionReal(sucursal).toLowerCase();
       const numerosSuc = direccionSuc.match(/\b(\d+)\b/g);
       
@@ -964,46 +1102,23 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
       if (codigoPostalFinal) {
         console.log('🔄 Sin coincidencias, intentando búsqueda por código postal:', codigoPostalFinal);
         
-        // Filtrar solo sucursales (NO punto hop)
-        const sucursalesSinHop = sucursales.filter(suc => {
-          const esPuntoHop = suc.nombre_sucursal.toLowerCase().includes('punto andreani hop');
-          return !esPuntoHop;
+        // Si llegamos aquí y hay código postal, ya debería estar filtrado
+        // Pero por si acaso, buscar en sucursales oficiales
+        const sucursalOficialPorCP = sucursalesOficiales.find(sucursal => {
+          const cpSucursal = extraerCodigoPostalSucursal(sucursal.direccion);
+          return cpSucursal === codigoPostalFinal || sucursal.direccion.includes(codigoPostalFinal);
         });
         
-        // Buscar por código postal en la dirección de las sucursales
-        const cpMatches = sucursalesSinHop.filter(suc => {
-          const dirSuc = suc.direccion || '';
-          const cpsEncontrados = dirSuc.match(/\b(\d{4,5})\b/g);
-          if (cpsEncontrados) {
-            return cpsEncontrados.some(cp => cp === codigoPostalFinal);
-          }
-          return false;
-        });
-        
-        if (cpMatches.length > 0) {
-          console.log(`✅ Sucursal encontrada por código postal: ${cpMatches[0].nombre_sucursal}`);
-          return cpMatches[0].nombre_sucursal;
-        }
-        
-        // Si no hay match exacto de CP, buscar por provincia + CP
-        if (provinciaFinal) {
-          const provCPMatches = sucursalesSinHop.filter(suc => {
-            const dirSuc = suc.direccion || '';
-            const provMatch = dirSuc.toLowerCase().includes(provinciaFinal.toLowerCase());
-            const cpMatch = dirSuc.match(/\b(\d{4,5})\b/g)?.some(cp => cp === codigoPostalFinal);
-            return provMatch && cpMatch;
-          });
-          
-          if (provCPMatches.length > 0) {
-            console.log(`✅ Sucursal encontrada por provincia + CP: ${provCPMatches[0].nombre_sucursal}`);
-            return provCPMatches[0].nombre_sucursal;
-          }
+        if (sucursalOficialPorCP) {
+          console.log(`✅ Sucursal oficial encontrada por código postal: ${sucursalOficialPorCP.nombre_sucursal}`);
+          return sucursalOficialPorCP.nombre_sucursal;
         }
       }
       
       console.log('❌ No se encontraron coincidencias');
       console.log('Dirección buscada:', direccionNormalizada);
-      console.log('Total sucursales revisadas:', sucursales.length);
+      console.log('Total sucursales revisadas:', sucursalesFiltradas.length);
+      console.log('Código postal usado para filtro:', codigoPostalFinal || 'NINGUNO');
       console.log('=== FIN DEBUG SUCURSAL ===');
       return 'SUCURSAL NO ENCONTRADA';
     }
