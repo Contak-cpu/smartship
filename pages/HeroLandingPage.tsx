@@ -1,5 +1,6 @@
 import React from 'react'
 import { HeroSection } from '../components/landing/HeroSection'
+import { VideoSection } from '../components/landing/VideoSection'
 import { PackagingSection } from '../components/landing/PackagingSection'
 import { HowItWorksSection } from '../components/landing/HowItWorksSection'
 import { BenefitsSection } from '../components/landing/BenefitsSection'
@@ -12,6 +13,7 @@ export default function HeroLandingPage() {
     <main className="min-h-screen">
       <Header />
       <HeroSection />
+      <VideoSection />
       <PackagingSection />
       <HowItWorksSection />
       <BenefitsSection />
