@@ -106,26 +106,26 @@ const DashboardPage: React.FC = () => {
   }, [isPaid, user]);
 
   const allFeatures: FeatureCard[] = [
-    // TEMPORALMENTE OCULTO - Panel Admin - Solo para nivel Dios (999)
-    // ...(userLevel === 999 ? [{
-    //   id: 'admin',
-    //   title: 'Panel de Administración Dios',
-    //   description: 'Control total del sistema. Gestiona usuarios, asigna niveles, crea nuevas cuentas con autoconfirmación, resetea contraseñas y visualiza estadísticas globales. Solo accesible para usuarios nivel Dios.',
-    //   path: '/admin',
-    //   color: 'red',
-    //   stats: '👑 Nivel Dios',
-    //   requiredLevel: 999,
-    //   icon: (
-    //     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //       <path
-    //         strokeLinecap="round"
-    //         strokeLinejoin="round"
-    //         strokeWidth={2}
-    //         d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-    //       />
-    //     </svg>
-    //   ),
-    // }] : []),
+    // Panel Admin - Solo para nivel Dios (999)
+    ...(userLevel === 999 ? [{
+      id: 'admin',
+      title: 'Panel de Administración Dios',
+      description: 'Control total del sistema. Gestiona usuarios, asigna niveles, crea nuevas cuentas con autoconfirmación, resetea contraseñas y visualiza estadísticas globales. Solo accesible para usuarios nivel Dios.',
+      path: '/admin',
+      color: 'red',
+      stats: '👑 Nivel Dios',
+      requiredLevel: 999,
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+          />
+        </svg>
+      ),
+    }] : []),
     {
       id: 'rentabilidad',
       title: 'Calculadora de Rentabilidad',

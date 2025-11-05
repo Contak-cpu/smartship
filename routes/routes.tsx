@@ -169,15 +169,14 @@ export const routes: RouteObject[] = [
   //     </LevelProtectedRoute>
   //   ),
   // },
-  // TEMPORALMENTE OCULTO - Panel de administración
-  // {
-  //   path: '/admin',
-  //   element: (
-  //     <LevelProtectedRoute requiredLevel={999} sectionName="Panel de Administración Dios">
-  //       <AdminPanelPage />
-  //     </LevelProtectedRoute>
-  //   ),
-  // },
+  {
+    path: '/admin',
+    element: (
+      <LevelProtectedRoute requiredLevel={999} sectionName="Panel de Administración Dios">
+        <AdminPanelPage />
+      </LevelProtectedRoute>
+    ),
+  },
   // AGREGAR NUEVAS RUTAS AQUÍ
   // Ejemplo de cómo agregar una nueva ruta protegida:
   // {

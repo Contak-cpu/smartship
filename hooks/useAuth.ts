@@ -25,11 +25,12 @@ export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Cargar perfil del usuario desde metadata
+  // Cargar perfil del usuario desde user_metadata (fuente de verdad)
   const loadUserProfile = async (currentUser: any) => {
     try {
-      console.log('📥 [useAuth] Cargando metadata para:', currentUser.email);
+      console.log('📥 [useAuth] Cargando metadata desde auth.users para:', currentUser.email);
       
+      // Leer directamente desde user_metadata de Supabase Auth
       const metadata: UserMetadata = {
         username: currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Usuario',
         nivel: currentUser.user_metadata?.nivel ?? 0,
@@ -49,7 +50,7 @@ export const useAuth = () => {
       };
       
       setUserProfile(userLevel);
-      console.log('✅ [useAuth] Metadata cargado:', metadata.username, 'Nivel:', metadata.nivel);
+      console.log('✅ [useAuth] Metadata cargado desde auth.users:', metadata.username, 'Nivel:', metadata.nivel, 'Paid:', metadata.is_paid);
     } catch (err) {
       console.error('❌ [useAuth] Excepción cargando metadata:', err);
       setError('Error al cargar los datos del usuario');

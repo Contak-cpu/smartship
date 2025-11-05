@@ -1032,7 +1032,7 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
   
   // Debug: mostrar sucursales que contienen la calle
   if (calleNumero) {
-    const sucursalesConCalle = sucursalesFiltradas.filter(sucursal => 
+    const sucursalesConCalle = sucursales.filter(sucursal => 
       sucursal.direccion.toLowerCase().includes(calleNumero.toLowerCase())
     );
     console.log(`Sucursales que contienen "${calleNumero}":`, sucursalesConCalle.slice(0, 5).map(s => s.nombre_sucursal));
@@ -1104,7 +1104,11 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
         
         // Si llegamos aquí y hay código postal, ya debería estar filtrado
         // Pero por si acaso, buscar en sucursales oficiales
-        const sucursalOficialPorCP = sucursalesOficiales.find(sucursal => {
+        const todasSucursalesOficiales = sucursales.filter(suc => 
+          !suc.nombre_sucursal.toLowerCase().startsWith('punto andreani hop')
+        );
+        
+        const sucursalOficialPorCP = todasSucursalesOficiales.find(sucursal => {
           const cpSucursal = extraerCodigoPostalSucursal(sucursal.direccion);
           return cpSucursal === codigoPostalFinal || sucursal.direccion.includes(codigoPostalFinal);
         });
@@ -1117,7 +1121,7 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
       
       console.log('❌ No se encontraron coincidencias');
       console.log('Dirección buscada:', direccionNormalizada);
-      console.log('Total sucursales revisadas:', sucursalesFiltradas.length);
+      console.log('Total sucursales revisadas:', sucursales.length);
       console.log('Código postal usado para filtro:', codigoPostalFinal || 'NINGUNO');
       console.log('=== FIN DEBUG SUCURSAL ===');
       return 'SUCURSAL NO ENCONTRADA';

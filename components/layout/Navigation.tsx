@@ -95,8 +95,8 @@ const Navigation = () => {
         )}
       </span>
       
-      {/* TEMPORALMENTE OCULTO - Panel Admin - Solo para usuarios Dios */}
-      {/* {isDios && location.pathname !== '/admin' && (
+      {/* Panel Admin - Solo para usuarios Dios */}
+      {isDios && location.pathname !== '/admin' && (
         <button
           onClick={() => {
             console.log('🔄 [Navigation] Navegando a admin');
@@ -109,7 +109,7 @@ const Navigation = () => {
           </svg>
           Panel Admin
         </button>
-      )} */}
+      )}
       
       {/* Renderizar enlaces de navegación dinámicamente */}
       {navLinks.map((link) => {
