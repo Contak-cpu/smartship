@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { PricingPage } from '../PricingPage';
+import HeroLandingPage from '../../pages/HeroLandingPage';
 
 interface SmartRedirectProps {
   onGoToLogin: () => void;
@@ -34,15 +34,8 @@ const SmartRedirect: React.FC<SmartRedirectProps> = ({
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Si no está autenticado, mostrar la página de precios
-  return (
-    <PricingPage 
-      onGoToLogin={onGoToLogin}
-      onShowBasicPlan={onShowBasicPlan}
-      onShowIntermediatePlan={onShowIntermediatePlan}
-      onShowProPlan={onShowProPlan}
-    />
-  );
+  // Si no está autenticado, mostrar la landing page
+  return <HeroLandingPage />;
 };
 
 export default SmartRedirect;
