@@ -10,7 +10,12 @@
     "preview": "vite preview",
     "vercel-build": "vite build",
     "lint": "eslint . --ext .ts,.tsx --fix",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "mcp:test": "node -e \"console.log('Vercel MCP Token configured:', process.env.VERCEL_TOKEN ? 'YES' : 'NO')\"",
+    "mcp:start": "./start-vercel-mcp.sh",
+    "mcp:stop": "./stop-vercel-mcp.sh",
+    "mcp:status": "node mcp-vercel.js status",
+    "mcp:server": "node mcp-vercel.js server"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.75.0",
@@ -32,6 +37,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/xlsx": "^0.0.35",
     "@vitejs/plugin-react": "^5.0.0",
+    "dotenv": "^16.3.1",
     "terser": "^5.44.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"

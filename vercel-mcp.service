@@ -1,0 +1,24 @@
+[Unit]
+Description=Vercel MCP Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/workspace
+ExecStart=/usr/bin/node mcp-vercel.js server
+ExecStop=/usr/bin/pkill -f "mcp-vercel.js server"
+Restart=always
+RestartSec=5
+Environment=VERCEL_TOKEN=k72PAk8f1VJms6qowWugrLrk
+Environment=VERCEL_MCP_URL=https://mcp.vercel.com
+Environment=NODE_ENV=production
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vercel-mcp
+
+[Install]
+WantedBy=multi-user.target
