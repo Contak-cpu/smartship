@@ -3,7 +3,7 @@
 """
 Script para limpiar CSV de Tiendanube y dejar solo pedidos de Andreani a domicilio
 - Corrige encoding de Windows-1252 a UTF-8
-- Filtra solo "Andreani Estándar Envío a domicilio"
+- Filtra "Andreani Estándar Envío a domicilio" y "Envío Gratis"
 - Elimina líneas duplicadas/incompletas
 """
 
@@ -47,8 +47,13 @@ def limpiar_csv_andreani(archivo_entrada, archivo_salida):
         
         contador_total += 1
         
-        # Filtrar solo Andreani Estándar "Envío a domicilio"
-        if 'Andreani Estándar' in linea and 'Env' in linea and 'o a domicilio' in linea:
+        # Filtrar solo Andreani Estándar "Envío a domicilio" o "Envío Gratis"
+        # Normalizar la línea para buscar sin problemas de encoding
+        linea_normalizada = linea.replace('ó', 'o').replace('í', 'i').replace('á', 'a').replace('é', 'e').replace('ú', 'u')
+        es_andreani_domicilio = 'Andreani Estandar' in linea_normalizada and 'Envo' in linea_normalizada and 'a domicilio' in linea_normalizada
+        es_envio_gratis = 'Envo Gratis' in linea_normalizada or 'Envio Gratis' in linea_normalizada
+        
+        if es_andreani_domicilio or es_envio_gratis:
             lineas_validas.append(linea)
             contador_andreani += 1
         
@@ -72,7 +77,7 @@ if __name__ == '__main__':
         print(f"\nPROCESO COMPLETADO")
         print(f"=====================================")
         print(f"Pedidos totales procesados: {total}")
-        print(f"Pedidos Andreani domicilio: {andreani}")
+        print(f"Pedidos Andreani domicilio + Envío Gratis: {andreani}")
         print(f"Pedidos omitidos (otros medios): {total - andreani}")
         print(f"Lineas escritas (con header): {escritos + 1}")
         print(f"\nArchivo limpio guardado en:")

@@ -1831,13 +1831,22 @@ export const processOrders = async (
     // - "Andreani Despacho" → domicilio
     // - Cualquier cosa con "domicilio" → domicilio
     // - "Envio Prioritario" o "Prioritario" → domicilio
+    // - "Envio Gratis" o "Envío Gratis" → domicilio (incluso con encoding corrupto)
+    // Detección flexible: busca "envi" seguido eventualmente de "gratis" (puede haber caracteres corruptos entre ellos)
+    const tieneEnvioGratisNormalizado = medioEnvioNormalizado && (
+      medioEnvioNormalizado.includes("envio gratis") ||
+      // Detección flexible: "envi" + "gratis" (puede haber caracteres corruptos como "" entre ellos)
+      (medioEnvioNormalizado.includes("envi") && medioEnvioNormalizado.includes("gratis"))
+    );
+    
     const esDomicilio = medioEnvioNormalizado && (
       medioEnvioNormalizado.includes("domicilio") ||
       medioEnvioNormalizado.includes("andreani") ||
       medioEnvioNormalizado.includes("envio a domicilio") ||
       medioEnvioNormalizado.includes("a domicilio") ||
       medioEnvioNormalizado.includes("envio prioritario") ||
-      medioEnvioNormalizado.includes("prioritario")
+      medioEnvioNormalizado.includes("prioritario") ||
+      tieneEnvioGratisNormalizado
     );
     
     // Detectar envío a sucursal
@@ -2318,14 +2327,23 @@ export const processVentasOrders = async (
     };
 
     // Normalizar medio de envío para detectar tipo
-    const medioEnvioNorm = medioEnvio.toLowerCase().trim()
+    // Primero normalizar quitando tildes y caracteres especiales, pero manteniendo la estructura básica
+    let medioEnvioNorm = medioEnvio.toLowerCase().trim()
+      // Normalizar tildes y acentos
       .replace(/[áàäâ]/g, 'a')
       .replace(/[éèëê]/g, 'e')
       .replace(/[íìïî]/g, 'i')
       .replace(/[óòöô]/g, 'o')
-      .replace(/[úùüû]/g, 'u');
+      .replace(/[úùüû]/g, 'u')
+      .replace(/[ñ]/g, 'n')
+      // Remover caracteres de reemplazo Unicode comunes (aparecen cuando hay encoding corrupto)
+      .replace(/\uFFFD/g, '')
+      // Remover caracteres no imprimibles pero mantener espacios
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+      // Remover comillas dobles que pueden estar alrededor del texto
+      .replace(/^["']|["']$/g, '');
     
-    console.log('🔍 Processing order (VENTAS):', numeroOrden, 'Medio de envío:', medioEnvio);
+    console.log('🔍 Processing order (VENTAS):', numeroOrden, 'Medio de envío original:', medioEnvio);
     console.log('📦 Medio de envío normalizado:', medioEnvioNorm);
     
     // Detectar envío a domicilio
@@ -2335,13 +2353,24 @@ export const processVentasOrders = async (
     // - "Andreani Despacho" → domicilio
     // - Cualquier cosa con "domicilio" → domicilio
     // - "Envio Prioritario" o "Prioritario" → domicilio
+    // - "Envio Gratis" o "Envío Gratis" → domicilio (incluso con encoding corrupto)
+    // Detección flexible: busca "envi" seguido eventualmente de "gratis" (puede haber caracteres corruptos entre ellos)
+    // Esta detección funciona incluso si el texto tiene encoding corrupto como "Envi Gratis" o "Envi Gratis"
+    const tieneEnvioGratis = medioEnvioNorm && (
+      medioEnvioNorm.includes("envio gratis") ||
+      // Detección flexible: "envi" + "gratis" (puede haber caracteres corruptos como "" entre ellos)
+      // Esto captura "envió gratis", "envio gratis", "envi gratis", etc.
+      (medioEnvioNorm.includes("envi") && medioEnvioNorm.includes("gratis"))
+    );
+    
     const esDomicilioVentas = medioEnvioNorm && (
       medioEnvioNorm.includes("domicilio") ||
       medioEnvioNorm.includes("andreani") ||
       medioEnvioNorm.includes("envio a domicilio") ||
       medioEnvioNorm.includes("a domicilio") ||
       medioEnvioNorm.includes("envio prioritario") ||
-      medioEnvioNorm.includes("prioritario")
+      medioEnvioNorm.includes("prioritario") ||
+      tieneEnvioGratis
     );
     
     // Detectar envío a sucursal
