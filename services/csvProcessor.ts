@@ -1,4 +1,3 @@
-
 import { 
   TiendanubeOrder, 
   AndreaniSucursalInfo,
@@ -1145,6 +1144,9 @@ const processShopifyOrders = async (
 
   const get = (row: any, key: string): string => (row?.[key] ?? '').toString().trim();
 
+  // Rastrear pedidos ya procesados para evitar duplicados
+  const pedidosProcesados = new Set<string>();
+
   for (const row of rows) {
     if (!row || Object.keys(row).length === 0) continue;
 
@@ -1152,6 +1154,24 @@ const processShopifyOrders = async (
     let email = get(row, 'Email');
     const telefono = get(row, 'Shipping Phone') || get(row, 'Phone');
     const medioEnvio = get(row, 'Shipping Method');
+
+    // Verificar si es una línea de producto adicional (tiene número de orden pero falta información esencial)
+    // Las líneas de productos adicionales tienen número de orden pero campos vacíos como email, dirección, etc.
+    const shippingAddress1 = get(row, 'Shipping Address1');
+    const shippingCity = get(row, 'Shipping City');
+    
+    // Si ya procesamos este pedido, saltar (es un producto adicional)
+    if (numeroOrden && pedidosProcesados.has(numeroOrden)) {
+      console.log(`⏭️ Saltando producto adicional del pedido ${numeroOrden} (ya procesado)`);
+      continue;
+    }
+    
+    // Si tiene número de orden pero le faltan campos esenciales (email, dirección), es producto adicional
+    // Detectar si es línea incompleta: tiene número de orden pero no tiene email O no tiene dirección
+    if (numeroOrden && (!email || !shippingAddress1 || !shippingCity)) {
+      console.log(`⏭️ Saltando línea incompleta del pedido ${numeroOrden} (email: "${email}", dirección: "${shippingAddress1}")`);
+      continue;
+    }
 
     // Nombre y apellido desde dirección de envío (fallback a facturación)
     const shippingName = get(row, 'Shipping Name') || get(row, 'Billing Name');
@@ -1196,8 +1216,26 @@ const processShopifyOrders = async (
       celularNumero = tel.substring(2);
     }
 
-    // DNI: Shopify no lo trae; usar placeholder seguro
-    const dniProcesado = '00000000';
+    // DNI: Intentar extraer de Billing Company o Billing Name
+    let dniProcesado = '00000000';
+    const billingCompany = get(row, 'Billing Company');
+    const billingName = get(row, 'Billing Name');
+    
+    // Intentar extraer DNI de Billing Company primero
+    const dniDesdeCompany = extraerDNI(billingCompany);
+    if (dniDesdeCompany) {
+      dniProcesado = dniDesdeCompany;
+      console.log(`DNI extraído de Billing Company para pedido ${numeroOrden}: ${dniProcesado}`);
+    } else {
+      // Si no se encontró en Billing Company, intentar en Billing Name
+      const dniDesdeName = extraerDNI(billingName);
+      if (dniDesdeName) {
+        dniProcesado = dniDesdeName;
+        console.log(`DNI extraído de Billing Name para pedido ${numeroOrden}: ${dniProcesado}`);
+      } else {
+        console.warn(`No se pudo extraer DNI para pedido ${numeroOrden} (Billing Company: "${billingCompany}", Billing Name: "${billingName}")`);
+      }
+    }
 
     // Armar formato Provincia / Localidad / CP
     let formatoProvinciaLocalidadCP = '';
@@ -1384,6 +1422,11 @@ const processShopifyOrders = async (
         'Departamento': pisoDepto,
         'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
       });
+      
+      // Marcar el pedido como procesado para evitar duplicados
+      if (numeroOrden) {
+        pedidosProcesados.add(numeroOrden);
+      }
     } else {
       contadorNoProcesados++;
       console.warn(`Pedido Shopify omitido: Name="${numeroOrden}", Email="${email}"`);
@@ -2029,7 +2072,7 @@ export const processOrders = async (
       domiciliosProcessed: contadorDomicilios,
       sucursalesProcessed: contadorSucursales,
       noProcessed: contadorNoProcesados,
-      processingLogs: processingLogs,
+      processingLogs,
       noProcessedReason
     }
   };
@@ -2081,6 +2124,9 @@ export const processVentasOrders = async (
   let contadorErroresSucursal = 0;
   const erroresSucursal: string[] = [];
 
+  // Rastrear pedidos ya procesados para evitar duplicados
+  const pedidosProcesados = new Set<string>();
+
   console.log('=== PROCESANDO ARCHIVO DE VENTAS ===');
   console.log('Total líneas de datos:', lines.length - 1);
 
@@ -2101,6 +2147,13 @@ export const processVentasOrders = async (
       continue;
     }
     
+    // Si ya procesamos este pedido, saltar (es un producto adicional)
+    if (pedidosProcesados.has(numeroOrden)) {
+      console.log(`⏭️ Saltando producto adicional del pedido ${numeroOrden} (ya procesado)`);
+      continue;
+    }
+    
+    // Extraer datos del pedido
     const nombreComprador = values[11]?.replace(/"/g, '') || '';
     let apellidoComprador = nombreComprador.split(' ')[0] || '';
     let nombreCompleto = nombreComprador.split(' ').slice(1).join(' ') || '';
@@ -2111,6 +2164,12 @@ export const processVentasOrders = async (
     const numero = values[17]?.replace(/"/g, '') || '';
     const piso = values[18]?.replace(/"/g, '') || '';
     const localidad = values[19]?.replace(/"/g, '') || '';
+    
+    // Verificar si es una línea incompleta (tiene número de orden pero le faltan campos esenciales)
+    if (!email || !direccion || !localidad) {
+      console.log(`⏭️ Saltando línea incompleta del pedido ${numeroOrden} (email: "${email}", dirección: "${direccion}")`);
+      continue;
+    }
     const ciudad = values[20]?.replace(/"/g, '') || '';
     const codigoPostal = values[21]?.replace(/"/g, '') || '';
     const provincia = values[22]?.replace(/"/g, '') || '';
@@ -2166,18 +2225,49 @@ export const processVentasOrders = async (
     
     const { codigo: codigoArea, numero: numeroTelefono } = separarTelefono(telefonoLimpio, provincia);
 
-    // Procesar DNI / CUIT
-    const dniCuitLimpio = dni.replace(/\D/g, '');
-    let dniProcesado = dniCuitLimpio;
-    if (dniCuitLimpio.length === 11) {
-      // Es un CUIT, extraer el DNI (quitar los primeros 2 dígitos y el último)
-      dniProcesado = dniCuitLimpio.substring(2, 10);
-      console.log(`CUIT detectado (${dniCuitLimpio}) -> DNI extraído: ${dniProcesado}`);
-    } else if (dniCuitLimpio.length === 8 || dniCuitLimpio.length === 7) {
-      // Es un DNI válido
-      dniProcesado = dniCuitLimpio;
-    } else {
-      console.warn(`Formato de DNI/CUIT no reconocido: ${dniCuitLimpio} (${dniCuitLimpio.length} dígitos)`);
+    // Procesar DNI / CUIT - primero intentar desde el campo DNI directo
+    let dniCuitLimpio = dni.replace(/\D/g, '');
+    let dniProcesado = '';
+    
+    // Si no hay DNI en el campo directo, buscar en Billing Company o Billing Name
+    if (!dniCuitLimpio || dniCuitLimpio.trim() === '') {
+      // Buscar índice de Billing Company y Billing Name en headers
+      const billingCompanyIndex = headers.findIndex((h: string) => h.trim().toLowerCase() === 'billing company');
+      const billingNameIndex = headers.findIndex((h: string) => h.trim().toLowerCase() === 'billing name');
+      
+      // Intentar extraer de Billing Company primero
+      if (billingCompanyIndex >= 0 && values[billingCompanyIndex]) {
+        const billingCompany = values[billingCompanyIndex]?.replace(/"/g, '') || '';
+        const dniDesdeCompany = extraerDNI(billingCompany);
+        if (dniDesdeCompany) {
+          dniCuitLimpio = dniDesdeCompany.replace(/\D/g, '');
+          console.log(`DNI extraído de Billing Company para pedido ${numeroOrden}: ${dniCuitLimpio}`);
+        }
+      }
+      
+      // Si no se encontró en Billing Company, intentar en Billing Name
+      if (!dniCuitLimpio && billingNameIndex >= 0 && values[billingNameIndex]) {
+        const billingName = values[billingNameIndex]?.replace(/"/g, '') || '';
+        const dniDesdeName = extraerDNI(billingName);
+        if (dniDesdeName) {
+          dniCuitLimpio = dniDesdeName.replace(/\D/g, '');
+          console.log(`DNI extraído de Billing Name para pedido ${numeroOrden}: ${dniCuitLimpio}`);
+        }
+      }
+    }
+    
+    // Procesar el DNI encontrado
+    if (dniCuitLimpio && dniCuitLimpio.trim() !== '') {
+      if (dniCuitLimpio.length === 11) {
+        // Es un CUIT, extraer el DNI (quitar los primeros 2 dígitos y el último)
+        dniProcesado = dniCuitLimpio.substring(2, 10);
+        console.log(`CUIT detectado (${dniCuitLimpio}) -> DNI extraído: ${dniProcesado}`);
+      } else if (dniCuitLimpio.length === 8 || dniCuitLimpio.length === 7) {
+        // Es un DNI válido
+        dniProcesado = dniCuitLimpio;
+      } else {
+        console.warn(`Formato de DNI/CUIT no reconocido: ${dniCuitLimpio} (${dniCuitLimpio.length} dígitos)`);
+      }
     }
 
     // Validar campos obligatorios antes de procesar
@@ -2439,6 +2529,11 @@ export const processVentasOrders = async (
         'Provincia / Localidad / CP * \nEj: BUENOS AIRES / 11 DE SEPTIEMBRE / 1657': formatoProvinciaLocalidadCP,
         'Observaciones\nEj: ': '',
       });
+      
+      // Marcar el pedido como procesado para evitar duplicados
+      if (numeroOrden) {
+        pedidosProcesados.add(numeroOrden);
+      }
 
     } else if (esSucursalVentas && !esDomicilioVentas) {
       console.log(`[SUCURSAL] Procesando pedido:`, numeroOrden);
@@ -2476,6 +2571,11 @@ export const processVentasOrders = async (
           ...baseData,
           'Sucursal * \nEj: 9 DE JULIO': nombreSucursal,
         });
+        
+        // Marcar el pedido como procesado para evitar duplicados
+        if (numeroOrden) {
+          pedidosProcesados.add(numeroOrden);
+        }
       }
     } else {
       contadorNoProcesados++;
@@ -2551,5 +2651,428 @@ export const processVentasOrders = async (
     domicilioCSV: unparseCSV(domicilios),
     sucursalCSV: unparseCSV(sucursalesOutput),
     processingInfo
+  };
+};
+
+// Función helper para extraer DNI de campos como Billing Company o Billing Name
+const extraerDNI = (campo: string): string | null => {
+  if (!campo || !campo.trim()) return null;
+  
+  // Limpiar el campo de espacios y caracteres especiales
+  const campoLimpio = campo.trim().replace(/[^\d]/g, '');
+  
+  // Si el campo contiene solo números, podría ser un DNI
+  if (campoLimpio.length >= 7 && campoLimpio.length <= 11) {
+    // Si tiene 11 dígitos, es un CUIT - extraer el DNI (posición 2-9)
+    if (campoLimpio.length === 11) {
+      const dni = campoLimpio.substring(2, 10);
+      console.log(`CUIT detectado en campo (${campoLimpio}) -> DNI extraído: ${dni}`);
+      return dni;
+    }
+    // Si tiene 7-10 dígitos, probablemente es un DNI
+    if (campoLimpio.length >= 7 && campoLimpio.length <= 10) {
+      console.log(`DNI detectado en campo: ${campoLimpio}`);
+      return campoLimpio;
+    }
+  }
+  
+  // Si el campo tiene texto mezclado, intentar extraer números que parezcan DNI
+  // Buscar patrones como "13.400.498" o "16821485" dentro del texto
+  const patronesDNI = [
+    /\b(\d{7,8})\b/g,  // 7-8 dígitos (DNI típico)
+    /\b(\d{2})\.(\d{3})\.(\d{3})\b/g,  // Formato 13.400.498
+    /\b(\d{11})\b/g,  // 11 dígitos (CUIT)
+  ];
+  
+  for (const patron of patronesDNI) {
+    const matches = campo.match(patron);
+    if (matches && matches.length > 0) {
+      const numeroEncontrado = matches[0].replace(/[^\d]/g, '');
+      if (numeroEncontrado.length === 11) {
+        // Es CUIT
+        const dni = numeroEncontrado.substring(2, 10);
+        console.log(`CUIT detectado en texto (${numeroEncontrado}) -> DNI extraído: ${dni}`);
+        return dni;
+      } else if (numeroEncontrado.length >= 7 && numeroEncontrado.length <= 10) {
+        // Es DNI
+        console.log(`DNI detectado en texto: ${numeroEncontrado}`);
+        return numeroEncontrado;
+      }
+    }
+  }
+  
+  return null;
+};
+
+// NOTA: Esta función está duplicada, considerar eliminar la duplicación en el futuro
+const processShopifyOrdersDuplicate = async (
+  csvText: string,
+  config?: { peso: number; alto: number; ancho: number; profundidad: number; valorDeclarado: number }
+): Promise<{
+  domicilioCSV: string;
+  sucursalCSV: string;
+  processingInfo: any;
+}> => {
+  // Valores por defecto
+  const defaultConfig = {
+    peso: 400,
+    alto: 10,
+    ancho: 10,
+    profundidad: 10,
+    valorDeclarado: 6000,
+  };
+  const finalConfig = config || defaultConfig;
+  // Cargar datos auxiliares
+  const [codigosPostales] = await Promise.all([
+    fetchCodigosPostales(),
+  ]);
+
+  // Parsear con coma como delimitador
+  const parseWithPapa = (): Promise<any[]> => new Promise((resolve) => {
+    Papa.parse(csvText.replace(/^\uFEFF/, ''), {
+      header: true,
+      skipEmptyLines: true,
+      delimiter: ',',
+      quoteChar: '"',
+      complete: (results: { data: any[] }) => resolve(results.data),
+    });
+  });
+
+  const rows = await parseWithPapa();
+  const domicilios: any[] = [];
+
+  let contadorDomicilios = 0;
+  let contadorNoProcesados = 0;
+  const droppedOrders: string[] = [];
+  const autofilledEmails: string[] = [];
+
+  // Construir índice PROVINCIA/LOCALIDAD -> formato exacto del catálogo
+  const provLocToFormato: Map<string, string> = new Map();
+  for (const [, formato] of codigosPostales.entries()) {
+    const norm = formato
+      .toUpperCase()
+      .replace(/[ÁÀÄÂ]/g, 'A')
+      .replace(/[ÉÈËÊ]/g, 'E')
+      .replace(/[ÍÌÏÎ]/g, 'I')
+      .replace(/[ÓÒÖÔ]/g, 'O')
+      .replace(/[ÚÙÜÛ]/g, 'U')
+      .replace(/[Ñ]/g, 'N')
+      .replace(/\./g, ' ')
+      .replace(/,/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const partes = norm.split('/').map(p => p.trim());
+    if (partes.length >= 2) {
+      const key = `${partes[0]} / ${partes[1]}`;
+      if (!provLocToFormato.has(key)) provLocToFormato.set(key, formato);
+    }
+  }
+
+  const get = (row: any, key: string): string => (row?.[key] ?? '').toString().trim();
+
+  // Rastrear pedidos ya procesados para evitar duplicados
+  const pedidosProcesados = new Set<string>();
+
+  for (const row of rows) {
+    if (!row || Object.keys(row).length === 0) continue;
+
+    const numeroOrden = get(row, 'Name') || get(row, 'Id') || '';
+    let email = get(row, 'Email');
+    const telefono = get(row, 'Shipping Phone') || get(row, 'Phone');
+    const medioEnvio = get(row, 'Shipping Method');
+
+    // Verificar si es una línea de producto adicional (tiene número de orden pero falta información esencial)
+    // Las líneas de productos adicionales tienen número de orden pero campos vacíos como email, dirección, etc.
+    const shippingAddress1 = get(row, 'Shipping Address1');
+    const shippingCity = get(row, 'Shipping City');
+    
+    // Si ya procesamos este pedido, saltar (es un producto adicional)
+    if (numeroOrden && pedidosProcesados.has(numeroOrden)) {
+      console.log(`⏭️ Saltando producto adicional del pedido ${numeroOrden} (ya procesado)`);
+      continue;
+    }
+    
+    // Si tiene número de orden pero le faltan campos esenciales (email, dirección), es producto adicional
+    // Detectar si es línea incompleta: tiene número de orden pero no tiene email O no tiene dirección
+    if (numeroOrden && (!email || !shippingAddress1 || !shippingCity)) {
+      console.log(`⏭️ Saltando línea incompleta del pedido ${numeroOrden} (email: "${email}", dirección: "${shippingAddress1}")`);
+      continue;
+    }
+
+    // Nombre y apellido desde dirección de envío (fallback a facturación)
+    const shippingName = get(row, 'Shipping Name') || get(row, 'Billing Name');
+    const [nombre, ...apParts] = shippingName.split(' ');
+    const apellido = apParts.join(' ');
+
+    // Dirección
+    const address1 = get(row, 'Shipping Address1');
+    const address2 = get(row, 'Shipping Address2');
+    const localidad = get(row, 'Shipping City');
+    const codigoPostal = get(row, 'Shipping Zip').replace(/[^\d]/g, '');
+    const provincia = get(row, 'Shipping Province Name') || get(row, 'Shipping Province');
+
+    // Extraer calle y número desde address1
+    const calle = normalizarNombre(address1);
+    let numeroCalle = '0';
+    const numMatch = address1.match(/\b(\d{1,6})\b/);
+    if (numMatch) {
+      numeroCalle = numMatch[1];
+    }
+
+    const pisoDepto = normalizarNombre(address2);
+
+    // Teléfono: limpiar prefijos +54 y el 9
+    let tel = telefono.replace(/[^\d]/g, '');
+    if (tel.startsWith('54')) tel = tel.substring(2);
+    if (tel.startsWith('9')) tel = tel.substring(1);
+
+    // Código de área básico: intentar detectar 2/3/4 dígitos comunes
+    let celularCodigo = '11';
+    let celularNumero = tel;
+    const posibles4 = ['2652','2901','2920','2944','2954','2965','2966','3541'];
+    const posibles3 = ['221','223','291','341','342','343','351','358','261','381','376','362','379','370','387','388','380','383','385','264','297','299'];
+    if (tel.length >= 10 && posibles4.some(p => tel.startsWith(p))) {
+      celularCodigo = posibles4.find(p => tel.startsWith(p))!;
+      celularNumero = tel.substring(4);
+    } else if (tel.length >= 10 && posibles3.some(p => tel.startsWith(p))) {
+      celularCodigo = posibles3.find(p => tel.startsWith(p))!;
+      celularNumero = tel.substring(3);
+    } else if (tel.length >= 8) {
+      celularCodigo = tel.substring(0, 2);
+      celularNumero = tel.substring(2);
+    }
+
+    // DNI: Intentar extraer de Billing Company o Billing Name
+    let dniProcesado = '00000000';
+    const billingCompany = get(row, 'Billing Company');
+    const billingName = get(row, 'Billing Name');
+    
+    // Intentar extraer DNI de Billing Company primero
+    const dniDesdeCompany = extraerDNI(billingCompany);
+    if (dniDesdeCompany) {
+      dniProcesado = dniDesdeCompany;
+      console.log(`DNI extraído de Billing Company para pedido ${numeroOrden}: ${dniProcesado}`);
+    } else {
+      // Si no se encontró en Billing Company, intentar en Billing Name
+      const dniDesdeName = extraerDNI(billingName);
+      if (dniDesdeName) {
+        dniProcesado = dniDesdeName;
+        console.log(`DNI extraído de Billing Name para pedido ${numeroOrden}: ${dniProcesado}`);
+      } else {
+        console.warn(`No se pudo extraer DNI para pedido ${numeroOrden} (Billing Company: "${billingCompany}", Billing Name: "${billingName}")`);
+      }
+    }
+
+    // Armar formato Provincia / Localidad / CP
+    let formatoProvinciaLocalidadCP = '';
+    if (codigoPostal && codigosPostales.has(codigoPostal)) {
+      formatoProvinciaLocalidadCP = codigosPostales.get(codigoPostal)!;
+    } else {
+      // Fallback: buscar por PROVINCIA + LOCALIDAD en el catálogo, ignorando CP provisto
+      const provinciaPedido = (provincia || '').toUpperCase().replace(/\s*\(.*?\)\s*/g, '').trim();
+      const localidadPedido = (localidad || '').toUpperCase().trim();
+
+      const provinciaNormalizada = provinciaPedido
+        .replace(/[áàäâ]/g, 'A')
+        .replace(/[éèëê]/g, 'E')
+        .replace(/[íìïî]/g, 'I')
+        .replace(/[óòöô]/g, 'O')
+        .replace(/[úùüû]/g, 'U')
+        .replace(/[ñ]/g, 'N')
+        .replace(/\./g, ' ')
+        .replace(/,/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const localidadNormalizada = localidadPedido
+        .replace(/[áàäâ]/g, 'A')
+        .replace(/[éèëê]/g, 'E')
+        .replace(/[íìïî]/g, 'I')
+        .replace(/[óòöô]/g, 'O')
+        .replace(/[úùüû]/g, 'U')
+        .replace(/[ñ]/g, 'N')
+        .replace(/\./g, ' ')
+        .replace(/,/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      let encontradoPorProvinciaLocalidad = false;
+
+      // Regla directa: VILLA GESELL -> BUENOS AIRES / VILLA GESELL / 7165
+      if (localidadNormalizada === 'VILLA GESELL' || localidadNormalizada.includes('VILLA GESELL')) {
+        formatoProvinciaLocalidadCP = 'BUENOS AIRES / VILLA GESELL / 7165';
+        encontradoPorProvinciaLocalidad = true;
+      }
+
+      // Intento directo por índice exacto
+      const keyDirecta = `${provinciaNormalizada} / ${localidadNormalizada}`;
+      if (provLocToFormato.has(keyDirecta)) {
+        formatoProvinciaLocalidadCP = provLocToFormato.get(keyDirecta)!;
+        encontradoPorProvinciaLocalidad = true;
+      }
+      for (const [, formato] of codigosPostales.entries()) {
+        const formatoNormalizado = formato
+          .replace(/[áàäâ]/g, 'A')
+          .replace(/[éèëê]/g, 'E')
+          .replace(/[íìïî]/g, 'I')
+          .replace(/[óòöô]/g, 'O')
+          .replace(/[úùüû]/g, 'U')
+          .replace(/[ñ]/g, 'N')
+          .toUpperCase()
+          .replace(/\./g, ' ')
+          .replace(/,/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        // provinciaNormalizada y localidadNormalizada ya calculadas fuera del bucle
+
+        const patronBusqueda = `${provinciaNormalizada} / ${localidadNormalizada}`;
+        if (!encontradoPorProvinciaLocalidad && formatoNormalizado.includes(patronBusqueda)) {
+          formatoProvinciaLocalidadCP = formato;
+          encontradoPorProvinciaLocalidad = true;
+          break;
+        }
+      }
+
+      // Si no se encontró por provincia+localidad, NO escribir una opción inválida; dejar vacío para corrección manual
+      if (!encontradoPorProvinciaLocalidad) {
+        // Fallback adicional: buscar por localidad exacta (ignorando provincia), tomar primera coincidencia
+        for (const [, formato] of codigosPostales.entries()) {
+          const formatoNormalizado = formato
+            .replace(/[áàäâ]/g, 'A')
+            .replace(/[éèëê]/g, 'E')
+            .replace(/[íìïî]/g, 'I')
+            .replace(/[óòöô]/g, 'O')
+            .replace(/[úùüû]/g, 'U')
+            .replace(/[ñ]/g, 'N')
+            .toUpperCase()
+            .replace(/\./g, ' ')
+            .replace(/,/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          const partes = formatoNormalizado.split('/').map(p => p.trim());
+          if (partes.length >= 2) {
+            const localidadCatalogo = partes[1];
+            if (localidadCatalogo === localidadNormalizada) {
+              formatoProvinciaLocalidadCP = formato;
+              encontradoPorProvinciaLocalidad = true;
+              break;
+            }
+          }
+        }
+        // Fallback por inclusión de localidad (maneja pequeñas diferencias)
+        if (!encontradoPorProvinciaLocalidad && localidadNormalizada) {
+          for (const [, formato] of codigosPostales.entries()) {
+            const formatoNormalizado = formato
+              .replace(/[áàäâ]/g, 'A')
+              .replace(/[éèëê]/g, 'E')
+              .replace(/[íìïî]/g, 'I')
+              .replace(/[óòöô]/g, 'O')
+              .replace(/[úùüû]/g, 'U')
+              .replace(/[ñ]/g, 'N')
+              .toUpperCase()
+              .replace(/\./g, ' ')
+              .replace(/,/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+            const partes = formatoNormalizado.split('/').map(p => p.trim());
+            if (partes.length >= 2) {
+              const localidadCatalogo = partes[1];
+              if (localidadCatalogo.includes(localidadNormalizada) || localidadNormalizada.includes(localidadCatalogo)) {
+                formatoProvinciaLocalidadCP = formato;
+                encontradoPorProvinciaLocalidad = true;
+                break;
+              }
+            }
+          }
+        }
+        // Fallback dirigido: forzar match por clave conocida de catálogo (sin depender de provincia)
+        if (!encontradoPorProvinciaLocalidad) {
+          if (localidadNormalizada === 'VILLA GESELL' || localidadNormalizada.includes('VILLA GESELL')) {
+            const clave = 'BUENOS AIRES / VILLA GESELL';
+            if (provLocToFormato.has(clave)) {
+              formatoProvinciaLocalidadCP = provLocToFormato.get(clave)!;
+              encontradoPorProvinciaLocalidad = true;
+            }
+          }
+        }
+        // Fallback temporal: si el pedido es #1029, forzar VILLA GESELL para desbloquear
+        if (!encontradoPorProvinciaLocalidad && (numeroOrden === '#1029' || numeroOrden.includes('1029'))) {
+          const clave = 'BUENOS AIRES / VILLA GESELL';
+          if (provLocToFormato.has(clave)) {
+            console.warn('[Shopify][Hotfix] Forzando formato para pedido #1029 -> BUENOS AIRES / VILLA GESELL / 7165');
+            formatoProvinciaLocalidadCP = provLocToFormato.get(clave)!;
+            encontradoPorProvinciaLocalidad = true;
+          }
+        }
+        if (!encontradoPorProvinciaLocalidad) {
+          formatoProvinciaLocalidadCP = '';
+        }
+      }
+    }
+
+    // Si falta email, autocompletar con un placeholder y registrar
+    if (!email) {
+      email = 'ejemplo@gmail.com';
+      if (numeroOrden) {
+        autofilledEmails.push(numeroOrden);
+      }
+    }
+
+    // Todos los envíos se consideran a domicilio según requerimiento
+    if (numeroOrden && email) {
+      // Si no hay formato válido de Provincia/Localidad/CP, descartar pedido y notificar
+      if (!formatoProvinciaLocalidadCP) {
+        contadorNoProcesados++;
+        droppedOrders.push(`${numeroOrden} - sin match Provincia/Localidad/CP`);
+        continue;
+      }
+      contadorDomicilios++;
+      domicilios.push({
+        'Paquete Guardado Ej:': '',
+        'Peso (grs)': finalConfig.peso,
+        'Alto (cm)': finalConfig.alto,
+        'Ancho (cm)': finalConfig.ancho,
+        'Profundidad (cm)': finalConfig.profundidad,
+        'Valor declarado ($ C/IVA) *': finalConfig.valorDeclarado,
+        'Numero Interno': numeroOrden,
+        'Nombre *': nombre ? normalizarNombre(nombre) : '',
+        'Apellido *': apellido ? normalizarNombre(apellido) : '',
+        'DNI *': dniProcesado,
+        'Email *': email,
+        'Celular código *': celularCodigo,
+        'Celular número *': celularNumero,
+        'Calle *': calle,
+        'Número *': numeroCalle,
+        'Piso': pisoDepto,
+        'Departamento': pisoDepto,
+        'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
+      });
+    } else {
+      contadorNoProcesados++;
+      console.warn(`Pedido Shopify omitido: Name="${numeroOrden}", Email="${email}"`);
+    }
+  }
+
+  const processingInfo = {
+    totalOrders: rows.length,
+    domiciliosProcessed: contadorDomicilios,
+    sucursalesProcessed: 0,
+    noProcessed: contadorNoProcesados,
+    processingLogs: [
+      `Total pedidos cargados: ${rows.length}`,
+      `Domicilios procesados: ${contadorDomicilios}`,
+      `Sucursales procesadas: 0`,
+      `No procesados: ${contadorNoProcesados}`,
+    ],
+    noProcessedReason: contadorNoProcesados > 0 ? 'Pedidos descartados por Provincia/Localidad/CP no encontrados' : '',
+    droppedOrders: droppedOrders.length ? droppedOrders : undefined,
+    autofilledEmails: autofilledEmails.length ? autofilledEmails : undefined,
+  };
+
+  return {
+    domicilioCSV: unparseCSV(domicilios),
+    sucursalCSV: '',
+    processingInfo,
   };
 };
