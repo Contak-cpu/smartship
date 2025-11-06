@@ -326,28 +326,73 @@ const PDFGenerator = () => {
           const page = await pdf.getPage(pageNum);
           const textContent = await page.getTextContent();
           
-          // Concatenar todo el texto de la página con mejor manejo de espacios
-          // Algunos PDFs tienen texto separado por caracteres, necesitamos unirlos mejor
-          const pageText = textContent.items
-            .map((item: any) => {
-              // Si el item tiene transformaciones de posición, podríamos usarlas
-              // pero por ahora simplemente tomamos el texto
-              return item.str || '';
-            })
+          // Extraer texto con coordenadas de posición para búsqueda por ubicación
+          const pageSize = page.view;
+          const viewport = page.getViewport({ scale: 1.0 });
+          
+          // Extraer items con sus coordenadas
+          const textItems = textContent.items.map((item: any) => {
+            // Extraer transformación (matriz de transformación)
+            const transform = item.transform || [1, 0, 0, 1, 0, 0];
+            // Las coordenadas X e Y están en transform[4] y transform[5]
+            // Pero en PDF.js, la transformación puede estar en diferentes formatos
+            const x = transform[4] || 0;
+            const y = transform[5] || 0;
+            // En PDF, Y=0 está en la parte inferior, pero viewport.height - y nos da Y desde arriba
+            const yFromTop = viewport.height - y;
+            
+            return {
+              text: item.str || '',
+              x: x,
+              y: y,
+              yFromTop: yFromTop,
+              width: item.width || 0,
+              height: item.height || 0
+            };
+          });
+          
+          // Concatenar todo el texto de la página para búsqueda por texto también
+          const pageText = textItems
+            .map(item => item.text)
             .join(' ')
-            // Limpiar espacios múltiples pero mantener la estructura
             .replace(/\s+/g, ' ')
             .trim();
           
-          // Log del texto extraído para debugging (primeras 200 caracteres)
-          console.log(`📄 Página ${pageNum} - Texto extraído (primeros 200 chars):`, pageText.substring(0, 200));
+          // Log del texto extraído para debugging
+          // Para la primera página, mostrar más información
+          if (pageNum === 1) {
+            console.log(`📄 Página ${pageNum} - Dimensiones: ${viewport.width}x${viewport.height}`);
+            console.log(`📄 Página ${pageNum} - Texto completo (primeros 1000 chars):`, pageText.substring(0, 1000));
+            // Mostrar algunos items con sus coordenadas
+            console.log(`📄 Página ${pageNum} - Primeros 10 items con coordenadas:`, 
+              textItems.slice(0, 10).map(item => `"${item.text}" @ (${item.x.toFixed(1)}, ${item.yFromTop.toFixed(1)})`));
+          }
           
-          // Buscar el patrón "N° Interno: #XXXX"
-          const orderNumber = extractOrderNumber(pageText);
+          // Buscar el número interno usando posición Y coordenadas
+          const orderNumber = extractOrderNumberByPosition(pageText, textItems, viewport);
           
           if (!orderNumber) {
-            // Si no se encuentra, intentar buscar en diferentes formatos
-            console.warn(`⚠️ Página ${pageNum}: No se encontró número con patrones estándar. Texto completo:`, pageText);
+            // Si no se encuentra, mostrar más información de diagnóstico solo para la primera página
+            if (pageNum === 1) {
+              console.warn(`⚠️ Página ${pageNum}: No se encontró número con patrones estándar.`);
+              console.warn(`   Buscando variaciones del patrón...`);
+              // Intentar buscar manualmente diferentes variaciones
+              const variaciones = [
+                /interno/gi,
+                /numero interno/gi,
+                /número interno/gi,
+                /n° interno/gi,
+                /n\s*°\s*interno/gi,
+                /#\d+/g,
+                /\d{3,}/g
+              ];
+              variaciones.forEach((patron, idx) => {
+                const matches = pageText.match(patron);
+                if (matches) {
+                  console.warn(`   Variación ${idx + 1} (${patron}):`, matches.slice(0, 5));
+                }
+              });
+            }
           } else {
             console.log(`✅ Página ${pageNum}: Número encontrado: ${orderNumber}`);
           }
@@ -462,7 +507,107 @@ const PDFGenerator = () => {
     }
   };
 
-  // Función para extraer número de orden del texto
+  // Función para extraer número de orden usando posición y coordenadas
+  const extractOrderNumberByPosition = (
+    text: string, 
+    textItems: Array<{text: string, x: number, y: number, yFromTop: number, width: number, height: number}>,
+    viewport: any
+  ) => {
+    // Primero intentar con el método de texto (por si el formato es claro)
+    const textoResult = extractOrderNumber(text);
+    if (textoResult) {
+      return textoResult;
+    }
+    
+    // Si no funciona, buscar por posición: buscar texto "Interno" y luego números cerca
+    console.log('🔍 Buscando número interno por posición...');
+    
+    // Buscar items que contengan "Interno" (NO solo "N°" porque eso también aparece en "N° de seguimiento")
+    const itemsConInterno = textItems.filter(item => 
+      item.text.toLowerCase().includes('interno')
+    );
+    
+    if (itemsConInterno.length > 0) {
+      console.log(`✅ Encontrados ${itemsConInterno.length} items con "interno"`);
+      itemsConInterno.forEach((item, idx) => {
+        console.log(`   Item ${idx + 1}: "${item.text}" @ Y=${item.yFromTop.toFixed(1)}`);
+      });
+      
+      // Para cada item con "Interno", buscar números que tengan "#" cerca (misma línea o líneas adyacentes)
+      for (const itemInterno of itemsConInterno) {
+        // Buscar items con "#" en la misma línea (Y similar, tolerancia de 15px)
+        const toleranciaY = 15;
+        const itemsConHash = textItems.filter(item => {
+          const distanciaY = Math.abs(item.yFromTop - itemInterno.yFromTop);
+          const tieneHash = item.text.includes('#');
+          return distanciaY <= toleranciaY && tieneHash && item.x > itemInterno.x; // Debe estar a la derecha
+        });
+        
+        // De esos items con "#", extraer el número
+        const numerosCerca = itemsConHash.map(item => {
+          // Extraer número después del "#"
+          const match = item.text.match(/#\s*(\d{3,})/);
+          if (match && match[1]) {
+            return {
+              text: match[1],
+              x: item.x,
+              yFromTop: item.yFromTop,
+              originalText: item.text
+            };
+          }
+          return null;
+        }).filter(item => item !== null);
+        
+        if (numerosCerca.length > 0) {
+          console.log(`✅ Encontrados ${numerosCerca.length} números con "#" cerca de "${itemInterno.text}":`);
+          numerosCerca.forEach((num: any) => {
+            console.log(`   Número: "${num.text}" @ Y=${num.yFromTop.toFixed(1)} (distancia: ${Math.abs(num.yFromTop - itemInterno.yFromTop).toFixed(1)}px, texto original: "${num.originalText}")`);
+          });
+          
+          // Tomar el número más cercano en X (a la derecha de "Interno")
+          const numeroMasCercano = numerosCerca.reduce((prev: any, curr: any) => 
+            (curr.x - itemInterno.x) < (prev.x - itemInterno.x) ? curr : prev
+          );
+          const numeroLimpio = numeroMasCercano.text.replace(/[#\s]/g, '');
+          if (numeroLimpio.length >= 3) {
+            const numeroFinal = numeroLimpio.length >= 4 ? numeroLimpio.substring(0, 4) : numeroLimpio;
+            console.log(`✅ Número interno encontrado por posición (después de "#"): "${numeroFinal}"`);
+            return numeroFinal;
+          }
+        }
+      }
+    }
+    
+    // Si no se encontró por posición, intentar buscar números en la parte superior del rótulo
+    // (típicamente el número interno está en la parte superior)
+    const parteSuperior = viewport.height * 0.3; // Primeros 30% de la página
+    const numerosSuperiores = textItems.filter(item => {
+      const esNumero = /^\d{3,}$/.test(item.text.trim()) || /^#\d{3,}$/.test(item.text.trim());
+      return item.yFromTop <= parteSuperior && esNumero;
+    });
+    
+    if (numerosSuperiores.length > 0) {
+      console.log(`⚠️ No se encontró "Interno", pero hay ${numerosSuperiores.length} números en la parte superior`);
+      numerosSuperiores.forEach((num, idx) => {
+        console.log(`   Número ${idx + 1}: "${num.text}" @ Y=${num.yFromTop.toFixed(1)}`);
+      });
+      // Tomar el número más arriba (menor Y desde arriba)
+      const numeroMasArriba = numerosSuperiores.reduce((prev, curr) => 
+        curr.yFromTop < prev.yFromTop ? curr : prev
+      );
+      const numeroLimpio = numeroMasArriba.text.replace(/[#\s]/g, '');
+      if (numeroLimpio.length >= 3 && numeroLimpio.length <= 5) {
+        const numeroFinal = numeroLimpio.length >= 4 ? numeroLimpio.substring(0, 4) : numeroLimpio;
+        console.log(`⚠️ Usando número de la parte superior como fallback: "${numeroFinal}"`);
+        return numeroFinal;
+      }
+    }
+    
+    console.log('❌ No se encontró número interno ni por texto ni por posición');
+    return null;
+  };
+
+  // Función para extraer número de orden del texto (método original)
   const extractOrderNumber = (text: string) => {
     if (!text || text.trim().length === 0) {
       return null;
@@ -474,54 +619,119 @@ const PDFGenerator = () => {
       .replace(/[°º]/g, '°')
       .trim();
 
-    console.log('🔍 Buscando número de orden en texto normalizado:', normalizedText.substring(0, 300));
+    console.log('🔍 Buscando número de orden en texto normalizado:', normalizedText.substring(0, 500));
 
-    // Patrones mejorados para detectar números de orden
-    const patterns = [
-      // Patrones específicos con "N° Interno" o variaciones
-      /N°\s*Interno\s*:?\s*#?\s*(\d{4,})/gi,
-      /N\s*°\s*Interno\s*:?\s*#?\s*(\d{4,})/gi,
-      /N\s+Interno\s*:?\s*#?\s*(\d{4,})/gi,
-      /Interno\s*:?\s*#?\s*(\d{4,})/gi,
-      /Número\s+Interno\s*:?\s*#?\s*(\d{4,})/gi,
-      /Numero\s+Interno\s*:?\s*#?\s*(\d{4,})/gi,
-      // Patrones con "#" seguido de 4 dígitos
-      /#\s*(\d{4,})/g,
-      // Patrones con "N°" y número de 4 dígitos cercano
-      /N°\s*:?\s*(\d{4,})/gi,
-      // Buscar números de 4 dígitos cerca de palabras clave
-      /(?:Interno|Orden|Número|Numero|Pedido)[\s:]*#?\s*(\d{4,})/gi,
-      // Buscar solo números de 4 dígitos al inicio o después de caracteres especiales
-      /(?:^|[\s:#])(\d{4,})(?:\s|$)/g,
+    // Función auxiliar para verificar si un número está cerca de palabras que NO son número interno
+    const esNumeroInvalido = (texto: string, posicion: number, numero: string): boolean => {
+      // Buscar contexto alrededor del número (80 caracteres antes y después)
+      const inicio = Math.max(0, posicion - 80);
+      const fin = Math.min(texto.length, posicion + numero.length + 80);
+      const contexto = texto.substring(inicio, fin).toLowerCase();
+      
+      // Palabras clave que indican que NO es el número interno (son otros números)
+      const palabrasInvalidas = [
+        'seguimiento',
+        'tracking',
+        'envio',
+        'envío',
+        'codigo de tracking',
+        'código de tracking',
+        'codigo de envio',
+        'código de envío',
+        'numero de seguimiento',
+        'número de seguimiento',
+        'rastreo',
+        'guia',
+        'guía',
+        'codigo postal',
+        'código postal',
+        'cp ',
+        'postal',
+        'codigo post',
+        'código post',
+        'direccion',
+        'dirección',
+        'calle',
+        'numero de calle',
+        'número de calle',
+        'altura',
+        'piso',
+        'dni',
+        'cuit',
+        'telefono',
+        'teléfono',
+        'celular',
+        'whatsapp',
+        'precio',
+        'total',
+        'subtotal',
+        'descuento',
+        'cantidad',
+        'unidad',
+        'kg',
+        'litro',
+        'metro',
+        'fecha',
+        'hora',
+        'dia',
+        'día',
+        'mes',
+        'año',
+        'año'
+      ];
+      
+      return palabrasInvalidas.some(palabra => contexto.includes(palabra));
+    };
+
+    // SOLO buscar patrones específicos con "N° Interno" seguido de "#" y número
+    // CRÍTICO: Debe tener "#" después de "Interno" para diferenciarlo de "N° de seguimiento"
+    const patronesInterno = [
+      // Patrón MÁS ESPECÍFICO: "N° Interno: #471" - DEBE tener el "#" después de Interno
+      /N°\s*Interno\s*:?\s*#\s*(\d{3,})/gi,
+      /N\s*°\s*Interno\s*:?\s*#\s*(\d{3,})/gi,
+      // Variación con espacio: "N ° Interno #471"
+      /N\s+Interno\s*:?\s*#\s*(\d{3,})/gi,
+      // Solo "Interno:" seguido de "#" y número (OBLIGATORIO el #)
+      /Interno\s*:?\s*#\s*(\d{3,})/gi,
+      // "Interno" seguido de "#" sin dos puntos
+      /Interno\s+#\s*(\d{3,})/gi,
+      // "Número Interno" o "Numero Interno" seguido de "#"
+      /Número\s+Interno\s*:?\s*#\s*(\d{3,})/gi,
+      /Numero\s+Interno\s*:?\s*#\s*(\d{3,})/gi,
+      // Patrón flexible pero que DEBE tener "#" después de "Interno"
+      /Interno[^\d#]*#\s*(\d{3,})/gi,
     ];
     
-    for (const pattern of patterns) {
-      const matches = normalizedText.matchAll(pattern);
+    // Buscar TODOS los matches de "Interno" primero para verificar contexto
+    for (const pattern of patronesInterno) {
+      const matches = Array.from(normalizedText.matchAll(pattern));
       for (const match of matches) {
         if (match[1]) {
           const number = match[1].trim();
-          // Verificar que sea un número de 4 dígitos (puede ser más largo pero extraemos 4)
-          if (number.length >= 4) {
-            const fourDigits = number.substring(0, 4);
-            console.log(`✅ Número encontrado con patrón: "${match[0]}" -> ${fourDigits}`);
-            return fourDigits;
+          // Aceptar números de 3 o más dígitos (como 471, 478, etc.)
+          if (number.length >= 3) {
+            const posicion = match.index || 0;
+            // Verificar que NO sea un número inválido (código postal, seguimiento, etc.)
+            if (!esNumeroInvalido(normalizedText, posicion, number)) {
+              // Si el número tiene más de 4 dígitos, tomar solo los primeros 4
+              // Si tiene menos de 4, completar con ceros a la izquierda o tomar como está
+              const numeroFinal = number.length >= 4 ? number.substring(0, 4) : number;
+              console.log(`✅ Número INTERNO encontrado con patrón específico: "${match[0]}" -> ${numeroFinal}`);
+              console.log(`   Contexto completo: "${normalizedText.substring(Math.max(0, posicion - 100), Math.min(normalizedText.length, posicion + match[0].length + 100))}"`);
+              return numeroFinal;
+            } else {
+              console.log(`⚠️ Número descartado (contexto inválido): "${match[0]}"`);
+              console.log(`   Contexto: "${normalizedText.substring(Math.max(0, posicion - 50), Math.min(normalizedText.length, posicion + match[0].length + 50))}"`);
+            }
           }
         }
       }
     }
-
-    // Si no se encuentra con patrones, buscar cualquier número de 4 dígitos como último recurso
-    const fallbackPattern = /\b(\d{4})\b/g;
-    const fallbackMatches = Array.from(normalizedText.matchAll(fallbackPattern));
     
-    if (fallbackMatches.length > 0) {
-      // Tomar el primer número de 4 dígitos encontrado
-      const firstMatch = fallbackMatches[0][1];
-      console.log(`⚠️ Usando fallback: número de 4 dígitos encontrado: ${firstMatch}`);
-      return firstMatch;
-    }
-    
-    console.log('❌ No se encontró ningún número de orden');
+    // Si no se encontró con los patrones específicos, NO usar fallbacks genéricos
+    // Es mejor devolver null que capturar un número incorrecto
+    console.log('❌ No se encontró el patrón "N° Interno" en el PDF. Verifica que el PDF contenga "N° Interno: #XXX"');
+    console.log(`   Texto completo extraído (primeros 1000 caracteres): ${normalizedText.substring(0, 1000)}`);
     return null;
   };
 
@@ -536,19 +746,21 @@ const PDFGenerator = () => {
     log('🚀 ===== INICIANDO GENERACIÓN DE PDF =====');
     
     // También imprimir directamente en el DOM
-    const debugDiv = document.createElement('div');
-    debugDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:red;color:white;padding:20px;z-index:9999;font-size:14px;max-width:300px;';
-    debugDiv.id = 'pdf-debug-info';
-    document.body.appendChild(debugDiv);
+    // COMENTADO: Debug visual deshabilitado para producción
+    // const debugDiv = document.createElement('div');
+    // debugDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:red;color:white;padding:20px;z-index:9999;font-size:14px;max-width:300px;';
+    // debugDiv.id = 'pdf-debug-info';
+    // document.body.appendChild(debugDiv);
     
     const updateDebug = (text: string) => {
-      const div = document.getElementById('pdf-debug-info');
-      if (div) {
-        div.innerHTML += '<br>' + text;
-      }
+      // COMENTADO: Debug visual deshabilitado para producción
+      // const div = document.getElementById('pdf-debug-info');
+      // if (div) {
+      //   div.innerHTML += '<br>' + text;
+      // }
     };
     
-    updateDebug('Función iniciada');
+    // updateDebug('Función iniciada');
     
     log('📋 Estado inicial:', {
       tienePDF: !!originalPdfDoc,
@@ -562,16 +774,16 @@ const PDFGenerator = () => {
       paginasPDF: pdfPagesData.length
     });
     
-    updateDebug(`CSV: ${csvData.length} filas, PDF: ${pdfPagesData.length} páginas`);
+    // updateDebug(`CSV: ${csvData.length} filas, PDF: ${pdfPagesData.length} páginas`);
 
     if (!originalPdfDoc || csvData.length < 2) {
       log('❌ Faltan archivos necesarios');
-      updateDebug('ERROR: Faltan archivos');
+      // updateDebug('ERROR: Faltan archivos');
       showMessage('error', 'Carga el CSV y el PDF antes de continuar');
       return;
     }
 
-    updateDebug('Archivos OK, procesando...');
+    // updateDebug('Archivos OK, procesando...');
     setProcessing(true);
     const headers = csvData[0];
     const rows = csvData.slice(1);
@@ -582,18 +794,18 @@ const PDFGenerator = () => {
       posY: posY,
       fontSize: fontSize
     });
-    updateDebug(`Config: X=${posX}px, Y=${posY}px, Tamaño=${fontSize}pt`);
+    // updateDebug(`Config: X=${posX}px, Y=${posY}px, Tamaño=${fontSize}pt`);
 
     log('📊 Headers del CSV:', headers);
     log('📊 Columna SKU seleccionada:', selectedColumn, `("${headers[selectedColumn]}")`);
     log('📊 Columna ORDEN seleccionada:', selectedOrderColumn, `("${headers[selectedOrderColumn]}")`);
     log('📊 Columna CANTIDAD seleccionada:', selectedQuantityColumn, `("${headers[selectedQuantityColumn] || 'N/A'}")`);
     
-    updateDebug(`SKU col: ${selectedColumn}, ORDEN col: ${selectedOrderColumn}`);
+    // updateDebug(`SKU col: ${selectedColumn}, ORDEN col: ${selectedOrderColumn}`);
 
     try {
       log('🔄 Iniciando generación de PDF combinado...');
-      updateDebug('Creando PDF documento...');
+      // updateDebug('Creando PDF documento...');
 
       const originalPages = originalPdfDoc.getPages();
       const finalPdfDoc = await PDFDocument.create();
@@ -618,7 +830,7 @@ const PDFGenerator = () => {
       const hoy = new Date().toISOString().split('T')[0];
 
       log(`📄 Procesando ${pdfPagesData.length} páginas del PDF...`);
-      updateDebug(`Procesando ${pdfPagesData.length} páginas...`);
+      // updateDebug(`Procesando ${pdfPagesData.length} páginas...`);
       
       let paginasConTexto = 0;
       
@@ -628,7 +840,7 @@ const PDFGenerator = () => {
         
         log(`\n📄 === PÁGINA ${i + 1}/${pdfPagesData.length} ===`);
         log(`   Número de orden del PDF: "${orderNumber}"`);
-        updateDebug(`Página ${i + 1}: Orden "${orderNumber}"`);
+        // updateDebug(`Página ${i + 1}: Orden "${orderNumber}"`);
         
         if (!orderNumber) {
           log(`   ⚠️ Sin número de orden, saltando página`);
@@ -682,12 +894,12 @@ const PDFGenerator = () => {
           const valoresUnicos = [...new Set(rows.slice(0, 20).map(r => r[selectedOrderColumn]).filter(Boolean))].slice(0, 10);
           log(`💡 Valores únicos en columna de orden (primeros 10):`, valoresUnicos);
           log(`💡 ¿Está buscando en la columna correcta? Verifica que "${headers[selectedOrderColumn]}" contenga los números de orden`);
-          updateDebug(`Página ${i + 1}: SIN MATCH para "${orderNumber}"`);
+          // updateDebug(`Página ${i + 1}: SIN MATCH para "${orderNumber}"`);
           continue;
         }
         
         log(`✅ Encontradas ${matchingRows.length} fila(s) para orden "${orderNumber}"`);
-        updateDebug(`Página ${i + 1}: ${matchingRows.length} fila(s) encontrada(s)`);
+        // updateDebug(`Página ${i + 1}: ${matchingRows.length} fila(s) encontrada(s)`);
 
         // Procesar cada fila y separar productos que vengan unidos con " + "
         const allProducts: string[] = [];
@@ -735,13 +947,13 @@ const PDFGenerator = () => {
 
         if (allProducts.length === 0) {
           log(`⚠️ No hay productos para orden ${orderNumber}`);
-          updateDebug(`Página ${i + 1}: Sin productos`);
+          // updateDebug(`Página ${i + 1}: Sin productos`);
           continue;
         }
 
         log(`✅ Total productos para orden ${orderNumber}: ${allProducts.length}`);
         log(`📋 Productos extraídos:`, allProducts);
-        updateDebug(`Página ${i + 1}: ${allProducts.length} productos`);
+        // updateDebug(`Página ${i + 1}: ${allProducts.length} productos`);
 
         const pageIndex = pageData.pageNumber - 1;
         log(`🔍 Verificando página: pageNumber=${pageData.pageNumber}, pageIndex=${pageIndex}, copiedPages=${copiedPages.length}`);
@@ -749,7 +961,7 @@ const PDFGenerator = () => {
         // ✅ USAR LA REFERENCIA DIRECTA DE copiedPages - Esta es la página EN finalPdfDoc
         if (pageIndex < 0 || pageIndex >= copiedPages.length) {
           log(`⚠️ Índice de página ${pageIndex} fuera de rango (copiedPages: ${copiedPages.length})`);
-          updateDebug(`Página ${i + 1}: ERROR - índice fuera de rango`);
+          // updateDebug(`Página ${i + 1}: ERROR - índice fuera de rango`);
           continue;
         }
         
@@ -759,7 +971,7 @@ const PDFGenerator = () => {
         
         if (!page) {
           log(`❌ ERROR: No se pudo obtener la página ${pageIndex} de copiedPages`);
-          updateDebug(`Página ${i + 1}: ERROR - no se puede obtener de copiedPages`);
+          // updateDebug(`Página ${i + 1}: ERROR - no se puede obtener de copiedPages`);
           continue;
         }
         
@@ -792,7 +1004,7 @@ const PDFGenerator = () => {
         
         if (lines.length === 0) {
           log(`⚠️ No hay líneas para dibujar en orden ${orderNumber}`);
-          updateDebug(`Página ${i + 1}: Sin líneas para dibujar`);
+          // updateDebug(`Página ${i + 1}: Sin líneas para dibujar`);
           continue;
         }
         
@@ -815,18 +1027,18 @@ const PDFGenerator = () => {
         log(`🔤 Tamaño de fuente (configurado): ${finalFontSize}pt`);
         log(`📍 Posición base configurada: X=${posX}, Y=${posY}`);
         log(`📍 Primera línea en Y=${posY}, segunda en Y=${posY - lineSpacing}, etc.`);
-        updateDebug(`Página ${i + 1}: ${lines.length} línea(s) para dibujar`);
+        // updateDebug(`Página ${i + 1}: ${lines.length} línea(s) para dibujar`);
         let lineasDibujadas = 0;
         
         // FORZAR logs múltiples veces para asegurar visibilidad
         log(`🎨 INICIANDO BUCLE DE DIBUJADO - Total líneas: ${lines.length}`);
         log(`🎨 Verificando: lines.length=${lines.length}, pageIndex=${pageIndex}, helveticaFont=${helveticaFont ? 'existe' : 'NO EXISTE'}`);
-        updateDebug(`Iniciando dibujado de ${lines.length} línea(s)`);
+        // updateDebug(`Iniciando dibujado de ${lines.length} línea(s)`);
         
         // Validar que tenemos todo lo necesario
         if (!helveticaFont) {
           log(`❌ ERROR CRÍTICO: helveticaFont no está disponible!`);
-          updateDebug(`ERROR: Fuente no disponible`);
+          // updateDebug(`ERROR: Fuente no disponible`);
           continue;
         }
         
@@ -868,7 +1080,7 @@ const PDFGenerator = () => {
           if (isOutOfBounds) {
             log(`⚠️ ADVERTENCIA: Coordenadas configuradas están fuera del rango de la página: X=${posX}, Y=${yPosition} (página: ${width}x${height})`);
             log(`   ℹ️ Usando coordenadas configuradas de todas formas: X=${posX}, Y=${yPosition}`);
-            updateDebug(`⚠️ Advertencia: Y=${yPosition} fuera de rango (0-${height}), pero usando valor configurado`);
+            // updateDebug(`⚠️ Advertencia: Y=${yPosition} fuera de rango (0-${height}), pero usando valor configurado`);
           } else {
             log(`✅ Coordenadas dentro de rango, usando posición exacta: X=${posX}, Y=${yPosition}`);
           }
@@ -881,8 +1093,8 @@ const PDFGenerator = () => {
           log(`   ✅ Usando coordenadas: posX=${posX}, posY base=${posY} -> finalX=${finalX}, finalY=${finalY}`);
           
           // ✅ Mostrar información de formato en el frontend
-          updateDebug(`Línea ${lineIndex + 1}: X=${finalX}px, Y=${finalY}px, Fuente=Helvetica, Tamaño=${finalFontSize}pt`);
-          updateDebug(`Texto: "${lineNormalizada.substring(0, 30)}..."`);
+          // updateDebug(`Línea ${lineIndex + 1}: X=${finalX}px, Y=${finalY}px, Fuente=Helvetica, Tamaño=${finalFontSize}pt`);
+          // updateDebug(`Texto: "${lineNormalizada.substring(0, 30)}..."`);
           
           try {
             // ✅ USAR LA REFERENCIA DIRECTA DE LA PÁGINA COPIADA - Esta es la página correcta
@@ -922,7 +1134,7 @@ const PDFGenerator = () => {
             lineasDibujadas++;
             log(`✅ Línea ${lineIndex + 1} dibujada exitosamente en página ${pageIndex + 1} con fuente Helvetica`);
             log(`   📊 Progreso: ${lineIndex + 1}/${lines.length} líneas procesadas, ${lineasDibujadas} dibujadas`);
-            updateDebug(`✅ Completado (${lineasDibujadas}/${lines.length})`);
+            // updateDebug(`✅ Completado (${lineasDibujadas}/${lines.length})`);
             
             // Añadir un pequeño delay para asegurar que el proceso no se bloquea
             await new Promise(resolve => setTimeout(resolve, 10));
@@ -930,27 +1142,27 @@ const PDFGenerator = () => {
           } catch (drawError: any) {
             log(`❌ Error al dibujar línea ${lineIndex + 1}:`, drawError);
             log(`   Error detalle:`, drawError?.message, drawError?.stack);
-            updateDebug(`ERROR dibujando: ${drawError?.message || drawError}`);
+            // updateDebug(`ERROR dibujando: ${drawError?.message || drawError}`);
           }
         }
         
         log(`🏁 FIN DEL BUCLE DE DIBUJADO - Líneas dibujadas: ${lineasDibujadas}/${lines.length}`);
-        updateDebug(`Bucle completado: ${lineasDibujadas}/${lines.length} líneas`);
+        // updateDebug(`Bucle completado: ${lineasDibujadas}/${lines.length} líneas`);
         
         if (lineasDibujadas > 0) {
           paginasConTexto++;
           log(`✅ Página ${pageData.pageNumber}: ${lineasDibujadas} línea(s) dibujada(s) exitosamente`);
-          updateDebug(`Página ${pageData.pageNumber}: ✅ ${lineasDibujadas} líneas`);
+          // updateDebug(`Página ${pageData.pageNumber}: ✅ ${lineasDibujadas} líneas`);
         } else {
           log(`⚠️ Página ${pageData.pageNumber}: No se dibujaron líneas`);
-          updateDebug(`Página ${pageData.pageNumber}: ⚠️ Sin líneas`);
+          // updateDebug(`Página ${pageData.pageNumber}: ⚠️ Sin líneas`);
         }
         
         log(`🔄 Continuando con siguiente página... (${i + 1}/${pdfPagesData.length})`);
       }
       
       log(`✅ TODAS LAS PÁGINAS PROCESADAS: ${paginasConTexto} páginas con texto de ${pdfPagesData.length} totales`);
-      updateDebug(`✅ Procesamiento completo: ${paginasConTexto} páginas con texto`);
+      // updateDebug(`✅ Procesamiento completo: ${paginasConTexto} páginas con texto`);
 
       // Agregar página de resumen al final
       const summaryPage = finalPdfDoc.addPage([595, 842]); // A4 size
@@ -1102,17 +1314,17 @@ const PDFGenerator = () => {
         }
       }
       
-      updateDebug(`Guardando PDF (${paginasConTexto} páginas con texto)...`);
+      // updateDebug(`Guardando PDF (${paginasConTexto} páginas con texto)...`);
       
       // Forzar actualización antes de guardar
       log(`🔄 Forzando actualización del documento antes de guardar...`);
-      updateDebug(`Convirtiendo a bytes...`);
+      // updateDebug(`Convirtiendo a bytes...`);
       
       let pdfBytes: Uint8Array;
       try {
         pdfBytes = await finalPdfDoc.save();
         log(`💾 PDF guardado, tamaño: ${pdfBytes.length} bytes`);
-        updateDebug(`PDF guardado: ${Math.round(pdfBytes.length / 1024)} KB`);
+        // updateDebug(`PDF guardado: ${Math.round(pdfBytes.length / 1024)} KB`);
         
         // Verificar que el PDF tiene el tamaño esperado
         if (pdfBytes.length < 1000) {
@@ -1120,20 +1332,20 @@ const PDFGenerator = () => {
         }
       } catch (saveError: any) {
         log(`❌ ERROR al guardar PDF: ${saveError?.message || saveError}`);
-        updateDebug(`ERROR guardando: ${saveError?.message || 'Error desconocido'}`);
+        // updateDebug(`ERROR guardando: ${saveError?.message || 'Error desconocido'}`);
         throw saveError;
       }
       
       log(`📦 Creando blob...`);
-      updateDebug(`Creando blob...`);
+      // updateDebug(`Creando blob...`);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       
       log(`🔗 Creando URL del objeto...`);
-      updateDebug(`Preparando descarga...`);
+      // updateDebug(`Preparando descarga...`);
       const url = URL.createObjectURL(blob);
       
       log(`⬇️ Iniciando descarga...`);
-      updateDebug(`Descargando...`);
+      // updateDebug(`Descargando...`);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'documentos_combinados.pdf';
@@ -1143,16 +1355,17 @@ const PDFGenerator = () => {
       URL.revokeObjectURL(url);
       
       log(`✅ PDF DESCARGADO EXITOSAMENTE`);
-      updateDebug(`✅ PDF descargado correctamente`);
+      // updateDebug(`✅ PDF descargado correctamente`);
       
-      updateDebug(`✅ PDF descargado (${paginasConTexto} páginas con texto)`);
+      // updateDebug(`✅ PDF descargado (${paginasConTexto} páginas con texto)`);
       log(`✅ PDF generado y descargado exitosamente. ${paginasConTexto} páginas tuvieron texto insertado.`);
       
       // Mantener el div de debug por más tiempo para ver el resultado final
-      setTimeout(() => {
-        const div = document.getElementById('pdf-debug-info');
-        if (div) div.remove();
-      }, 10000);
+      // COMENTADO: Debug visual deshabilitado para producción
+      // setTimeout(() => {
+      //   const div = document.getElementById('pdf-debug-info');
+      //   if (div) div.remove();
+      // }, 10000);
 
       // Guardar en historial
       try {
@@ -1235,14 +1448,15 @@ const PDFGenerator = () => {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       log('❌ ERROR al generar PDF:', error);
       log('❌ Stack:', error instanceof Error ? error.stack : 'No disponible');
-      updateDebug(`ERROR: ${errorMessage}`);
+      // updateDebug(`ERROR: ${errorMessage}`);
       showMessage('error', `Error al generar el PDF: ${errorMessage}`);
       
       // Mantener el div de debug para ver el error
-      setTimeout(() => {
-        const div = document.getElementById('pdf-debug-info');
-        if (div) div.remove();
-      }, 15000);
+      // COMENTADO: Debug visual deshabilitado para producción
+      // setTimeout(() => {
+      //   const div = document.getElementById('pdf-debug-info');
+      //   if (div) div.remove();
+      // }, 15000);
     } finally {
       setProcessing(false);
     }
