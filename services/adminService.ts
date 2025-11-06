@@ -14,6 +14,12 @@ export interface UserAdmin {
   last_sign_in_at: string | null;
   created_at: string;
   updated_at: string;
+  is_paid: boolean | null;
+  payment_status: string | null;
+  paid_until: string | null;
+  trial_expires_at: string | null;
+  is_expired?: boolean;
+  pagos_empresa?: boolean | null;
 }
 
 export interface CreateUserData {
@@ -26,10 +32,16 @@ export interface CreateUserData {
 export interface UpdateUserData {
   username?: string;
   nivel?: number;
+  is_paid?: boolean;
+  paid_until?: string | null;
+  pagos_empresa?: boolean;
+  trial_expires_at?: string | null;
+  payment_status?: string | null;
 }
 
 /**
  * Obtiene todos los usuarios del sistema (solo nivel Dios)
+ * Usa la función RPC get_all_users_admin que lee desde auth.users.raw_user_meta_data
  */
 export const getAllUsers = async (): Promise<{ data: UserAdmin[] | null; error: any }> => {
   try {
@@ -40,6 +52,7 @@ export const getAllUsers = async (): Promise<{ data: UserAdmin[] | null; error: 
       return { data: null, error };
     }
 
+    // La función RPC ya devuelve los datos en el formato correcto
     return { data: data as UserAdmin[], error: null };
   } catch (error) {
     console.error('Error en getAllUsers:', error);
@@ -49,29 +62,30 @@ export const getAllUsers = async (): Promise<{ data: UserAdmin[] | null; error: 
 
 /**
  * Actualiza el nivel de un usuario (solo nivel Dios)
- * Actualiza directamente en user_metadata de auth.users usando Admin API
+ * Usa la función RPC update_user_level que actualiza directamente raw_user_meta_data
  */
 export const updateUserLevel = async (
   userId: string,
   newLevel: number
 ): Promise<{ success: boolean; error: any }> => {
   try {
+    // Primero intentar usar la función RPC (más confiable)
+    const { error: rpcError } = await supabase.rpc('update_user_level', {
+      p_user_id: userId,
+      p_new_level: newLevel,
+    });
+
+    if (!rpcError) {
+      return { success: true, error: null };
+    }
+
+    // Si falla la RPC, intentar con Admin API
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
     if (!serviceRoleKey) {
-      // Si no hay service_role_key, intentar usar la función RPC (si existe)
-      const { data, error } = await supabase.rpc('update_user_level', {
-        p_user_id: userId,
-        p_new_level: newLevel,
-      });
-
-      if (error) {
-        console.error('Error al actualizar nivel:', error);
-        return { success: false, error };
-      }
-
-      return { success: true, error: null };
+      console.error('Error al actualizar nivel (RPC falló y no hay service_role_key):', rpcError);
+      return { success: false, error: rpcError };
     }
 
     // Usar Admin API para actualizar metadata
@@ -123,20 +137,38 @@ export const updateUserLevel = async (
 
 /**
  * Actualiza el perfil de un usuario (solo nivel Dios)
- * Actualiza directamente en user_metadata de auth.users
+ * Usa la función RPC update_user_metadata que no requiere service_role_key
  */
 export const updateUserProfile = async (
   userId: string,
   updates: UpdateUserData
 ): Promise<{ success: boolean; error: any }> => {
   try {
+    // Primero intentar usar la función RPC (no requiere service_role_key)
+    const { error: rpcError } = await supabase.rpc('update_user_metadata', {
+      p_user_id: userId,
+      p_username: updates.username || null,
+      p_nivel: updates.nivel !== undefined ? updates.nivel : null,
+      p_is_paid: updates.is_paid !== undefined ? updates.is_paid : null,
+      p_paid_until: updates.paid_until !== undefined ? (updates.paid_until || '') : null,
+      p_pagos_empresa: updates.pagos_empresa !== undefined ? updates.pagos_empresa : null,
+      p_trial_expires_at: updates.trial_expires_at !== undefined ? (updates.trial_expires_at || '') : null,
+      p_payment_status: updates.payment_status !== undefined ? (updates.payment_status || '') : null,
+    });
+
+    if (!rpcError) {
+      return { success: true, error: null };
+    }
+
+    // Si falla la RPC, intentar con Admin API (requiere service_role_key)
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
     if (!serviceRoleKey) {
+      console.error('Error al actualizar perfil (RPC falló y no hay service_role_key):', rpcError);
       return { 
         success: false, 
-        error: { message: 'VITE_SUPABASE_SERVICE_ROLE_KEY no está configurada. Necesaria para actualizar metadata.' } 
+        error: rpcError || { message: 'No se puede actualizar el perfil. La función RPC falló y no hay service_role_key configurada.' } 
       };
     }
 
@@ -162,6 +194,11 @@ export const updateUserProfile = async (
       ...currentMetadata,
       ...(updates.username && { username: updates.username }),
       ...(updates.nivel !== undefined && { nivel: updates.nivel }),
+      ...(updates.is_paid !== undefined && { is_paid: updates.is_paid }),
+      ...(updates.paid_until !== undefined && { paid_until: updates.paid_until }),
+      ...(updates.pagos_empresa !== undefined && { pagos_empresa: updates.pagos_empresa }),
+      ...(updates.trial_expires_at !== undefined && { trial_expires_at: updates.trial_expires_at }),
+      ...(updates.payment_status !== undefined && { payment_status: updates.payment_status }),
     };
 
     // Actualizar metadata
@@ -198,38 +235,61 @@ export const createUser = async (
   userData: CreateUserData
 ): Promise<{ success: boolean; userId?: string; error: any }> => {
   try {
-    // Crear el usuario en auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: userData.email,
-      password: userData.password,
-      options: {
-        data: {
-          username: userData.username,
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!serviceRoleKey) {
+      // Si no hay service_role_key, usar el método normal de signUp
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            username: userData.username,
+            nivel: userData.nivel,
+          },
         },
-        // NOTA: emailRedirectTo se usa para confirmar el email automáticamente
-        // En producción, deberías tener un endpoint que confirme el email
-        emailRedirectTo: undefined,
+      });
+
+      if (authError || !authData.user) {
+        console.error('Error al crear usuario en auth:', authError);
+        return { success: false, error: authError };
+      }
+
+      return { success: true, userId: authData.user.id, error: null };
+    }
+
+    // Usar Admin API para crear usuario con metadata completa
+    const trialExpiresAt = new Date();
+    trialExpiresAt.setDate(trialExpiresAt.getDate() + 7); // 7 días de trial
+
+    const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'apikey': serviceRoleKey,
       },
+      body: JSON.stringify({
+        email: userData.email,
+        password: userData.password,
+        email_confirm: true, // Auto-confirmar email
+        user_metadata: {
+          username: userData.username,
+          nivel: userData.nivel,
+          trial_expires_at: trialExpiresAt.toISOString(),
+        },
+      }),
     });
 
-    if (authError || !authData.user) {
-      console.error('Error al crear usuario en auth:', authError);
-      return { success: false, error: authError };
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Error al crear usuario con Admin API:', error);
+      return { success: false, error };
     }
 
-    // El perfil se crea automáticamente por el trigger handle_new_user()
-    // Pero necesitamos actualizar el nivel
-    const { error: updateError } = await supabase
-      .from('user_profiles')
-      .update({ nivel: userData.nivel })
-      .eq('id', authData.user.id);
-
-    if (updateError) {
-      console.error('Error al actualizar nivel del nuevo usuario:', updateError);
-      return { success: false, error: updateError };
-    }
-
-    return { success: true, userId: authData.user.id, error: null };
+    const result = await response.json();
+    return { success: true, userId: result.id, error: null };
   } catch (error) {
     console.error('Error en createUser:', error);
     return { success: false, error };
@@ -238,21 +298,45 @@ export const createUser = async (
 
 /**
  * Elimina un usuario (solo nivel Dios)
- * NOTA: Esto solo elimina el perfil. Para eliminar completamente el usuario
- * de auth.users, necesitarías usar la Admin API de Supabase
+ * Usa la función RPC delete_user_admin que no requiere service_role_key
  */
 export const deleteUser = async (
   userId: string
 ): Promise<{ success: boolean; error: any }> => {
   try {
-    // Eliminar perfil (esto también eliminará el usuario de auth por CASCADE)
-    const { error } = await supabase
-      .from('user_profiles')
-      .delete()
-      .eq('id', userId);
+    // Primero intentar usar la función RPC (no requiere service_role_key)
+    const { error: rpcError } = await supabase.rpc('delete_user_admin', {
+      p_user_id: userId,
+    });
 
-    if (error) {
-      console.error('Error al eliminar usuario:', error);
+    if (!rpcError) {
+      return { success: true, error: null };
+    }
+
+    // Si falla la RPC, intentar con Admin API (requiere service_role_key)
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!serviceRoleKey) {
+      console.error('Error al eliminar usuario (RPC falló y no hay service_role_key):', rpcError);
+      return { 
+        success: false, 
+        error: rpcError || { message: 'No se puede eliminar el usuario. La función RPC falló y no hay service_role_key configurada.' } 
+      };
+    }
+
+    // Usar Admin API para eliminar el usuario completamente
+    const response = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'apikey': serviceRoleKey,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Error al eliminar usuario con Admin API:', error);
       return { success: false, error };
     }
 
@@ -404,13 +488,26 @@ export const getUserStats = async (): Promise<{
   totalUsers: number;
   usersByLevel: { [key: number]: number };
   recentUsers: number;
+  paidUsers: number;
+  expiredUsers: number;
+  activeUsers: number;
+  trialUsers: number;
   error: any;
 }> => {
   try {
     const { data: users, error } = await getAllUsers();
 
     if (error || !users) {
-      return { totalUsers: 0, usersByLevel: {}, recentUsers: 0, error };
+      return { 
+        totalUsers: 0, 
+        usersByLevel: {}, 
+        recentUsers: 0, 
+        paidUsers: 0,
+        expiredUsers: 0,
+        activeUsers: 0,
+        trialUsers: 0,
+        error 
+      };
     }
 
     const totalUsers = users.length;
@@ -428,10 +525,111 @@ export const getUserStats = async (): Promise<{
       new Date(user.created_at) > thirtyDaysAgo
     ).length;
 
-    return { totalUsers, usersByLevel, recentUsers, error: null };
+    // Contar usuarios pagos
+    const paidUsers = users.filter(user => user.is_paid === true).length;
+
+    // Contar usuarios expirados
+    const expiredUsers = users.filter(user => {
+      if (user.is_expired) return true;
+      const now = new Date();
+      if (user.paid_until) {
+        return new Date(user.paid_until) < now;
+      }
+      if (user.trial_expires_at && !user.is_paid) {
+        return new Date(user.trial_expires_at) < now && user.nivel > 0;
+      }
+      return false;
+    }).length;
+
+    // Contar usuarios activos (no expirados)
+    const activeUsers = totalUsers - expiredUsers;
+
+    // Contar usuarios en trial
+    const trialUsers = users.filter(user => {
+      if (user.is_paid) return false;
+      if (user.trial_expires_at) {
+        const now = new Date();
+        return new Date(user.trial_expires_at) >= now;
+      }
+      return false;
+    }).length;
+
+    return { 
+      totalUsers, 
+      usersByLevel, 
+      recentUsers, 
+      paidUsers,
+      expiredUsers,
+      activeUsers,
+      trialUsers,
+      error: null 
+    };
   } catch (error) {
     console.error('Error en getUserStats:', error);
-    return { totalUsers: 0, usersByLevel: {}, recentUsers: 0, error };
+    return { 
+      totalUsers: 0, 
+      usersByLevel: {}, 
+      recentUsers: 0, 
+      paidUsers: 0,
+      expiredUsers: 0,
+      activeUsers: 0,
+      trialUsers: 0,
+      error 
+    };
+  }
+};
+
+/**
+ * Reduce el nivel a 0 para usuarios expirados automáticamente
+ */
+export const expireUsersAutomatically = async (): Promise<{
+  success: boolean;
+  expiredCount: number;
+  error: any;
+}> => {
+  try {
+    const { data: users, error } = await getAllUsers();
+
+    if (error || !users) {
+      return { success: false, expiredCount: 0, error };
+    }
+
+    const now = new Date();
+    let expiredCount = 0;
+    const expiredUsers: string[] = [];
+
+    // Identificar usuarios expirados que aún tienen nivel > 0
+    users.forEach(user => {
+      if (user.nivel === 0 || user.nivel === 999) return; // No tocar invitados ni dioses
+
+      let isExpired = false;
+
+      // Verificar si el pago expiró
+      if (user.paid_until) {
+        isExpired = new Date(user.paid_until) < now;
+      } 
+      // Verificar si el trial expiró y no está pagado
+      else if (user.trial_expires_at && !user.is_paid) {
+        isExpired = new Date(user.trial_expires_at) < now;
+      }
+
+      if (isExpired) {
+        expiredUsers.push(user.id);
+      }
+    });
+
+    // Reducir nivel a 0 para usuarios expirados
+    for (const userId of expiredUsers) {
+      const result = await updateUserLevel(userId, 0);
+      if (result.success) {
+        expiredCount++;
+      }
+    }
+
+    return { success: true, expiredCount, error: null };
+  } catch (error) {
+    console.error('Error en expireUsersAutomatically:', error);
+    return { success: false, expiredCount: 0, error };
   }
 };
 

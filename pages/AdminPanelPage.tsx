@@ -9,6 +9,7 @@ import {
   deleteUser,
   resetUserPassword,
   getUserStats,
+  expireUsersAutomatically,
   UserAdmin 
 } from '../services/adminService';
 
@@ -31,6 +32,8 @@ const AdminPanelPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserAdmin | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<string | null>(null);
+  const [paymentDate, setPaymentDate] = useState<string>('');
 
   // Verificar que el usuario es nivel Dios
   const isDios = userLevel === 999;
@@ -39,6 +42,10 @@ const AdminPanelPage = () => {
   const loadData = async () => {
     try {
       setRefreshing(true);
+      
+      // Primero expirar usuarios automáticamente
+      await expireUsersAutomatically();
+      
       const [usersResult, statsResult] = await Promise.all([
         getAllUsers(),
         getUserStats(),
@@ -64,6 +71,19 @@ const AdminPanelPage = () => {
       loadData();
     }
   }, [isDios]);
+
+  // Verificar si un usuario está expirado
+  const isUserExpired = (user: UserAdmin): boolean => {
+    if (user.is_expired) return true;
+    const now = new Date();
+    if (user.paid_until) {
+      return new Date(user.paid_until) < now;
+    }
+    if (user.trial_expires_at && !user.is_paid) {
+      return new Date(user.trial_expires_at) < now && user.nivel > 0;
+    }
+    return false;
+  };
 
   // Filtrar usuarios por término de búsqueda
   const filteredUsers = users.filter(user => 
@@ -98,17 +118,91 @@ const AdminPanelPage = () => {
 
   // Manejar cambio de nivel
   const handleChangeLevel = async (userId: string, newLevel: number) => {
-    if (!confirm(`¿Estás seguro de cambiar el nivel del usuario?`)) {
-      return;
-    }
-
     const result = await updateUserLevel(userId, newLevel);
     
     if (result.success) {
-      alert('Nivel actualizado exitosamente');
-      loadData();
+      // Recargar datos para reflejar el cambio
+      await loadData();
     } else {
       alert(`Error al actualizar nivel: ${result.error?.message || 'Desconocido'}`);
+    }
+  };
+
+  // Manejar cambio de estado de pago
+  const handleChangePaymentStatus = async (userId: string, isPaid: boolean, date?: string) => {
+    const updates: any = {
+      is_paid: isPaid,
+    };
+
+    // Actualizar payment_status según el estado de pago
+    if (isPaid) {
+      updates.payment_status = 'approved';
+    } else {
+      // Si se desmarca como pagado, limpiar el estado de pago
+      updates.payment_status = null;
+    }
+
+    // Si se marca como pagado y hay fecha, agregarla
+    if (isPaid && date) {
+      updates.paid_until = new Date(date).toISOString();
+    } else if (!isPaid) {
+      // Si se desmarca como pagado, limpiar la fecha
+      updates.paid_until = null;
+    } else if (isPaid && !date) {
+      // Si se marca como pagado pero no hay fecha, mantener la fecha existente si existe
+      const currentUser = users.find(u => u.id === userId);
+      if (currentUser?.paid_until) {
+        updates.paid_until = currentUser.paid_until;
+      }
+    }
+
+    const result = await updateUserProfile(userId, updates);
+    
+    if (result.success) {
+      setEditingPayment(null);
+      setPaymentDate('');
+      await loadData();
+    } else {
+      alert(`Error al actualizar estado de pago: ${result.error?.message || 'Desconocido'}`);
+    }
+  };
+
+  // Manejar cambio de fecha de vencimiento
+  const handleChangePaymentDate = async (userId: string, date: string) => {
+    const updates = {
+      paid_until: date ? new Date(date).toISOString() : null,
+    };
+
+    const result = await updateUserProfile(userId, updates);
+    
+    if (result.success) {
+      await loadData();
+    } else {
+      alert(`Error al actualizar fecha de vencimiento: ${result.error?.message || 'Desconocido'}`);
+    }
+  };
+
+  // Finalizar trial de un usuario
+  const handleEndTrial = async (userId: string, username: string) => {
+    if (!confirm(`¿Finalizar el periodo de prueba de "${username}"?\n\nEl usuario verá que su prueba finalizó al ingresar a su perfil.`)) {
+      return;
+    }
+
+    // Establecer trial_expires_at a una fecha pasada
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - 1); // Ayer
+
+    const updates = {
+      trial_expires_at: pastDate.toISOString(),
+    };
+
+    const result = await updateUserProfile(userId, updates);
+    
+    if (result.success) {
+      alert('Periodo de prueba finalizado exitosamente');
+      await loadData();
+    } else {
+      alert(`Error al finalizar trial: ${result.error?.message || 'Desconocido'}`);
     }
   };
 
@@ -182,8 +276,8 @@ const AdminPanelPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-950 p-4 sm:p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-gray-950 p-2 sm:p-4 md:p-6 w-full">
+        <div className="w-full space-y-4 sm:space-y-6">
           {/* Header */}
           <div className="bg-gradient-to-r from-red-900/50 to-purple-900/50 rounded-2xl p-6 border-2 border-red-500/50">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -215,12 +309,13 @@ const AdminPanelPage = () => {
 
           {/* Estadísticas */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-400 text-sm mb-1">Total Usuarios</p>
                     <p className="text-3xl font-bold text-white">{stats.totalUsers}</p>
+                    <p className="text-xs text-gray-500 mt-1">Activos: {stats.activeUsers}</p>
                   </div>
                   <div className="bg-blue-500/20 p-3 rounded-lg">
                     <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,12 +328,13 @@ const AdminPanelPage = () => {
               <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm mb-1">Usuarios Recientes (30d)</p>
-                    <p className="text-3xl font-bold text-white">{stats.recentUsers}</p>
+                    <p className="text-gray-400 text-sm mb-1">Usuarios Pagos</p>
+                    <p className="text-3xl font-bold text-green-400">{stats.paidUsers}</p>
+                    <p className="text-xs text-gray-500 mt-1">Con suscripción activa</p>
                   </div>
                   <div className="bg-green-500/20 p-3 rounded-lg">
                     <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                 </div>
@@ -247,12 +343,28 @@ const AdminPanelPage = () => {
               <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm mb-1">Usuarios Dios</p>
-                    <p className="text-3xl font-bold text-white">{stats.usersByLevel[999] || 0}</p>
+                    <p className="text-gray-400 text-sm mb-1">Usuarios Expirados</p>
+                    <p className="text-3xl font-bold text-red-400">{stats.expiredUsers}</p>
+                    <p className="text-xs text-gray-500 mt-1">Nivel reducido a 0</p>
                   </div>
                   <div className="bg-red-500/20 p-3 rounded-lg">
                     <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-sm mb-1">En Trial</p>
+                    <p className="text-3xl font-bold text-yellow-400">{stats.trialUsers}</p>
+                    <p className="text-xs text-gray-500 mt-1">Usuarios nuevos</p>
+                  </div>
+                  <div className="bg-yellow-500/20 p-3 rounded-lg">
+                    <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                 </div>
@@ -290,30 +402,38 @@ const AdminPanelPage = () => {
           </div>
 
           {/* Tabla de usuarios */}
-          <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+          <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden w-full">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full min-w-[1200px]">
                 <thead className="bg-gray-700">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Usuario</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Nivel</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Último Acceso</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Creado</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Acciones</th>
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider whitespace-nowrap">Usuario</th>
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider whitespace-nowrap">Email</th>
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider whitespace-nowrap">Nivel</th>
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider whitespace-nowrap">Estado Pago</th>
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider whitespace-nowrap">Vence</th>
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider whitespace-nowrap">Fecha de Creación</th>
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider whitespace-nowrap sticky right-0 bg-gray-700 z-10">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
+                      <td colSpan={7} className="px-3 sm:px-6 py-8 text-center text-gray-400">
                         No se encontraron usuarios
                       </td>
                     </tr>
                   ) : (
-                    filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-700/50 transition-colors">
-                        <td className="px-6 py-4">
+                    filteredUsers.map((user) => {
+                      const expired = isUserExpired(user);
+                      return (
+                      <tr 
+                        key={user.id} 
+                        className={`hover:bg-gray-700/50 transition-colors ${
+                          expired ? 'opacity-50 bg-gray-900/30' : ''
+                        }`}
+                      >
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold">
                               {user.username?.charAt(0).toUpperCase() || '?'}
@@ -321,7 +441,7 @@ const AdminPanelPage = () => {
                             <span className="text-white font-medium">{user.username || 'Sin nombre'}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
                           <div className="flex flex-col">
                             <span className="text-gray-300">{user.email}</span>
                             {user.email_confirmed_at ? (
@@ -336,11 +456,11 @@ const AdminPanelPage = () => {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
                           <select
                             value={user.nivel}
                             onChange={(e) => handleChangeLevel(user.id, parseInt(e.target.value))}
-                            className="bg-gray-700 text-white border border-gray-500 px-3 py-2 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-600 transition-colors cursor-pointer"
+                            className="bg-gray-700 text-white border border-gray-500 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-600 transition-colors cursor-pointer w-full min-w-[120px]"
                           >
                             {NIVELES.map((nivel) => (
                               <option key={nivel.value} value={nivel.value} className="bg-gray-800 text-white">
@@ -349,17 +469,141 @@ const AdminPanelPage = () => {
                             ))}
                           </select>
                         </td>
-                        <td className="px-6 py-4 text-gray-300 text-sm">
-                          {formatDate(user.last_sign_in_at)}
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <div className="flex flex-col gap-2 min-w-[140px]">
+                            {/* Selector de estado de pago */}
+                            <select
+                              value={user.is_paid ? 'paid' : 'unpaid'}
+                              onChange={(e) => {
+                                const isPaid = e.target.value === 'paid';
+                                if (isPaid && !user.paid_until) {
+                                  // Si se marca como pagado y no hay fecha, activar edición de fecha
+                                  setEditingPayment(user.id);
+                                  setPaymentDate('');
+                                } else {
+                                  handleChangePaymentStatus(user.id, isPaid);
+                                }
+                              }}
+                              className="bg-gray-700 text-white border border-gray-500 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-green-500 hover:bg-gray-600 transition-colors cursor-pointer w-full"
+                            >
+                              <option value="unpaid" className="bg-gray-800 text-white">
+                                Sin pagar
+                              </option>
+                              <option value="paid" className="bg-gray-800 text-white">
+                                Pagado
+                              </option>
+                            </select>
+
+                            {/* Campo de fecha solo cuando se está editando el estado de pago */}
+                            {editingPayment === user.id && (
+                              <div className="flex flex-col gap-1">
+                                <input
+                                  type="date"
+                                  value={paymentDate}
+                                  onChange={(e) => setPaymentDate(e.target.value)}
+                                  className="bg-gray-700 text-white border border-gray-500 px-2 py-1 rounded text-xs focus:outline-none focus:ring-2 focus:ring-green-500"
+                                  placeholder="Fecha de vencimiento"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      if (paymentDate) {
+                                        handleChangePaymentStatus(user.id, true, paymentDate);
+                                      } else {
+                                        // Si no hay fecha pero se confirma, marcar como pagado sin fecha
+                                        handleChangePaymentStatus(user.id, true);
+                                      }
+                                    }}
+                                    className="text-xs text-green-400 hover:text-green-300 font-semibold"
+                                  >
+                                    ✓ Guardar
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingPayment(null);
+                                      setPaymentDate('');
+                                      // Revertir el selector a "Sin pagar"
+                                      handleChangePaymentStatus(user.id, false);
+                                    }}
+                                    className="text-xs text-red-400 hover:text-red-300"
+                                  >
+                                    ✕ Cancelar
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Badges adicionales */}
+                            {user.pagos_empresa && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                                </svg>
+                                Plan Empresa
+                              </span>
+                            )}
+                            {user.payment_status && (
+                              <span className="text-xs text-gray-400">
+                                {user.payment_status === 'approved' ? '✅ Aprobado' : 
+                                 user.payment_status === 'pending' ? '⏳ Pendiente' : 
+                                 user.payment_status === 'rejected' ? '❌ Rechazado' : 
+                                 user.payment_status}
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 text-gray-300 text-sm">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <div className="flex flex-col gap-2 min-w-[150px]">
+                            {user.paid_until ? (
+                              <>
+                                <span className="text-gray-300 text-sm">
+                                  {formatDate(user.paid_until)}
+                                </span>
+                                {new Date(user.paid_until) < new Date() ? (
+                                  <span className="text-xs text-red-400">Expirado</span>
+                                ) : (
+                                  <span className="text-xs text-green-400">
+                                    {Math.ceil((new Date(user.paid_until).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} días restantes
+                                  </span>
+                                )}
+                              </>
+                            ) : user.trial_expires_at ? (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-300 text-sm">
+                                    Trial: {formatDate(user.trial_expires_at)}
+                                  </span>
+                                  {new Date(user.trial_expires_at) >= new Date() && (
+                                    <button
+                                      onClick={() => handleEndTrial(user.id, user.username)}
+                                      className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded transition-colors"
+                                      title="Finalizar periodo de prueba"
+                                    >
+                                      Finalizar
+                                    </button>
+                                  )}
+                                </div>
+                                {new Date(user.trial_expires_at) < new Date() ? (
+                                  <span className="text-xs text-red-400">Trial expirado</span>
+                                ) : (
+                                  <span className="text-xs text-blue-400">
+                                    {Math.ceil((new Date(user.trial_expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} días restantes
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-gray-500 text-sm">Sin fecha</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-gray-300 text-xs sm:text-sm whitespace-nowrap">
                           {formatDate(user.created_at)}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-2">
+                        <td className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 sticky right-0 bg-gray-800 z-10 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
+                          <div className="flex items-center justify-center gap-1 sm:gap-2">
                             <button
                               onClick={() => handleResetPassword(user.email)}
-                              className="bg-yellow-600 hover:bg-yellow-700 text-white p-2 rounded-lg transition-colors"
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0"
                               title="Resetear contraseña"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -368,7 +612,7 @@ const AdminPanelPage = () => {
                             </button>
                             <button
                               onClick={() => setEditingUser(user)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors"
+                              className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0"
                               title="Editar usuario"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -377,7 +621,7 @@ const AdminPanelPage = () => {
                             </button>
                             <button
                               onClick={() => handleDeleteUser(user.id, user.username)}
-                              className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors"
+                              className="bg-red-600 hover:bg-red-700 text-white p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0"
                               title="Eliminar usuario"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -387,7 +631,8 @@ const AdminPanelPage = () => {
                           </div>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>
