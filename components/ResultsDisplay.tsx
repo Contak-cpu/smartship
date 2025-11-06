@@ -241,41 +241,60 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string, includeL
             }
         }
         
-        // Crear hoja de sucursales si existe contenido
+        // Crear hoja de sucursales SIEMPRE (con encabezados, incluso si no hay datos)
+        const ws = workbook.addWorksheet('A sucursal');
+        
+        // FILA 1: Encabezados combinados
+        ws.getCell('A1').value = 'Características';
+        ws.getCell('H1').value = 'Destinatario';
+        ws.getCell('N1').value = 'Destino';
+        
+        // Combinar celdas de la fila 1
+        ws.mergeCells('A1:G1');
+        ws.mergeCells('H1:M1');
+        
+        // FILA 2: Encabezados detallados (CORREGIDOS según plantilla Andreani)
+        const headers = [
+            'Paquete Guardado Ej: Mistery',
+            'Peso (grs) Ej: ',
+            'Alto (cm) Ej: ',
+            'Ancho (cm) Ej: ',
+            'Profundidad (cm) Ej: ',
+            'Valor declarado ($ C/IVA) * Ej: ',
+            'Numero Interno Ej: ',
+            'Nombre * Ej: ',
+            'Apellido * Ej: ',
+            'DNI * Ej: ',
+            'Email * Ej: ',
+            'Celular código * Ej: ',
+            'Celular número * Ej: ',
+            'Sucursal * Ej: 9 DE JULIO'
+        ];
+        
+        ws.getRow(2).values = headers;
+        
+        // Aplicar formato a los encabezados (fila 1 y 2)
+        ws.getRow(1).font = { bold: true, size: 12 };
+        ws.getRow(2).font = { bold: true, size: 11 };
+        
+        // Centrar y colorear encabezados de la fila 1
+        ws.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getCell('H1').alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getCell('N1').alignment = { horizontal: 'center', vertical: 'middle' };
+        
+        ws.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
+        ws.getCell('H1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
+        ws.getCell('N1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
+        
+        // Ajustar ancho de columnas
+        ws.columns.forEach(column => {
+            column.width = 15;
+        });
+        
+        // Procesar datos solo si existen
         if (sucursalCSV && sucursalCSV.trim()) {
             const sucursalData = csvToDataArray(sucursalCSV);
             if (sucursalData.length > 0) {
-                const ws = workbook.addWorksheet('A sucursal');
-                
-                // FILA 1: Encabezados combinados
-                ws.getCell('A1').value = 'Características';
-                ws.getCell('H1').value = 'Destinatario';
-                ws.getCell('N1').value = 'Destino';
-                
-                // Combinar celdas de la fila 1
-                ws.mergeCells('A1:G1');
-                ws.mergeCells('H1:M1');
-                
-                // FILA 2: Encabezados detallados (CORREGIDOS según plantilla Andreani)
-                const headers = [
-                    'Paquete Guardado Ej: Mistery',
-                    'Peso (grs) Ej: ',
-                    'Alto (cm) Ej: ',
-                    'Ancho (cm) Ej: ',
-                    'Profundidad (cm) Ej: ',
-                    'Valor declarado ($ C/IVA) * Ej: ',
-                    'Numero Interno Ej: ',
-                    'Nombre * Ej: ',
-                    'Apellido * Ej: ',
-                    'DNI * Ej: ',
-                    'Email * Ej: ',
-                    'Celular código * Ej: ',
-                    'Celular número * Ej: ',
-                    'Sucursal * Ej: 9 DE JULIO'
-                ];
-                
-                ws.getRow(2).values = headers;
-                
                 // DATOS desde fila 3 (CORREGIDO: columnas numéricas específicas)
                 // Columnas numéricas en A SUCURSAL: B C D E F G J L M (índices: 1 2 3 4 5 6 9 11 12)
                 const columnasNumericasSucursal = [1, 2, 3, 4, 5, 6, 9, 11, 12];
@@ -331,7 +350,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string, includeL
                     }
                 });
                 
-                // AGREGAR VALIDACIÓN DE DATOS (DESPLEGABLE) en columna N (índice 14)
+                // AGREGAR VALIDACIÓN DE DATOS (DESPLEGABLE) en columna N (índice 14) - Solo si hay datos
                 // CORRECTO: Una opción por cada fila de configuración
                 if (sucursalesOptions.length > 0) {
                     try {
@@ -359,7 +378,7 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string, includeL
                     }
                 }
                 
-                // AGREGAR VALIDACIÓN DE DATOS (DESPLEGABLE) en columna A - SIEMPRE VACÍA
+                // AGREGAR VALIDACIÓN DE DATOS (DESPLEGABLE) en columna A - Solo si hay datos
                 if (itemNoGenericoOptions.length > 0) {
                     try {
                         const lastRow = sucursalData.length + 2; // +2 para headers (filas 1-2), datos desde fila 3
@@ -388,6 +407,8 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string, includeL
                 }
             }
         }
+        
+        console.log('✅ Hoja "A sucursal" creada siempre con encabezados');
         
         // Crear hoja "Llega hoy" si está seleccionada (idéntica a "A Domicilio" pero solo con encabezados)
         if (includeLlegaHoy) {

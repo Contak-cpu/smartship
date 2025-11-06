@@ -77,9 +77,46 @@ export class ExcelTemplateProcessor {
       await this.populateData(newDomicilioSheet, processedData.domicilioData);
     }
     
+    // Crear hoja de sucursal SIEMPRE (incluso si no hay datos o no existe en la plantilla)
+    const newSucursalSheet = newWorkbook.addWorksheet('A sucursal');
+    
     if (sucursalSheet) {
-      const newSucursalSheet = newWorkbook.addWorksheet('A sucursal');
+      // Si existe en la plantilla, copiar su estructura
       await this.copySheetStructure(sucursalSheet, newSucursalSheet);
+    } else {
+      // Si no existe en la plantilla, crear encabezados básicos
+      // FILA 1: Encabezados combinados
+      newSucursalSheet.getCell('A1').value = 'Características';
+      newSucursalSheet.getCell('H1').value = 'Destinatario';
+      newSucursalSheet.getCell('N1').value = 'Destino';
+      
+      // Combinar celdas de la fila 1
+      newSucursalSheet.mergeCells('A1:G1');
+      newSucursalSheet.mergeCells('H1:M1');
+      
+      // FILA 2: Encabezados detallados
+      const headers = [
+        'Paquete Guardado Ej: Mistery',
+        'Peso (grs) Ej: ',
+        'Alto (cm) Ej: ',
+        'Ancho (cm) Ej: ',
+        'Profundidad (cm) Ej: ',
+        'Valor declarado ($ C/IVA) * Ej: ',
+        'Numero Interno Ej: ',
+        'Nombre * Ej: ',
+        'Apellido * Ej: ',
+        'DNI * Ej: ',
+        'Email * Ej: ',
+        'Celular código * Ej: ',
+        'Celular número * Ej: ',
+        'Sucursal * Ej: 9 DE JULIO'
+      ];
+      
+      newSucursalSheet.getRow(2).values = headers;
+    }
+    
+    // Poblar datos solo si existen
+    if (processedData.sucursalData && processedData.sucursalData.length > 0) {
       await this.populateData(newSucursalSheet, processedData.sucursalData);
     }
 
