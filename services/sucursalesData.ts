@@ -73,6 +73,7 @@ export const SUCURSALES_DATA: SucursalInfo[] = [
   { nombre_sucursal: "MENDOZA (AV SAN MARTIN)", direccion: "Av. San Martín 505, M5500 Mendoza" },
   { nombre_sucursal: "MERCEDES (CENTRO)", direccion: "C. 29 482, B6600 Mercedes, Provincia de Buenos Aires" },
   { nombre_sucursal: "MERLO (CALLE REAL)", direccion: "Ruta 5 1276 Entre calle 7 y 5, D5881 Merlo, San Luis" },
+  { nombre_sucursal: "MERLO (CALLE REAL)", direccion: "Av. Calle Real 257, B1722 Merlo, Provincia de Buenos Aires" },
   { nombre_sucursal: "METAN (SAN MARTIN ESTE)", direccion: "San Martin Este 172, A4440 San José de Metán, Salta" },
   { nombre_sucursal: "MICROCENTRO (AV CORRIENTES)", direccion: "Av. Corrientes 455, C1043 Cdad. Autónoma de Buenos Aires" },
   { nombre_sucursal: "MONSERRAT (AV BELGRANO)", direccion: "Av. Belgrano 1211, C1093 Cdad. Autónoma de Buenos Aires" },

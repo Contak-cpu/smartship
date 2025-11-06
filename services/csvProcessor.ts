@@ -979,23 +979,60 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
     }
   }
   
-  // Si llegamos aquí, no encontramos ninguna coincidencia
-  // Solo buscar por dirección si NO hay código postal (caso excepcional)
-  let coincidenciasExactas: AndreaniSucursalInfo[] = [];
-  if (!codigoPostalFinal) {
-    console.log('⚠️ No hay código postal, buscando por dirección en todas las sucursales...');
-    coincidenciasExactas = sucursales.filter(sucursal => {
-      const direccionReal = extraerDireccionReal(sucursal);
-      const direccionRealNormalizada = normalizarDireccion(direccionReal);
-      const direccionSucursal = sucursal.direccion.toLowerCase().trim();
-      const direccionSucursalNormalizada = normalizarDireccion(sucursal.direccion);
-      
-      const tieneCoincidenciaExacta = calleNumeroNormalizada && direccionRealNormalizada.includes(calleNumeroNormalizada);
-      const tieneCoincidenciaDirecta = calleNumero && direccionReal.toLowerCase().includes(calleNumero.toLowerCase());
-      
-      return tieneCoincidenciaExacta || tieneCoincidenciaDirecta;
-    });
-  }
+      // Si llegamos aquí, no encontramos ninguna coincidencia
+      // Solo buscar por dirección si NO hay código postal (caso excepcional)
+      let coincidenciasExactas: AndreaniSucursalInfo[] = [];
+      if (!codigoPostalFinal) {
+        console.log('⚠️ No hay código postal, buscando por dirección en todas las sucursales...');
+        coincidenciasExactas = sucursales.filter(sucursal => {
+          const direccionReal = extraerDireccionReal(sucursal);
+          const direccionRealNormalizada = normalizarDireccion(direccionReal);
+          const direccionSucursal = sucursal.direccion.toLowerCase().trim();
+          const direccionSucursalNormalizada = normalizarDireccion(sucursal.direccion);
+          
+          const tieneCoincidenciaExacta = calleNumeroNormalizada && direccionRealNormalizada.includes(calleNumeroNormalizada);
+          const tieneCoincidenciaDirecta = calleNumero && direccionReal.toLowerCase().includes(calleNumero.toLowerCase());
+          
+          return tieneCoincidenciaExacta || tieneCoincidenciaDirecta;
+        });
+      } else {
+        console.error(`❌ DEBUG: No se encontró sucursal después de todos los pasos`);
+        console.error(`   - Código postal proporcionado: "${codigoPostalFinal}"`);
+        console.error(`   - Provincia proporcionada: "${provinciaFinal}"`);
+        console.error(`   - Calle y número buscado: "${calleNumero}"`);
+        console.error(`   - Total sucursales revisadas: ${sucursales.length}`);
+        
+        // Mostrar algunas sucursales de la provincia para debugging
+        if (provinciaFinal) {
+          const sucursalesEnProvincia = sucursales.filter(suc => {
+            const dirSuc = suc.direccion.toLowerCase();
+            const nombreSuc = suc.nombre_sucursal.toLowerCase();
+            return dirSuc.includes(provinciaFinal.toLowerCase()) || nombreSuc.includes(provinciaFinal.toLowerCase());
+          });
+          console.error(`   - Sucursales en provincia "${provinciaFinal}": ${sucursalesEnProvincia.length}`);
+          if (sucursalesEnProvincia.length > 0 && sucursalesEnProvincia.length <= 5) {
+            console.error(`   - Ejemplos de sucursales en la provincia:`);
+            sucursalesEnProvincia.slice(0, 5).forEach(suc => {
+              console.error(`     * ${suc.nombre_sucursal} - ${suc.direccion}`);
+            });
+          }
+        }
+        
+        // Mostrar sucursales con código postal similar
+        if (codigoPostalFinal) {
+          const sucursalesConCPSimilar = sucursales.filter(suc => {
+            const cpSuc = extraerCodigoPostalSucursal(suc.direccion);
+            return cpSuc && cpSuc === codigoPostalFinal;
+          });
+          console.error(`   - Sucursales con código postal "${codigoPostalFinal}": ${sucursalesConCPSimilar.length}`);
+          if (sucursalesConCPSimilar.length > 0 && sucursalesConCPSimilar.length <= 5) {
+            console.error(`   - Ejemplos de sucursales con ese CP:`);
+            sucursalesConCPSimilar.slice(0, 5).forEach(suc => {
+              console.error(`     * ${suc.nombre_sucursal} - ${suc.direccion}`);
+            });
+          }
+        }
+      }
   
   // Si no hay coincidencias exactas, intentar búsqueda difusa (solo si no hay código postal)
   let coincidenciasDifusas: { sucursal: AndreaniSucursalInfo; similitud: number }[] = [];
@@ -1119,11 +1156,45 @@ const findSucursalByAddress = (direccionPedido: string, sucursales: AndreaniSucu
         }
       }
       
-      console.log('❌ No se encontraron coincidencias');
-      console.log('Dirección buscada:', direccionNormalizada);
-      console.log('Total sucursales revisadas:', sucursales.length);
-      console.log('Código postal usado para filtro:', codigoPostalFinal || 'NINGUNO');
-      console.log('=== FIN DEBUG SUCURSAL ===');
+      console.error('❌ No se encontraron coincidencias después de todos los intentos');
+      console.error('   Dirección buscada:', direccionNormalizada);
+      console.error('   Calle y número:', calleNumero);
+      console.error('   Localidad:', localidad);
+      console.error('   Ciudad:', ciudad);
+      console.error('   Código postal usado:', codigoPostalFinal || 'NINGUNO');
+      console.error('   Provincia:', provinciaFinal || 'NINGUNA');
+      console.error('   Total sucursales revisadas:', sucursales.length);
+      
+      // Mostrar información de debugging adicional
+      if (codigoPostalFinal) {
+        const sucursalesConCP = sucursales.filter(suc => {
+          const cpSuc = extraerCodigoPostalSucursal(suc.direccion);
+          return cpSuc === codigoPostalFinal;
+        });
+        console.error(`   Sucursales con código postal "${codigoPostalFinal}": ${sucursalesConCP.length}`);
+        if (sucursalesConCP.length > 0 && sucursalesConCP.length <= 3) {
+          sucursalesConCP.forEach(suc => {
+            console.error(`     - ${suc.nombre_sucursal}: ${suc.direccion}`);
+          });
+        }
+      }
+      
+      if (provinciaFinal) {
+        const provinciaLower = provinciaFinal.toLowerCase();
+        const sucursalesEnProvincia = sucursales.filter(suc => {
+          const dirSuc = suc.direccion.toLowerCase();
+          const nombreSuc = suc.nombre_sucursal.toLowerCase();
+          return dirSuc.includes(provinciaLower) || nombreSuc.includes(provinciaLower);
+        });
+        console.error(`   Sucursales en provincia "${provinciaFinal}": ${sucursalesEnProvincia.length}`);
+        if (sucursalesEnProvincia.length > 0 && sucursalesEnProvincia.length <= 3) {
+          sucursalesEnProvincia.slice(0, 3).forEach(suc => {
+            console.error(`     - ${suc.nombre_sucursal}: ${suc.direccion}`);
+          });
+        }
+      }
+      
+      console.error('=== FIN DEBUG SUCURSAL ===');
       return 'SUCURSAL NO ENCONTRADA';
     }
   }
@@ -1639,6 +1710,7 @@ export const processOrders = async (
   let contadorDomicilios = 0;
   let contadorSucursales = 0;
   let contadorNoProcesados = 0;
+  let contadorSucursalesNoEncontradas = 0;
 
   for (const order of tiendanubeOrders) {
     // Helper function to split name and surname
@@ -1927,6 +1999,8 @@ export const processOrders = async (
       return text
         .replace(/"/g, '') // Quitar comillas dobles
         .replace(/'/g, '') // Quitar comillas simples
+        .replace(/[¡!¿?]/g, '') // Quitar signos de exclamación e interrogación
+        .replace(/\+/g, ' ') // Reemplazar + con espacio para detectar "ENVIO PRIORITARIO + SEGUIMIENTO + SEGURO"
         .replace(/\uFFFD/g, 'i') // Reemplazar caracteres de reemplazo Unicode () con 'i'
         .replace(/\u00ed/g, 'i') // Corregir caracteres mal codificados y quitar tildes
         .replace(/\u00f3/g, 'o')
@@ -1936,6 +2010,7 @@ export const processOrders = async (
         .replace(/\u00f1/g, 'n')
         .replace(/\u00fc/g, 'u')
         .replace(/\u00e7/g, 'c')
+        .replace(/\s+/g, ' ') // Normalizar espacios múltiples a uno solo
         .trim()
         .toLowerCase();
     };
@@ -1950,12 +2025,33 @@ export const processOrders = async (
     // - "Andreani Despacho" → domicilio
     // - Cualquier cosa con "domicilio" → domicilio
     // - "Envio Prioritario" o "Prioritario" → domicilio
+    // - "ENVIO PRIORITARIO + SEGUIMIENTO + SEGURO" → domicilio (detecta "envio prioritario", "seguimiento", "seguro")
     // - "Envio Gratis" o "Envío Gratis" → domicilio (incluso con encoding corrupto)
+    // - "¡Te vamos a contactar para coordinar para la entrega!" → domicilio (con variaciones)
     // Detección flexible: busca "envi" seguido eventualmente de "gratis" (puede haber caracteres corruptos entre ellos)
     const tieneEnvioGratisNormalizado = medioEnvioNormalizado && (
       medioEnvioNormalizado.includes("envio gratis") ||
       // Detección flexible: "envi" + "gratis" (puede haber caracteres corruptos como "" entre ellos)
       (medioEnvioNormalizado.includes("envi") && medioEnvioNormalizado.includes("gratis"))
+    );
+    
+    // Detectar "ENVIO PRIORITARIO + SEGUIMIENTO + SEGURO" (puede venir con o sin los +)
+    const tieneEnvioPrioritarioCompleto = medioEnvioNormalizado && (
+      (medioEnvioNormalizado.includes("envio prioritario") && 
+       (medioEnvioNormalizado.includes("seguimiento") || medioEnvioNormalizado.includes("seguro"))) ||
+      (medioEnvioNormalizado.includes("prioritario") && 
+       (medioEnvioNormalizado.includes("seguimiento") || medioEnvioNormalizado.includes("seguro")))
+    );
+    
+    // Detectar mensaje de contacto (con variaciones: con/sin signos de exclamación, con/sin "para" duplicado)
+    const tieneMensajeContacto = medioEnvioNormalizado && (
+      medioEnvioNormalizado.includes("te vamos a contactar para coordinar") ||
+      medioEnvioNormalizado.includes("vamos a contactar para coordinar") ||
+      medioEnvioNormalizado.includes("te vamos a contactar para coordinar para la entrega") ||
+      medioEnvioNormalizado.includes("vamos a contactar para coordinar para la entrega") ||
+      (medioEnvioNormalizado.includes("contactar") && 
+       medioEnvioNormalizado.includes("coordinar") && 
+       medioEnvioNormalizado.includes("entrega"))
     );
     
     const esDomicilio = medioEnvioNormalizado && (
@@ -1965,9 +2061,9 @@ export const processOrders = async (
       medioEnvioNormalizado.includes("a domicilio") ||
       medioEnvioNormalizado.includes("envio prioritario") ||
       medioEnvioNormalizado.includes("prioritario") ||
+      tieneEnvioPrioritarioCompleto ||
       tieneEnvioGratisNormalizado ||
-      medioEnvioNormalizado.includes("te vamos a contactar para coordinar la entrega") ||
-      medioEnvioNormalizado.includes("vamos a contactar para coordinar")
+      tieneMensajeContacto
     );
     
     // Detectar envío a sucursal
@@ -2155,12 +2251,33 @@ export const processOrders = async (
 
       // Verificar si se encontró la sucursal correctamente
       if (nombreSucursal === 'SUCURSAL NO ENCONTRADA') {
-        console.error(`❌ Pedido #${baseData['Numero Interno']} NO PROCESADO: no se encontró la sucursal. Debe cargarlo manualmente.`);
+        contadorSucursalesNoEncontradas++;
+        console.error(`\n🚨 ==========================================`);
+        console.error(`🚨 PEDIDO A SUCURSAL NO PROCESADO #${contadorSucursalesNoEncontradas}`);
+        console.error(`🚨 ==========================================`);
+        console.error(`📦 Número de Orden: ${baseData['Numero Interno']}`);
+        console.error(`👤 Cliente: ${getColumnValue(order, 11)}`);
+        console.error(`📧 Email: ${getColumnValue(order, 1)}`);
+        console.error(`📞 Teléfono: ${getColumnValue(order, 13)}`);
+        console.error(`📍 Dirección completa del pedido:`);
+        console.error(`   - Calle: "${calle}"`);
+        console.error(`   - Número: "${numero}" (básico: "${numeroBasico}")`);
+        console.error(`   - Piso: "${piso}"`);
+        console.error(`   - Localidad: "${localidad}"`);
+        console.error(`   - Ciudad: "${ciudad}"`);
+        console.error(`   - Código Postal: "${codigoPostal}"`);
+        console.error(`   - Provincia: "${provincia}"`);
+        console.error(`   - Dirección construida: "${direccionCompleta}"`);
+        console.error(`📋 Medio de envío: "${medioEnvio}"`);
+        console.error(`❌ MOTIVO: No se encontró sucursal Andreani que coincida con la dirección`);
+        console.error(`💡 ACCIÓN REQUERIDA: Revisar manualmente y asignar sucursal correcta`);
+        console.error(`🚨 ==========================================\n`);
       } else {
         sucursalesOutput.push({
           ...baseData,
           'Sucursal *': nombreSucursal,
         });
+        console.log(`✅ Sucursal asignada correctamente: ${nombreSucursal}`);
       }
     } else {
       contadorNoProcesados++;
@@ -2173,19 +2290,28 @@ export const processOrders = async (
     }
   }
 
-  console.log('=== RESUMEN DE PROCESAMIENTO ===');
+  console.log('\n=== RESUMEN DE PROCESAMIENTO ===');
   console.log(`Total pedidos procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
   console.log(`- Domicilios: ${contadorDomicilios}`);
-  console.log(`- Sucursales: ${contadorSucursales}`);
-  console.log(`- No procesados: ${contadorNoProcesados}`);
+  console.log(`- Sucursales encontradas y procesadas: ${contadorSucursales - contadorSucursalesNoEncontradas}`);
+  console.log(`- Sucursales NO encontradas (requieren revisión manual): ${contadorSucursalesNoEncontradas}`);
+  console.log(`- No procesados (medio de envío no reconocido): ${contadorNoProcesados}`);
   console.log('Final results - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
+  
+  if (contadorSucursalesNoEncontradas > 0) {
+    console.error(`\n⚠️ ATENCIÓN: ${contadorSucursalesNoEncontradas} pedido(s) a sucursal no pudieron ser procesados automáticamente.`);
+    console.error(`   Revisa los logs anteriores para ver los detalles de cada pedido.`);
+  }
 
   // Recopilar logs de procesamiento
   const processingLogs: string[] = [];
   processingLogs.push(`Total pedidos cargados: ${tiendanubeOrders.length}`);
   processingLogs.push(`Domicilios procesados: ${contadorDomicilios}`);
-  processingLogs.push(`Sucursales procesadas: ${contadorSucursales}`);
-  processingLogs.push(`No procesados: ${contadorNoProcesados}`);
+  processingLogs.push(`Sucursales procesadas: ${contadorSucursales - contadorSucursalesNoEncontradas}`);
+  if (contadorSucursalesNoEncontradas > 0) {
+    processingLogs.push(`⚠️ Sucursales NO encontradas (requieren revisión manual): ${contadorSucursalesNoEncontradas}`);
+  }
+  processingLogs.push(`No procesados (medio de envío no reconocido): ${contadorNoProcesados}`);
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
   
   // Determinar razón de no procesados para processOrders
@@ -2450,6 +2576,9 @@ export const processVentasOrders = async (
     // Normalizar medio de envío para detectar tipo
     // Primero normalizar quitando tildes y caracteres especiales, pero manteniendo la estructura básica
     let medioEnvioNorm = medioEnvio.toLowerCase().trim()
+      // Remover caracteres corruptos comunes de encoding (incluyendo caracteres de reemplazo Unicode)
+      .replace(/\uFFFD/g, '') // Carácter de reemplazo Unicode
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Caracteres de control y no imprimibles
       // Normalizar tildes y acentos
       .replace(/[áàäâ]/g, 'a')
       .replace(/[éèëê]/g, 'e')
@@ -2457,12 +2586,15 @@ export const processVentasOrders = async (
       .replace(/[óòöô]/g, 'o')
       .replace(/[úùüû]/g, 'u')
       .replace(/[ñ]/g, 'n')
-      // Remover caracteres de reemplazo Unicode comunes (aparecen cuando hay encoding corrupto)
-      .replace(/\uFFFD/g, '')
-      // Remover caracteres no imprimibles pero mantener espacios
-      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+      // Remover signos de exclamación e interrogación (incluyendo variantes Unicode)
+      .replace(/[¡!¿?]/g, '')
+      // Reemplazar + con espacio para detectar "ENVIO PRIORITARIO + SEGUIMIENTO + SEGURO"
+      .replace(/\+/g, ' ')
       // Remover comillas dobles que pueden estar alrededor del texto
-      .replace(/^["']|["']$/g, '');
+      .replace(/^["']|["']$/g, '')
+      // Normalizar espacios múltiples a uno solo
+      .replace(/\s+/g, ' ')
+      .trim();
     
     console.log('🔍 Processing order (VENTAS):', numeroOrden, 'Medio de envío original:', medioEnvio);
     console.log('📦 Medio de envío normalizado:', medioEnvioNorm);
@@ -2474,7 +2606,9 @@ export const processVentasOrders = async (
     // - "Andreani Despacho" → domicilio
     // - Cualquier cosa con "domicilio" → domicilio
     // - "Envio Prioritario" o "Prioritario" → domicilio
+    // - "ENVIO PRIORITARIO + SEGUIMIENTO + SEGURO" → domicilio (detecta "envio prioritario", "seguimiento", "seguro")
     // - "Envio Gratis" o "Envío Gratis" → domicilio (incluso con encoding corrupto)
+    // - "¡Te vamos a contactar para coordinar para la entrega!" → domicilio (con variaciones)
     // Detección flexible: busca "envi" seguido eventualmente de "gratis" (puede haber caracteres corruptos entre ellos)
     // Esta detección funciona incluso si el texto tiene encoding corrupto como "Envi Gratis" o "Envi Gratis"
     const tieneEnvioGratis = medioEnvioNorm && (
@@ -2484,6 +2618,25 @@ export const processVentasOrders = async (
       (medioEnvioNorm.includes("envi") && medioEnvioNorm.includes("gratis"))
     );
     
+    // Detectar "ENVIO PRIORITARIO + SEGUIMIENTO + SEGURO" (puede venir con o sin los +)
+    const tieneEnvioPrioritarioCompleto = medioEnvioNorm && (
+      (medioEnvioNorm.includes("envio prioritario") && 
+       (medioEnvioNorm.includes("seguimiento") || medioEnvioNorm.includes("seguro"))) ||
+      (medioEnvioNorm.includes("prioritario") && 
+       (medioEnvioNorm.includes("seguimiento") || medioEnvioNorm.includes("seguro")))
+    );
+    
+    // Detectar mensaje de contacto (con variaciones: con/sin signos de exclamación, con/sin "para" duplicado)
+    const tieneMensajeContacto = medioEnvioNorm && (
+      medioEnvioNorm.includes("te vamos a contactar para coordinar") ||
+      medioEnvioNorm.includes("vamos a contactar para coordinar") ||
+      medioEnvioNorm.includes("te vamos a contactar para coordinar para la entrega") ||
+      medioEnvioNorm.includes("vamos a contactar para coordinar para la entrega") ||
+      (medioEnvioNorm.includes("contactar") && 
+       medioEnvioNorm.includes("coordinar") && 
+       medioEnvioNorm.includes("entrega"))
+    );
+    
     const esDomicilioVentas = medioEnvioNorm && (
       medioEnvioNorm.includes("domicilio") ||
       medioEnvioNorm.includes("andreani") ||
@@ -2491,9 +2644,9 @@ export const processVentasOrders = async (
       medioEnvioNorm.includes("a domicilio") ||
       medioEnvioNorm.includes("envio prioritario") ||
       medioEnvioNorm.includes("prioritario") ||
+      tieneEnvioPrioritarioCompleto ||
       tieneEnvioGratis ||
-      medioEnvioNorm.includes("te vamos a contactar para coordinar la entrega") ||
-      medioEnvioNorm.includes("vamos a contactar para coordinar")
+      tieneMensajeContacto
     );
     
     // Detectar envío a sucursal
@@ -2740,19 +2893,28 @@ export const processVentasOrders = async (
     }
   }
 
-  console.log('=== RESUMEN DE PROCESAMIENTO (VENTAS) ===');
+  console.log('\n=== RESUMEN DE PROCESAMIENTO (VENTAS) ===');
   console.log(`Total pedidos procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
   console.log(`- Domicilios: ${contadorDomicilios}`);
-  console.log(`- Sucursales: ${contadorSucursales}`);
-  console.log(`- No procesados: ${contadorNoProcesados}`);
+  console.log(`- Sucursales encontradas y procesadas: ${contadorSucursales}`);
+  console.log(`- Sucursales NO encontradas (requieren revisión manual): ${contadorErroresSucursal}`);
+  console.log(`- No procesados (medio de envío no reconocido): ${contadorNoProcesados}`);
   console.log('Resultados finales - Domicilios:', domicilios.length, 'Sucursales:', sucursalesOutput.length);
+  
+  if (contadorErroresSucursal > 0) {
+    console.error(`\n⚠️ ATENCIÓN: ${contadorErroresSucursal} pedido(s) a sucursal no pudieron ser procesados automáticamente.`);
+    console.error(`   Revisa los logs anteriores para ver los detalles de cada pedido.`);
+  }
 
   // Recopilar logs de procesamiento
   const processingLogs: string[] = [];
   processingLogs.push(`Total pedidos cargados: ${lines.length - 1}`);
   processingLogs.push(`Domicilios procesados: ${contadorDomicilios}`);
   processingLogs.push(`Sucursales procesadas: ${contadorSucursales}`);
-  processingLogs.push(`No procesados: ${contadorNoProcesados}`);
+  if (contadorErroresSucursal > 0) {
+    processingLogs.push(`⚠️ Sucursales NO encontradas (requieren revisión manual): ${contadorErroresSucursal}`);
+  }
+  processingLogs.push(`No procesados (medio de envío no reconocido): ${contadorNoProcesados}`);
   processingLogs.push(`Total procesados: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
   
   // Calcular total de órdenes reales (sin líneas duplicadas de productos)
