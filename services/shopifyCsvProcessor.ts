@@ -110,7 +110,7 @@ const esEnvioSucursal = (shippingMethod: string): boolean => {
   const methodLower = shippingMethod.toLowerCase();
   // Buscar palabras clave que indiquen sucursal
   const keywordsSucursal = ['sucursal', 'pickup', 'retiro', 'punto', 'andreani'];
-  const keywordsDomicilio = ['domicilio', 'delivery', 'envío', 'envio'];
+  const keywordsDomicilio = ['domicilio', 'delivery', 'envío', 'envio', 'te vamos a contactar para coordinar la entrega', 'vamos a contactar para coordinar'];
   
   // Si contiene palabras de sucursal Y no contiene palabras de domicilio
   const tieneSucursal = keywordsSucursal.some(kw => methodLower.includes(kw));

@@ -1965,7 +1965,9 @@ export const processOrders = async (
       medioEnvioNormalizado.includes("a domicilio") ||
       medioEnvioNormalizado.includes("envio prioritario") ||
       medioEnvioNormalizado.includes("prioritario") ||
-      tieneEnvioGratisNormalizado
+      tieneEnvioGratisNormalizado ||
+      medioEnvioNormalizado.includes("te vamos a contactar para coordinar la entrega") ||
+      medioEnvioNormalizado.includes("vamos a contactar para coordinar")
     );
     
     // Detectar envío a sucursal
@@ -2489,7 +2491,9 @@ export const processVentasOrders = async (
       medioEnvioNorm.includes("a domicilio") ||
       medioEnvioNorm.includes("envio prioritario") ||
       medioEnvioNorm.includes("prioritario") ||
-      tieneEnvioGratis
+      tieneEnvioGratis ||
+      medioEnvioNorm.includes("te vamos a contactar para coordinar la entrega") ||
+      medioEnvioNorm.includes("vamos a contactar para coordinar")
     );
     
     // Detectar envío a sucursal
