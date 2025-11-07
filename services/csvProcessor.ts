@@ -1562,7 +1562,7 @@ const processShopifyOrders = async (
     }
   }
 
-  const get = (row: any, key: string): string => (row?.[key] ?? '').toString().trim();
+  const getRowField = (row: any, key: string): string => (row?.[key] ?? '').toString().trim();
 
   // Rastrear pedidos ya procesados para evitar duplicados
   const pedidosProcesados = new Set<string>();
@@ -1570,15 +1570,15 @@ const processShopifyOrders = async (
   for (const row of rows) {
     if (!row || Object.keys(row).length === 0) continue;
 
-    const numeroOrden = get(row, 'Name') || get(row, 'Id') || '';
-    let email = get(row, 'Email');
-    const telefono = get(row, 'Shipping Phone') || get(row, 'Phone');
-    const medioEnvio = get(row, 'Shipping Method');
+    const numeroOrden = getRowField(row, 'Name') || getRowField(row, 'Id') || '';
+    let email = getRowField(row, 'Email');
+    const telefono = getRowField(row, 'Shipping Phone') || getRowField(row, 'Phone');
+    const medioEnvio = getRowField(row, 'Shipping Method');
 
     // Verificar si es una línea de producto adicional (tiene número de orden pero falta información esencial)
     // Las líneas de productos adicionales tienen número de orden pero campos vacíos como email, dirección, etc.
-    const shippingAddress1 = get(row, 'Shipping Address1');
-    const shippingCity = get(row, 'Shipping City');
+    const shippingAddress1 = getRowField(row, 'Shipping Address1');
+    const shippingCity = getRowField(row, 'Shipping City');
     
     // Si ya procesamos este pedido, saltar (es un producto adicional)
     if (numeroOrden && pedidosProcesados.has(numeroOrden)) {
@@ -1594,16 +1594,16 @@ const processShopifyOrders = async (
     }
 
     // Nombre y apellido desde dirección de envío (fallback a facturación)
-    const shippingName = get(row, 'Shipping Name') || get(row, 'Billing Name');
+    const shippingName = getRowField(row, 'Shipping Name') || getRowField(row, 'Billing Name');
     const [nombre, ...apParts] = shippingName.split(' ');
     const apellido = apParts.join(' ');
 
     // Dirección
-    const address1 = get(row, 'Shipping Address1');
-    const address2 = get(row, 'Shipping Address2');
-    const localidad = get(row, 'Shipping City');
-    const codigoPostal = get(row, 'Shipping Zip').replace(/[^\d]/g, '');
-    const provincia = get(row, 'Shipping Province Name') || get(row, 'Shipping Province');
+    const address1 = getRowField(row, 'Shipping Address1');
+    const address2 = getRowField(row, 'Shipping Address2');
+    const localidad = getRowField(row, 'Shipping City');
+    const codigoPostal = getRowField(row, 'Shipping Zip').replace(/[^\d]/g, '');
+    const provincia = getRowField(row, 'Shipping Province Name') || getRowField(row, 'Shipping Province');
 
     // Extraer calle y número desde address1
     const calle = normalizarNombre(address1);
@@ -1638,8 +1638,8 @@ const processShopifyOrders = async (
 
     // DNI: Intentar extraer de Billing Company o Billing Name
     let dniProcesado = '00000000';
-    const billingCompany = get(row, 'Billing Company');
-    const billingName = get(row, 'Billing Name');
+    const billingCompany = getRowField(row, 'Billing Company');
+    const billingName = getRowField(row, 'Billing Name');
     
     // Intentar extraer DNI de Billing Company primero
     const dniDesdeCompany = extraerDNI(billingCompany);
@@ -3476,7 +3476,7 @@ const processShopifyOrdersDuplicate = async (
     }
   }
 
-  const get = (row: any, key: string): string => (row?.[key] ?? '').toString().trim();
+  const getRowField = (row: any, key: string): string => (row?.[key] ?? '').toString().trim();
 
   // Rastrear pedidos ya procesados para evitar duplicados
   const pedidosProcesados = new Set<string>();
@@ -3484,15 +3484,15 @@ const processShopifyOrdersDuplicate = async (
   for (const row of rows) {
     if (!row || Object.keys(row).length === 0) continue;
 
-    const numeroOrden = get(row, 'Name') || get(row, 'Id') || '';
-    let email = get(row, 'Email');
-    const telefono = get(row, 'Shipping Phone') || get(row, 'Phone');
-    const medioEnvio = get(row, 'Shipping Method');
+    const numeroOrden = getRowField(row, 'Name') || getRowField(row, 'Id') || '';
+    let email = getRowField(row, 'Email');
+    const telefono = getRowField(row, 'Shipping Phone') || getRowField(row, 'Phone');
+    const medioEnvio = getRowField(row, 'Shipping Method');
 
     // Verificar si es una línea de producto adicional (tiene número de orden pero falta información esencial)
     // Las líneas de productos adicionales tienen número de orden pero campos vacíos como email, dirección, etc.
-    const shippingAddress1 = get(row, 'Shipping Address1');
-    const shippingCity = get(row, 'Shipping City');
+    const shippingAddress1 = getRowField(row, 'Shipping Address1');
+    const shippingCity = getRowField(row, 'Shipping City');
     
     // Si ya procesamos este pedido, saltar (es un producto adicional)
     if (numeroOrden && pedidosProcesados.has(numeroOrden)) {
@@ -3508,16 +3508,16 @@ const processShopifyOrdersDuplicate = async (
     }
 
     // Nombre y apellido desde dirección de envío (fallback a facturación)
-    const shippingName = get(row, 'Shipping Name') || get(row, 'Billing Name');
+    const shippingName = getRowField(row, 'Shipping Name') || getRowField(row, 'Billing Name');
     const [nombre, ...apParts] = shippingName.split(' ');
     const apellido = apParts.join(' ');
 
     // Dirección
-    const address1 = get(row, 'Shipping Address1');
-    const address2 = get(row, 'Shipping Address2');
-    const localidad = get(row, 'Shipping City');
-    const codigoPostal = get(row, 'Shipping Zip').replace(/[^\d]/g, '');
-    const provincia = get(row, 'Shipping Province Name') || get(row, 'Shipping Province');
+    const address1 = getRowField(row, 'Shipping Address1');
+    const address2 = getRowField(row, 'Shipping Address2');
+    const localidad = getRowField(row, 'Shipping City');
+    const codigoPostal = getRowField(row, 'Shipping Zip').replace(/[^\d]/g, '');
+    const provincia = getRowField(row, 'Shipping Province Name') || getRowField(row, 'Shipping Province');
 
     // Extraer calle y número desde address1
     const calle = normalizarNombre(address1);
@@ -3552,8 +3552,8 @@ const processShopifyOrdersDuplicate = async (
 
     // DNI: Intentar extraer de Billing Company o Billing Name
     let dniProcesado = '00000000';
-    const billingCompany = get(row, 'Billing Company');
-    const billingName = get(row, 'Billing Name');
+    const billingCompany = getRowField(row, 'Billing Company');
+    const billingName = getRowField(row, 'Billing Name');
     
     // Intentar extraer DNI de Billing Company primero
     const dniDesdeCompany = extraerDNI(billingCompany);

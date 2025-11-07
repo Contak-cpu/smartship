@@ -418,7 +418,7 @@ const HomePage: React.FC = () => {
         {mostrarModalSugerencias && sugerenciasPendientes && (
           <SugerenciasSucursalModal
             sugerencias={sugerenciasPendientes}
-            onCompletar={(sugerenciasActualizadas) => {
+            onCompletar={async (sugerenciasActualizadas) => {
               // Procesar sugerencias aceptadas y rechazadas
               const sugerenciasAceptadas = sugerenciasActualizadas.filter(s => s.decision === 'aceptada');
               const sugerenciasRechazadas = sugerenciasActualizadas.filter(s => s.decision === 'rechazada');
