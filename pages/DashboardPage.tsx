@@ -347,17 +347,74 @@ const DashboardPage: React.FC = () => {
             Buenos días <span className="text-blue-400">{username}</span>, ¿en qué vas a trabajar hoy?
           </h2>
           
+          {/* Mensaje de plan expirado si el nivel es 0 */}
+          {userLevel === 0 && (
+            <div className="mb-8 px-2">
+              <div className="bg-gradient-to-r from-red-900/50 to-orange-900/50 border-2 border-red-500/50 rounded-2xl p-6 shadow-xl">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="bg-red-500/20 p-3 rounded-full">
+                      <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      Tu plan expiró
+                    </h3>
+                    <p className="text-gray-300 mb-4 text-lg">
+                      Tu suscripción ha vencido. Para continuar usando todas las funcionalidades, necesitas renovar tu plan.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={() => {
+                          // Mostrar PaymentRequest
+                          const paymentSection = document.getElementById('payment-section');
+                          if (paymentSection) {
+                            paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }}
+                        className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-green-500/50 flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        ¿Querés realizar el pago?
+                      </button>
+                      <button
+                        onClick={() => navigate('/precios')}
+                        className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        Ver planes disponibles
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Status del Plan - Mostrar PaidPlanStatus si está pagado, sino TrialStatus */}
-          <div className="mb-8 px-2">
+          <div id="payment-section" className="mb-8 px-2">
             {userPaidStatus ? (
               <PaidPlanStatus />
             ) : (
               <>
-                <TrialStatus />
+                {userLevel !== 0 && <TrialStatus />}
                 {/* Payment Request (solo para usuarios que no pagaron Y no tienen solicitud pendiente) */}
-                {paymentStatus !== 'pending' && (
+                {paymentStatus !== 'pending' && userLevel !== 0 && (
                   <div className="mt-4">
                     <PaymentRequest currentPlan="Trial" onPaymentRequested={(plan) => console.log('Solicitud de pago:', plan)} />
+                  </div>
+                )}
+                {/* Mostrar PaymentRequest también si el nivel es 0 */}
+                {userLevel === 0 && paymentStatus !== 'pending' && (
+                  <div className="mt-4">
+                    <PaymentRequest currentPlan="Expirado" onPaymentRequested={(plan) => console.log('Solicitud de pago:', plan)} />
                   </div>
                 )}
               </>

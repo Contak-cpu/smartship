@@ -21,7 +21,47 @@ export interface ProcessingInfo {
   hasShopifySucursalWarnings?: boolean;
   shopifySucursalOrders?: number;
   erroresSucursal?: string[]; // Lista de pedidos con errores de sucursal
+  erroresSucursalDetallados?: Array<{
+    numeroOrden: string;
+    direccion: string;
+    numero: string;
+    localidad: string;
+    ciudad: string;
+    codigoPostal: string;
+    provincia: string;
+    motivo: string;
+  }>; // Detalles completos de errores de sucursal
   tasaEfectividad?: number; // Porcentaje de pedidos procesados exitosamente
+  sugerenciasSucursal?: SucursalSugerencia[]; // Sugerencias de sucursales para pedidos sin coincidencias exactas
+}
+
+// Sugerencia de sucursal para pedidos sin coincidencias exactas
+export interface SucursalSugerencia {
+  numeroOrden: string;
+  direccionPedido: string;
+  numero: string;
+  localidad: string;
+  ciudad: string;
+  codigoPostal: string;
+  provincia: string;
+  sucursalSugerida: AndreaniSucursalInfo;
+  razon: string; // Por qué se sugiere esta sucursal
+  score?: number; // Puntuación de confianza (0-100)
+  decision?: 'aceptada' | 'rechazada' | 'pendiente'; // Decisión del usuario
+  // Datos del pedido para reconstruir el CSV si se acepta
+  pedidoData?: {
+    peso?: number;
+    alto?: number;
+    ancho?: number;
+    profundidad?: number;
+    valorDeclarado?: number;
+    nombre?: string;
+    apellido?: string;
+    dni?: string;
+    email?: string;
+    celularCodigo?: string;
+    celularNumero?: string;
+  };
 }
 
 // Represents a row from the input Tiendanube CSV

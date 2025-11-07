@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import * as ExcelJS from 'exceljs';
+import { ProcessingInfo } from '../types';
 
 interface ResultsDisplayProps {
   domicilioCSV: string;
   sucursalCSV: string;
+  processingInfo?: ProcessingInfo;
   onDownload: (content: string, fileName: string) => void;
   onDownloadCombined?: (domicilioCSV: string, sucursalCSV: string, fileName: string) => void;
   onDownloadExcel?: (domicilioCSV: string, sucursalCSV: string) => void;
@@ -24,7 +26,7 @@ const ExcelIcon = () => (
 );
 
 // Función independiente para exportar a Excel con desplegables correctos (una opción por fila)
-const exportToExcel = async (domicilioCSV: string, sucursalCSV: string, includeLlegaHoy: boolean = false) => {
+const exportToExcel = async (domicilioCSV: string, sucursalCSV: string, processingInfo?: ProcessingInfo, includeLlegaHoy: boolean = false) => {
     try {
         const workbook = new ExcelJS.Workbook();
         
@@ -532,12 +534,33 @@ const exportToExcel = async (domicilioCSV: string, sucursalCSV: string, includeL
 };
 
 
-export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, sucursalCSV, onDownload, onDownloadCombined, onDownloadExcel }) => {
+export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, sucursalCSV, processingInfo, onDownload, onDownloadCombined, onDownloadExcel }) => {
   const [includeLlegaHoy, setIncludeLlegaHoy] = useState(true);
   
   return (
     <div className="bg-gray-900/50 p-4 sm:p-6 rounded-lg animate-fade-in border border-gray-700/50 shadow-xl">
         <h3 className="text-lg sm:text-xl font-bold text-center text-white mb-4 sm:mb-6">📥 Descargar Archivos Procesados</h3>
+        
+        {/* Mostrar advertencia si hay pedidos excluidos */}
+        {processingInfo?.erroresSucursalDetallados && processingInfo.erroresSucursalDetallados.length > 0 && (
+          <div className="mb-4 p-3 rounded bg-orange-900/30 border-2 border-orange-600/50 text-xs">
+            <div className="text-orange-200 font-bold mb-2">
+              ⚠️ {processingInfo.erroresSucursalDetallados.length} Pedido(s) NO incluido(s) en el archivo descargado
+            </div>
+            <div className="text-orange-200/90 space-y-2">
+              {processingInfo.erroresSucursalDetallados.map((error, idx) => (
+                <div key={idx} className="bg-orange-900/40 p-2 rounded border border-orange-700/50">
+                  <div className="font-semibold text-orange-100">Pedido #{error.numeroOrden}</div>
+                  <div className="text-orange-200/90 mt-1">
+                    <div>📍 {error.direccion} {error.numero}, {error.localidad || error.ciudad}, {error.provincia} (CP: {error.codigoPostal})</div>
+                    <div className="mt-1 text-orange-300">Motivo: {error.motivo}</div>
+                    <div className="mt-1 text-orange-300 font-semibold">⚠️ Debe cargarse manualmente en Andreani</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         
         {/* Primera fila - Archivos individuales */}
         <div className="mb-4">
@@ -577,7 +600,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
                     </button>
                 )}
                 <button
-                    onClick={() => exportToExcel(domicilioCSV, sucursalCSV, includeLlegaHoy)}
+                    onClick={() => exportToExcel(domicilioCSV, sucursalCSV, processingInfo, includeLlegaHoy)}
                     disabled={!domicilioCSV && !sucursalCSV}
                     className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 disabled:hover:scale-100 text-sm sm:text-base"
                 >

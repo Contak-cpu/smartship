@@ -26,11 +26,30 @@ const UserModal: React.FC<UserModalProps> = ({ user, onClose, onSuccess }) => {
     password: '',
     confirmPassword: '',
     nivel: user?.nivel ?? 0,
+    is_paid: user?.is_paid ?? false,
+    paid_until: user?.paid_until ? new Date(user.paid_until).toISOString().split('T')[0] : '',
+    pagos_empresa: user?.pagos_empresa ?? false,
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Actualizar formData cuando cambie el usuario
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        email: user.email || '',
+        username: user.username || '',
+        password: '',
+        confirmPassword: '',
+        nivel: user.nivel ?? 0,
+        is_paid: user.is_paid ?? false,
+        paid_until: user.paid_until ? new Date(user.paid_until).toISOString().split('T')[0] : '',
+        pagos_empresa: user.pagos_empresa ?? false,
+      });
+    }
+  }, [user]);
 
   // Validaciones
   const validateForm = (): string | null => {
@@ -82,6 +101,9 @@ const UserModal: React.FC<UserModalProps> = ({ user, onClose, onSuccess }) => {
         const updates: UpdateUserData = {
           username: formData.username,
           nivel: formData.nivel,
+          is_paid: formData.is_paid,
+          paid_until: formData.paid_until ? new Date(formData.paid_until).toISOString() : null,
+          pagos_empresa: formData.pagos_empresa,
         };
 
         const result = await updateUserProfile(user.id, updates);
@@ -364,6 +386,67 @@ const UserModal: React.FC<UserModalProps> = ({ user, onClose, onSuccess }) => {
               </p>
             </div>
           </div>
+
+          {/* Sección de Pago (solo al editar) */}
+          {isEditing && (
+            <>
+              <div className="border-t border-gray-700 pt-4 mt-4">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  Información de Pago
+                </h3>
+              </div>
+
+              {/* Usuario Pagado */}
+              <div className="flex items-center gap-3 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+                <input
+                  type="checkbox"
+                  id="is_paid"
+                  checked={formData.is_paid}
+                  onChange={(e) => setFormData({ ...formData, is_paid: e.target.checked })}
+                  className="w-5 h-5 text-green-600 bg-gray-800 border-gray-600 rounded focus:ring-green-500"
+                />
+                <label htmlFor="is_paid" className="text-gray-300 font-medium cursor-pointer flex-1">
+                  Usuario Pagado
+                </label>
+              </div>
+
+              {/* Fecha de Vencimiento del Pago */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Fecha de Vencimiento del Pago
+                </label>
+                <input
+                  type="date"
+                  value={formData.paid_until}
+                  onChange={(e) => setFormData({ ...formData, paid_until: e.target.value })}
+                  className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Dejar vacío si no hay fecha de vencimiento específica
+                </p>
+              </div>
+
+              {/* Plan Empresa */}
+              <div className="flex items-center gap-3 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+                <input
+                  type="checkbox"
+                  id="pagos_empresa"
+                  checked={formData.pagos_empresa}
+                  onChange={(e) => setFormData({ ...formData, pagos_empresa: e.target.checked })}
+                  className="w-5 h-5 text-purple-600 bg-gray-800 border-gray-600 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="pagos_empresa" className="text-gray-300 font-medium cursor-pointer flex-1">
+                  Plan Empresa
+                </label>
+                <span className="text-xs text-purple-400 bg-purple-900/30 px-2 py-1 rounded">
+                  Multi-tienda
+                </span>
+              </div>
+            </>
+          )}
 
           {/* Info adicional al crear */}
           {!isEditing && (

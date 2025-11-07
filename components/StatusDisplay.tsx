@@ -82,7 +82,40 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, pro
               </div>
               
               {/* Mostrar errores de sucursal si existen */}
-              {processingInfo.erroresSucursal && processingInfo.erroresSucursal.length > 0 && (
+              {console.log('🔍 DEBUG StatusDisplay - erroresSucursalDetallados:', processingInfo.erroresSucursalDetallados)}
+              {console.log('🔍 DEBUG StatusDisplay - erroresSucursalDetallados length:', processingInfo.erroresSucursalDetallados?.length)}
+              {processingInfo.erroresSucursalDetallados && processingInfo.erroresSucursalDetallados.length > 0 && (
+                <div className="mt-2 p-3 rounded bg-orange-900/30 border-2 border-orange-600/50 text-xs">
+                  <div className="text-orange-200 font-bold mb-2 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    ⚠️ {processingInfo.erroresSucursalDetallados.length} Pedido(s) NO procesado(s) - Requieren carga manual
+                  </div>
+                  <div className="text-orange-200 text-xs space-y-2">
+                    {processingInfo.erroresSucursalDetallados.map((error, idx) => (
+                      <div key={idx} className="bg-orange-900/40 p-2 rounded border border-orange-700/50">
+                        <div className="font-semibold text-orange-100 mb-1">Pedido #{error.numeroOrden}</div>
+                        <div className="text-orange-200/90 space-y-0.5">
+                          <div>📍 <span className="font-medium">Dirección:</span> {error.direccion} {error.numero}</div>
+                          <div>🏙️ <span className="font-medium">Localidad:</span> {error.localidad || error.ciudad}</div>
+                          <div>🗺️ <span className="font-medium">Provincia:</span> {error.provincia}</div>
+                          <div>📮 <span className="font-medium">CP:</span> {error.codigoPostal}</div>
+                          <div className="mt-1 pt-1 border-t border-orange-700/50">
+                            <span className="font-medium text-orange-100">Motivo:</span> {error.motivo}
+                          </div>
+                          <div className="mt-1 text-orange-300 font-semibold">
+                            ⚠️ Este pedido debe ser cargado manualmente en el sistema de Andreani
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Fallback a lista simple si no hay detalles */}
+              {(!processingInfo.erroresSucursalDetallados || processingInfo.erroresSucursalDetallados.length === 0) && 
+               processingInfo.erroresSucursal && processingInfo.erroresSucursal.length > 0 && (
                 <div className="mt-2 p-2 rounded bg-orange-900/20 border border-orange-600/30 text-xs">
                   <div className="text-orange-300 font-semibold mb-1">
                     ⚠️ Pedidos con error de sucursal ({processingInfo.erroresSucursal.length})

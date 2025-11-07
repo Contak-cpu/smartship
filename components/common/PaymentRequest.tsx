@@ -33,20 +33,25 @@ export const PaymentRequest: React.FC<PaymentRequestProps> = ({ currentPlan, onP
           {/* Info */}
           <div className="flex-1">
             <h3 className="text-xl font-bold text-white mb-2">
-              💳 ¿Quieres ser usuario pago?
+              {currentPlan === 'Expirado' ? '⏰ Tu plan expiró' : '💳 ¿Quieres ser usuario pago?'}
             </h3>
             <p className="text-gray-300 text-sm leading-relaxed">
-              Actualmente tienes acceso en modo trial. Actualiza tu plan para tener acceso permanente 
-              a todas las funcionalidades y beneficios exclusivos.
+              {currentPlan === 'Expirado' 
+                ? 'Tu suscripción ha vencido. Renueva tu plan ahora para recuperar el acceso a todas las funcionalidades y beneficios exclusivos.'
+                : 'Actualmente tienes acceso en modo trial. Actualiza tu plan para tener acceso permanente a todas las funcionalidades y beneficios exclusivos.'}
             </p>
           </div>
 
           {/* Botón */}
           <button
             onClick={() => handleSelectPlan('Basic')}
-            className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-900 font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-yellow-500/50"
+            className={`font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg ${
+              currentPlan === 'Expirado'
+                ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white hover:shadow-red-500/50'
+                : 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-900 hover:shadow-yellow-500/50'
+            }`}
           >
-            Actualizar mi plan
+            {currentPlan === 'Expirado' ? 'Renovar mi plan' : 'Actualizar mi plan'}
           </button>
         </div>
       </div>
