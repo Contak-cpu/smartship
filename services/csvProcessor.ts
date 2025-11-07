@@ -1424,7 +1424,7 @@ export const generarSugerenciaSucursal = (
       continue;
     }
     
-    // 1. Coincidencia parcial de calle (máximo 40 puntos)
+    // 1. Coincidencia parcial de calle (máximo 50 puntos)
     const palabrasCalle = calleNumeroNorm.split(/\s+/).filter(p => p.length >= 3);
     let palabrasCoinciden = 0;
     for (const palabra of palabrasCalle) {
@@ -1433,24 +1433,24 @@ export const generarSugerenciaSucursal = (
       }
     }
     if (palabrasCoinciden > 0) {
-      const scoreCalle = Math.min(40, (palabrasCoinciden / palabrasCalle.length) * 40);
+      const scoreCalle = Math.min(50, (palabrasCoinciden / palabrasCalle.length) * 50);
       score += scoreCalle;
       razones.push(`${palabrasCoinciden}/${palabrasCalle.length} palabras de la calle coinciden`);
     }
     
-    // 2. Coincidencia de código postal (30 puntos)
+    // 2. Coincidencia de código postal (25 puntos)
     if (cpLimpio) {
       const cpSucursal = extraerCodigoPostalSucursal(sucursal.direccion);
       if (cpSucursal === cpLimpio) {
-        score += 30;
+        score += 25;
         razones.push('Código postal coincide exactamente');
-      } else if (cpSucursal && cpSucursal.startsWith(cpLimpio.substring(0, 4))) {
-        score += 15;
+      } else if (cpSucursal && cpLimpio.length >= 4 && cpSucursal.startsWith(cpLimpio.substring(0, 4))) {
+        score += 12;
         razones.push('Código postal parcialmente coincide');
       }
     }
     
-    // 3. Coincidencia de provincia (20 puntos)
+    // 3. Coincidencia de provincia (20 puntos) - CRÍTICO
     if (provinciaNorm) {
       if (direccionSucNorm.includes(provinciaNorm) || nombreSucNorm.includes(provinciaNorm)) {
         score += 20;
@@ -1458,16 +1458,23 @@ export const generarSugerenciaSucursal = (
       }
     }
     
-    // 4. Coincidencia de ciudad/localidad (10 puntos)
+    // 4. Coincidencia de ciudad/localidad (15 puntos)
     if (ciudadNorm) {
       if (direccionSucNorm.includes(ciudadNorm) || nombreSucNorm.includes(ciudadNorm)) {
-        score += 10;
+        score += 15;
         razones.push('Ciudad/Localidad coincide');
       }
     }
     
-    // Solo sugerir si tiene al menos 30 puntos
-    if (score >= 30) {
+    // 5. Bonus por coincidencia exacta de nombre de sucursal con ciudad/localidad (10 puntos)
+    if (ciudadNorm && nombreSucNorm.includes(ciudadNorm)) {
+      score += 10;
+      razones.push('Nombre de sucursal coincide con ciudad/localidad');
+    }
+    
+    // Reducir umbral mínimo a 20 puntos para asegurar que siempre haya sugerencias
+    // Si tiene calle + provincia = mínimo 50 puntos, así que 20 es razonable
+    if (score >= 20) {
       sugerencias.push({ sucursal, score, razones });
     }
   }
@@ -2536,27 +2543,132 @@ export const processOrders = async (
           console.log(`⚠️ ACCIÓN REQUERIDA: Revisar y decidir si aceptar o rechazar la sugerencia`);
           console.log(`💡 ==========================================\n`);
         } else {
-          contadorSucursalesNoEncontradas++;
-          console.error(`\n🚨 ==========================================`);
-          console.error(`🚨 PEDIDO A SUCURSAL NO PROCESADO #${contadorSucursalesNoEncontradas}`);
-          console.error(`🚨 ==========================================`);
-          console.error(`📦 Número de Orden: ${baseData['Numero Interno']}`);
-          console.error(`👤 Cliente: ${getColumnValue(order, 11)}`);
-          console.error(`📧 Email: ${getColumnValue(order, 1)}`);
-          console.error(`📞 Teléfono: ${getColumnValue(order, 13)}`);
-          console.error(`📍 Dirección completa del pedido:`);
-          console.error(`   - Calle: "${calle}"`);
-          console.error(`   - Número: "${numero}" (básico: "${numeroBasico}")`);
-          console.error(`   - Piso: "${piso}"`);
-          console.error(`   - Localidad: "${localidad}"`);
-          console.error(`   - Ciudad: "${ciudad}"`);
-          console.error(`   - Código Postal: "${codigoPostal}"`);
-          console.error(`   - Provincia: "${provincia}"`);
-          console.error(`   - Dirección construida: "${direccionCompleta}"`);
-          console.error(`📋 Medio de envío: "${medioEnvio}"`);
-          console.error(`❌ MOTIVO: No se encontró sucursal Andreani que coincida con la dirección`);
-          console.error(`💡 ACCIÓN REQUERIDA: Revisar manualmente y asignar sucursal correcta`);
-          console.error(`🚨 ==========================================\n`);
+          // Si no se pudo generar sugerencia, buscar la sucursal más cercana por provincia
+          // para asegurar que siempre haya una sugerencia
+          const normalizarTextoFallback = (texto: string): string => {
+            return texto
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/\./g, ' ')
+              .replace(/[^\w\s]/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+          };
+          
+          const sucursalesProvincia = sucursales.filter(s => {
+            const direccionSucNorm = normalizarTextoFallback(s.direccion);
+            const nombreSucNorm = normalizarTextoFallback(s.nombre_sucursal);
+            const provinciaNorm = provincia ? normalizarTextoFallback(provincia) : '';
+            return provinciaNorm && (direccionSucNorm.includes(provinciaNorm) || nombreSucNorm.includes(provinciaNorm));
+          });
+          
+          if (sucursalesProvincia.length > 0) {
+            // Usar la primera sucursal de la provincia como sugerencia de último recurso
+            const sucursalFallback = sucursalesProvincia[0];
+            sugerenciasSucursal.push({
+              numeroOrden: baseData['Numero Interno'],
+              direccionPedido: direccionCompleta,
+              numero: numeroBasico,
+              localidad: localidad,
+              ciudad: ciudad,
+              codigoPostal: codigoPostal,
+              provincia: provincia,
+              sucursalSugerida: sucursalFallback,
+              razon: `Sucursal en la misma provincia (${provincia}) - Revisar manualmente`,
+              score: 20,
+              decision: 'pendiente',
+              pedidoData: {
+                peso: baseData['Peso (grs)'],
+                alto: baseData['Alto (cm)'],
+                ancho: baseData['Ancho (cm)'],
+                profundidad: baseData['Profundidad (cm)'],
+                valorDeclarado: baseData['Valor declarado ($ C/IVA) *'],
+                nombre: baseData['Nombre *'],
+                apellido: baseData['Apellido *'],
+                dni: baseData['DNI *'],
+                email: baseData['Email *'],
+                celularCodigo: baseData['Celular código *'],
+                celularNumero: baseData['Celular número *']
+              }
+            });
+            console.log(`\n💡 ==========================================`);
+            console.log(`💡 SUGERENCIA FALLBACK GENERADA PARA PEDIDO #${baseData['Numero Interno']}`);
+            console.log(`💡 ==========================================`);
+            console.log(`📦 Número de Orden: ${baseData['Numero Interno']}`);
+            console.log(`👤 Cliente: ${getColumnValue(order, 11)}`);
+            console.log(`📍 Dirección: ${direccionCompleta}`);
+            console.log(`💡 Sucursal sugerida (fallback): ${sucursalFallback.nombre_sucursal}`);
+            console.log(`📊 Score: 20/100 (Baja confianza - Revisar manualmente)`);
+            console.log(`📝 Razón: Sucursal en la misma provincia`);
+            console.log(`⚠️ ACCIÓN REQUERIDA: Revisar y decidir si aceptar o rechazar la sugerencia`);
+            console.log(`💡 ==========================================\n`);
+          } else {
+            // Si no hay sucursales en la provincia, buscar cualquier sucursal disponible como último recurso
+            if (sucursales.length > 0) {
+              // Usar la primera sucursal disponible como sugerencia de último recurso
+              const sucursalUltimoRecurso = sucursales[0];
+              sugerenciasSucursal.push({
+                numeroOrden: baseData['Numero Interno'],
+                direccionPedido: direccionCompleta,
+                numero: numeroBasico,
+                localidad: localidad,
+                ciudad: ciudad,
+                codigoPostal: codigoPostal,
+                provincia: provincia,
+                sucursalSugerida: sucursalUltimoRecurso,
+                razon: `No se encontraron sucursales en ${provincia}. Sucursal genérica sugerida - REVISAR MANUALMENTE`,
+                score: 10,
+                decision: 'pendiente',
+                pedidoData: {
+                  peso: baseData['Peso (grs)'],
+                  alto: baseData['Alto (cm)'],
+                  ancho: baseData['Ancho (cm)'],
+                  profundidad: baseData['Profundidad (cm)'],
+                  valorDeclarado: baseData['Valor declarado ($ C/IVA) *'],
+                  nombre: baseData['Nombre *'],
+                  apellido: baseData['Apellido *'],
+                  dni: baseData['DNI *'],
+                  email: baseData['Email *'],
+                  celularCodigo: baseData['Celular código *'],
+                  celularNumero: baseData['Celular número *']
+                }
+              });
+              console.log(`\n💡 ==========================================`);
+              console.log(`💡 SUGERENCIA ÚLTIMO RECURSO GENERADA PARA PEDIDO #${baseData['Numero Interno']}`);
+              console.log(`💡 ==========================================`);
+              console.log(`📦 Número de Orden: ${baseData['Numero Interno']}`);
+              console.log(`👤 Cliente: ${getColumnValue(order, 11)}`);
+              console.log(`📍 Dirección: ${direccionCompleta}`);
+              console.log(`💡 Sucursal sugerida (último recurso): ${sucursalUltimoRecurso.nombre_sucursal}`);
+              console.log(`📊 Score: 10/100 (Muy baja confianza - Revisar manualmente)`);
+              console.log(`📝 Razón: No se encontraron sucursales en la provincia ${provincia}`);
+              console.log(`⚠️ ACCIÓN REQUERIDA: Revisar y decidir si aceptar o rechazar la sugerencia`);
+              console.log(`💡 ==========================================\n`);
+            } else {
+              contadorSucursalesNoEncontradas++;
+              console.error(`\n🚨 ==========================================`);
+              console.error(`🚨 PEDIDO A SUCURSAL NO PROCESADO #${contadorSucursalesNoEncontradas}`);
+              console.error(`🚨 ==========================================`);
+              console.error(`📦 Número de Orden: ${baseData['Numero Interno']}`);
+              console.error(`👤 Cliente: ${getColumnValue(order, 11)}`);
+              console.error(`📧 Email: ${getColumnValue(order, 1)}`);
+              console.error(`📞 Teléfono: ${getColumnValue(order, 13)}`);
+              console.error(`📍 Dirección completa del pedido:`);
+              console.error(`   - Calle: "${calle}"`);
+              console.error(`   - Número: "${numero}" (básico: "${numeroBasico}")`);
+              console.error(`   - Piso: "${piso}"`);
+              console.error(`   - Localidad: "${localidad}"`);
+              console.error(`   - Ciudad: "${ciudad}"`);
+              console.error(`   - Código Postal: "${codigoPostal}"`);
+              console.error(`   - Provincia: "${provincia}"`);
+              console.error(`   - Dirección construida: "${direccionCompleta}"`);
+              console.error(`📋 Medio de envío: "${medioEnvio}"`);
+              console.error(`❌ MOTIVO: No se encontró sucursal Andreani y no hay sucursales disponibles en el sistema`);
+              console.error(`💡 ACCIÓN REQUERIDA: Revisar manualmente y asignar sucursal correcta`);
+              console.error(`🚨 ==========================================\n`);
+            }
+          }
         }
       } else {
         sucursalesOutput.push({
@@ -2615,7 +2727,8 @@ export const processOrders = async (
       sucursalesProcessed: contadorSucursales,
       noProcessed: contadorNoProcesados,
       processingLogs,
-      noProcessedReason
+      noProcessedReason,
+      sugerenciasSucursal: sugerenciasSucursal.length > 0 ? sugerenciasSucursal : undefined
     }
   };
 };
@@ -3225,27 +3338,132 @@ export const processVentasOrders = async (
           console.log(`⚠️ ACCIÓN REQUERIDA: Revisar y decidir si aceptar o rechazar la sugerencia`);
           console.log(`💡 ==========================================\n`);
         } else {
-          contadorErroresSucursal++;
-          const errorDetalle = {
-            numeroOrden: numeroOrden,
-            direccion: direccion,
-            numero: numeroBasico,
-            localidad: localidad,
-            ciudad: ciudad,
-            codigoPostal: codigoPostal,
-            provincia: provincia,
-            motivo: `No se encontró sucursal que coincida con la dirección "${direccion} ${numeroBasico}" en ${localidad || ciudad}, ${provincia} (CP: ${codigoPostal})`
+          // Si no se pudo generar sugerencia, buscar la sucursal más cercana por provincia
+          // para asegurar que siempre haya una sugerencia
+          const normalizarTextoFallback = (texto: string): string => {
+            return texto
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/\./g, ' ')
+              .replace(/[^\w\s]/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
           };
-          erroresSucursal.push(`Pedido #${numeroOrden} - ${errorDetalle.motivo}`);
-          erroresSucursalDetallados.push(errorDetalle);
-          console.error(`❌ Pedido #${numeroOrden} NO PROCESADO: no se encontró la sucursal.`);
-          console.error(`   📍 Dirección: ${direccion} ${numeroBasico}`);
-          console.error(`   📍 Localidad: ${localidad}, Ciudad: ${ciudad}`);
-          console.error(`   📍 Provincia: ${provincia}, CP: ${codigoPostal}`);
-          console.error(`   ⚠️ Debe cargar este pedido manualmente en el sistema de Andreani.`);
-          console.log(`📊 Contador de errores de sucursal actualizado:`, contadorErroresSucursal);
-          console.log(`📊 Total errores detallados capturados:`, erroresSucursalDetallados.length);
-          console.log(`📊 Último error capturado:`, JSON.stringify(errorDetalle, null, 2));
+          
+          const sucursalesProvincia = sucursales.filter(s => {
+            const direccionSucNorm = normalizarTextoFallback(s.direccion);
+            const nombreSucNorm = normalizarTextoFallback(s.nombre_sucursal);
+            const provinciaNorm = provincia ? normalizarTextoFallback(provincia) : '';
+            return provinciaNorm && (direccionSucNorm.includes(provinciaNorm) || nombreSucNorm.includes(provinciaNorm));
+          });
+          
+          if (sucursalesProvincia.length > 0) {
+            // Usar la primera sucursal de la provincia como sugerencia de último recurso
+            const sucursalFallback = sucursalesProvincia[0];
+            sugerenciasSucursal.push({
+              numeroOrden: numeroOrden,
+              direccionPedido: direccionCompletaParaSugerencia,
+              numero: numeroBasico,
+              localidad: localidad,
+              ciudad: ciudad,
+              codigoPostal: codigoPostal,
+              provincia: provincia,
+              sucursalSugerida: sucursalFallback,
+              razon: `Sucursal en la misma provincia (${provincia}) - Revisar manualmente`,
+              score: 20,
+              decision: 'pendiente',
+              pedidoData: {
+                peso: baseData['Peso (grs)\nEj: '] ? Number(baseData['Peso (grs)\nEj: ']) : finalConfig.peso,
+                alto: baseData['Alto (cm)\nEj: '] ? Number(baseData['Alto (cm)\nEj: ']) : finalConfig.alto,
+                ancho: baseData['Ancho (cm)\nEj: '] ? Number(baseData['Ancho (cm)\nEj: ']) : finalConfig.ancho,
+                profundidad: baseData['Profundidad (cm)\nEj: '] ? Number(baseData['Profundidad (cm)\nEj: ']) : finalConfig.profundidad,
+                valorDeclarado: baseData['Valor declarado ($ C/IVA) *\nEj: '] ? Number(baseData['Valor declarado ($ C/IVA) *\nEj: ']) : finalConfig.valorDeclarado,
+                nombre: baseData['Nombre *\nEj: '],
+                apellido: baseData['Apellido *\nEj: '],
+                dni: baseData['DNI *\nEj: '],
+                email: baseData['Email *\nEj: '],
+                celularCodigo: baseData['Celular código *\nEj: '],
+                celularNumero: baseData['Celular número *\nEj: ']
+              }
+            });
+            console.log(`\n💡 ==========================================`);
+            console.log(`💡 SUGERENCIA FALLBACK GENERADA PARA PEDIDO #${numeroOrden}`);
+            console.log(`💡 ==========================================`);
+            console.log(`📦 Número de Orden: ${numeroOrden}`);
+            console.log(`📍 Dirección: ${direccionCompletaParaSugerencia}`);
+            console.log(`💡 Sucursal sugerida (fallback): ${sucursalFallback.nombre_sucursal}`);
+            console.log(`📊 Score: 20/100 (Baja confianza - Revisar manualmente)`);
+            console.log(`📝 Razón: Sucursal en la misma provincia`);
+            console.log(`⚠️ ACCIÓN REQUERIDA: Revisar y decidir si aceptar o rechazar la sugerencia`);
+            console.log(`💡 ==========================================\n`);
+          } else {
+            // Si no hay sucursales en la provincia, buscar cualquier sucursal disponible como último recurso
+            // o crear una sugerencia especial indicando que no hay sucursales disponibles
+            if (sucursales.length > 0) {
+              // Usar la primera sucursal disponible como sugerencia de último recurso
+              const sucursalUltimoRecurso = sucursales[0];
+              sugerenciasSucursal.push({
+                numeroOrden: numeroOrden,
+                direccionPedido: direccionCompletaParaSugerencia,
+                numero: numeroBasico,
+                localidad: localidad,
+                ciudad: ciudad,
+                codigoPostal: codigoPostal,
+                provincia: provincia,
+                sucursalSugerida: sucursalUltimoRecurso,
+                razon: `No se encontraron sucursales en ${provincia}. Sucursal genérica sugerida - REVISAR MANUALMENTE`,
+                score: 10,
+                decision: 'pendiente',
+                pedidoData: {
+                  peso: baseData['Peso (grs)\nEj: '] ? Number(baseData['Peso (grs)\nEj: ']) : finalConfig.peso,
+                  alto: baseData['Alto (cm)\nEj: '] ? Number(baseData['Alto (cm)\nEj: ']) : finalConfig.alto,
+                  ancho: baseData['Ancho (cm)\nEj: '] ? Number(baseData['Ancho (cm)\nEj: ']) : finalConfig.ancho,
+                  profundidad: baseData['Profundidad (cm)\nEj: '] ? Number(baseData['Profundidad (cm)\nEj: ']) : finalConfig.profundidad,
+                  valorDeclarado: baseData['Valor declarado ($ C/IVA) *\nEj: '] ? Number(baseData['Valor declarado ($ C/IVA) *\nEj: ']) : finalConfig.valorDeclarado,
+                  nombre: baseData['Nombre *\nEj: '],
+                  apellido: baseData['Apellido *\nEj: '],
+                  dni: baseData['DNI *\nEj: '],
+                  email: baseData['Email *\nEj: '],
+                  celularCodigo: baseData['Celular código *\nEj: '],
+                  celularNumero: baseData['Celular número *\nEj: ']
+                }
+              });
+              console.log(`\n💡 ==========================================`);
+              console.log(`💡 SUGERENCIA ÚLTIMO RECURSO GENERADA PARA PEDIDO #${numeroOrden}`);
+              console.log(`💡 ==========================================`);
+              console.log(`📦 Número de Orden: ${numeroOrden}`);
+              console.log(`📍 Dirección: ${direccionCompletaParaSugerencia}`);
+              console.log(`💡 Sucursal sugerida (último recurso): ${sucursalUltimoRecurso.nombre_sucursal}`);
+              console.log(`📊 Score: 10/100 (Muy baja confianza - Revisar manualmente)`);
+              console.log(`📝 Razón: No se encontraron sucursales en la provincia ${provincia}`);
+              console.log(`⚠️ ACCIÓN REQUERIDA: Revisar y decidir si aceptar o rechazar la sugerencia`);
+              console.log(`💡 ==========================================\n`);
+            } else {
+              // Si no hay sucursales disponibles en absoluto, registrar como error
+              contadorErroresSucursal++;
+              const errorDetalle = {
+                numeroOrden: numeroOrden,
+                direccion: direccion,
+                numero: numeroBasico,
+                localidad: localidad,
+                ciudad: ciudad,
+                codigoPostal: codigoPostal,
+                provincia: provincia,
+                motivo: `No se encontró sucursal que coincida con la dirección "${direccion} ${numeroBasico}" en ${localidad || ciudad}, ${provincia} (CP: ${codigoPostal}) y no hay sucursales disponibles en el sistema`
+              };
+              erroresSucursal.push(`Pedido #${numeroOrden} - ${errorDetalle.motivo}`);
+              erroresSucursalDetallados.push(errorDetalle);
+              console.error(`❌ Pedido #${numeroOrden} NO PROCESADO: no se encontró la sucursal y no hay sucursales disponibles.`);
+              console.error(`   📍 Dirección: ${direccion} ${numeroBasico}`);
+              console.error(`   📍 Localidad: ${localidad}, Ciudad: ${ciudad}`);
+              console.error(`   📍 Provincia: ${provincia}, CP: ${codigoPostal}`);
+              console.error(`   ⚠️ Debe cargar este pedido manualmente en el sistema de Andreani.`);
+              console.log(`📊 Contador de errores de sucursal actualizado:`, contadorErroresSucursal);
+              console.log(`📊 Total errores detallados capturados:`, erroresSucursalDetallados.length);
+              console.log(`📊 Último error capturado:`, JSON.stringify(errorDetalle, null, 2));
+            }
+          }
         }
       } else {
         contadorSucursales++;
@@ -3261,13 +3479,137 @@ export const processVentasOrders = async (
         }
       }
     } else {
-      contadorNoProcesados++;
-      console.error(`❌ [NO PROCESADO ${contadorNoProcesados}] Pedido ${numeroOrden}`);
-      console.error(`   Medio de envío original: "${medioEnvio}"`);
-      console.error(`   Medio de envío normalizado: "${medioEnvioNorm}"`);
-      console.error(`   ⚠️ El medio de envío no coincide con ningún patrón conocido`);
-      console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar"`);
-      console.error(`   ✅ Patrones de SUCURSAL: "punto de retiro", "sucursal", "retiro"`);
+      // Si no se detectó claramente como domicilio o sucursal, pero tiene indicadores de sucursal,
+      // intentar procesarlo como sucursal con sugerencia
+      const tieneIndicadoresSucursal = medioEnvioNorm && (
+        medioEnvioNorm.includes("retiro") ||
+        medioEnvioNorm.includes("sucursal") ||
+        medioEnvioNorm.includes("punto")
+      );
+      
+      if (tieneIndicadoresSucursal) {
+        console.log(`⚠️ [SUCURSAL AMBIGUA] Pedido ${numeroOrden} tiene indicadores de sucursal pero no se detectó claramente`);
+        console.log(`   Medio de envío: "${medioEnvio}"`);
+        console.log(`   Procesando como sucursal con sugerencia...`);
+        
+        // Procesar como sucursal pero forzar generación de sugerencia
+        let numeroBasico = numero || '';
+        if (numero) {
+          const textoAntes = numero.split(/entre|y|local|piso|depto|dto/i)[0].trim();
+          if (textoAntes) {
+            numeroBasico = textoAntes;
+          }
+          const soloNumeros = numeroBasico.match(/\d+/);
+          if (soloNumeros && soloNumeros[0] && numeroBasico !== soloNumeros[0]) {
+            numeroBasico = soloNumeros[0];
+          }
+        }
+        
+        const direccionCompletaParaSugerencia = `${direccion} ${numeroBasico}`.trim();
+        const sugerencia = generarSugerenciaSucursal(
+          direccionCompletaParaSugerencia,
+          sucursales,
+          codigoPostal,
+          provincia,
+          ciudad,
+          localidad,
+          numeroOrden
+        );
+        
+        if (sugerencia && sugerencia.sucursal) {
+          sugerenciasSucursal.push({
+            numeroOrden: numeroOrden,
+            direccionPedido: direccionCompletaParaSugerencia,
+            numero: numeroBasico,
+            localidad: localidad,
+            ciudad: ciudad,
+            codigoPostal: codigoPostal,
+            provincia: provincia,
+            sucursalSugerida: sugerencia.sucursal,
+            razon: `Medio de envío ambiguo detectado como sucursal: ${sugerencia.razon}`,
+            score: sugerencia.score,
+            decision: 'pendiente',
+            pedidoData: {
+              peso: baseData['Peso (grs)\nEj: '] ? Number(baseData['Peso (grs)\nEj: ']) : finalConfig.peso,
+              alto: baseData['Alto (cm)\nEj: '] ? Number(baseData['Alto (cm)\nEj: ']) : finalConfig.alto,
+              ancho: baseData['Ancho (cm)\nEj: '] ? Number(baseData['Ancho (cm)\nEj: ']) : finalConfig.ancho,
+              profundidad: baseData['Profundidad (cm)\nEj: '] ? Number(baseData['Profundidad (cm)\nEj: ']) : finalConfig.profundidad,
+              valorDeclarado: baseData['Valor declarado ($ C/IVA) *\nEj: '] ? Number(baseData['Valor declarado ($ C/IVA) *\nEj: ']) : finalConfig.valorDeclarado,
+              nombre: baseData['Nombre *\nEj: '],
+              apellido: baseData['Apellido *\nEj: '],
+              dni: baseData['DNI *\nEj: '],
+              email: baseData['Email *\nEj: '],
+              celularCodigo: baseData['Celular código *\nEj: '],
+              celularNumero: baseData['Celular número *\nEj: ']
+            }
+          });
+          console.log(`💡 Sugerencia generada para pedido ambiguo #${numeroOrden}`);
+        } else {
+          // Si no se pudo generar sugerencia, usar fallback
+          const normalizarTextoFallback = (texto: string): string => {
+            return texto
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/\./g, ' ')
+              .replace(/[^\w\s]/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+          };
+          
+          const sucursalesProvincia = sucursales.filter(s => {
+            const direccionSucNorm = normalizarTextoFallback(s.direccion);
+            const nombreSucNorm = normalizarTextoFallback(s.nombre_sucursal);
+            const provinciaNorm = provincia ? normalizarTextoFallback(provincia) : '';
+            return provinciaNorm && (direccionSucNorm.includes(provinciaNorm) || nombreSucNorm.includes(provinciaNorm));
+          });
+          
+          if (sucursalesProvincia.length > 0 || sucursales.length > 0) {
+            const sucursalFallback = sucursalesProvincia.length > 0 ? sucursalesProvincia[0] : sucursales[0];
+            sugerenciasSucursal.push({
+              numeroOrden: numeroOrden,
+              direccionPedido: direccionCompletaParaSugerencia,
+              numero: numeroBasico,
+              localidad: localidad,
+              ciudad: ciudad,
+              codigoPostal: codigoPostal,
+              provincia: provincia,
+              sucursalSugerida: sucursalFallback,
+              razon: `Medio de envío ambiguo - Sucursal sugerida para revisar manualmente`,
+              score: 15,
+              decision: 'pendiente',
+              pedidoData: {
+                peso: baseData['Peso (grs)\nEj: '] ? Number(baseData['Peso (grs)\nEj: ']) : finalConfig.peso,
+                alto: baseData['Alto (cm)\nEj: '] ? Number(baseData['Alto (cm)\nEj: ']) : finalConfig.alto,
+                ancho: baseData['Ancho (cm)\nEj: '] ? Number(baseData['Ancho (cm)\nEj: ']) : finalConfig.ancho,
+                profundidad: baseData['Profundidad (cm)\nEj: '] ? Number(baseData['Profundidad (cm)\nEj: ']) : finalConfig.profundidad,
+                valorDeclarado: baseData['Valor declarado ($ C/IVA) *\nEj: '] ? Number(baseData['Valor declarado ($ C/IVA) *\nEj: ']) : finalConfig.valorDeclarado,
+                nombre: baseData['Nombre *\nEj: '],
+                apellido: baseData['Apellido *\nEj: '],
+                dni: baseData['DNI *\nEj: '],
+                email: baseData['Email *\nEj: '],
+                celularCodigo: baseData['Celular código *\nEj: '],
+                celularNumero: baseData['Celular número *\nEj: ']
+              }
+            });
+            console.log(`💡 Sugerencia fallback generada para pedido ambiguo #${numeroOrden}`);
+          } else {
+            contadorNoProcesados++;
+            console.error(`❌ [NO PROCESADO ${contadorNoProcesados}] Pedido ${numeroOrden}`);
+            console.error(`   Medio de envío original: "${medioEnvio}"`);
+            console.error(`   Medio de envío normalizado: "${medioEnvioNorm}"`);
+            console.error(`   ⚠️ El medio de envío no coincide con ningún patrón conocido y no hay sucursales disponibles`);
+          }
+        }
+      } else {
+        contadorNoProcesados++;
+        console.error(`❌ [NO PROCESADO ${contadorNoProcesados}] Pedido ${numeroOrden}`);
+        console.error(`   Medio de envío original: "${medioEnvio}"`);
+        console.error(`   Medio de envío normalizado: "${medioEnvioNorm}"`);
+        console.error(`   ⚠️ El medio de envío no coincide con ningún patrón conocido`);
+        console.error(`   ✅ Patrones de DOMICILIO: "domicilio", "a domicilio", "andreani estandar"`);
+        console.error(`   ✅ Patrones de SUCURSAL: "punto de retiro", "sucursal", "retiro"`);
+      }
     }
   }
 
