@@ -20,6 +20,7 @@ export interface UserAdmin {
   trial_expires_at: string | null;
   is_expired?: boolean;
   pagos_empresa?: boolean | null;
+  plan?: string | null;
 }
 
 export interface CreateUserData {

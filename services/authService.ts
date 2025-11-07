@@ -19,6 +19,18 @@ export interface SignUpResponse {
   requiresEmailConfirmation?: boolean;
 }
 
+/**
+ * Mapea un plan a su nivel correspondiente
+ */
+export function getLevelFromPlan(plan: string): number {
+  const planMap: Record<string, number> = {
+    'Starter': 1,
+    'Basic': 2,
+    'Pro': 3,
+  };
+  return planMap[plan] || 0;
+}
+
 class AuthService {
   /**
    * Inicia sesión con email y contraseña
@@ -105,11 +117,21 @@ class AuthService {
     paymentStatus?: 'pending' | 'approved'
   ): Promise<SignUpResponse> {
     try {
-      console.log('🔐 [AuthService] Registrando usuario:', email, 'Plan:', plan);
+      console.log('🔐 [AuthService] Registrando usuario:', email, 'Plan:', plan, 'PaymentStatus:', paymentStatus);
 
-      // Calcular fecha de expiración del trial (7 días)
-      const trialExpiresAt = new Date();
-      trialExpiresAt.setDate(trialExpiresAt.getDate() + 7);
+      // Si el pago está pendiente, registrar con nivel 0 y sin trial
+      // Solo cuando el pago esté aprobado se le dará acceso al nivel correspondiente
+      const isPending = paymentStatus === 'pending';
+      const nivel = isPending ? 0 : getLevelFromPlan(plan);
+      const isPaid = paymentStatus === 'approved';
+      
+      // Solo establecer trial si el pago está aprobado
+      let trialExpiresAt: string | undefined = undefined;
+      if (isPaid) {
+        const trialDate = new Date();
+        trialDate.setDate(trialDate.getDate() + 7);
+        trialExpiresAt = trialDate.toISOString();
+      }
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -117,10 +139,10 @@ class AuthService {
         options: {
           data: {
             username,
-            plan,
-            nivel: 3, // Nivel VIP por defecto
-            trial_expires_at: trialExpiresAt.toISOString(),
-            is_paid: paymentStatus === 'approved', // Solo true si fue aprobado
+            plan, // Guardar el plan seleccionado para cuando se apruebe el pago
+            nivel, // Nivel 0 si está pendiente, nivel del plan si está aprobado
+            trial_expires_at: trialExpiresAt, // Solo si está aprobado
+            is_paid: isPaid, // Solo true si fue aprobado
             payment_status: paymentStatus || undefined, // Estado del pago
           },
           emailRedirectTo: undefined, // No requerir confirmación de email
@@ -150,7 +172,11 @@ class AuthService {
         };
       }
 
-      console.log('✅ [AuthService] Usuario registrado exitosamente con nivel 3 y 7 días de trial');
+      if (isPending) {
+        console.log('✅ [AuthService] Usuario registrado con nivel 0 y pago pendiente. Acceso será activado cuando se apruebe el pago.');
+      } else {
+        console.log(`✅ [AuthService] Usuario registrado exitosamente con nivel ${nivel} y 7 días de trial`);
+      }
 
       // Verificar si requiere confirmación de email
       const requiresEmailConfirmation = 

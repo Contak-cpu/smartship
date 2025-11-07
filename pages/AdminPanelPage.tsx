@@ -12,6 +12,7 @@ import {
   expireUsersAutomatically,
   UserAdmin 
 } from '../services/adminService';
+import { getLevelFromPlan } from '../services/authService';
 
 // Niveles disponibles
 const NIVELES = [
@@ -130,6 +131,7 @@ const AdminPanelPage = () => {
 
   // Manejar cambio de estado de pago
   const handleChangePaymentStatus = async (userId: string, isPaid: boolean, date?: string) => {
+    const currentUser = users.find(u => u.id === userId);
     const updates: any = {
       is_paid: isPaid,
     };
@@ -137,9 +139,25 @@ const AdminPanelPage = () => {
     // Actualizar payment_status según el estado de pago
     if (isPaid) {
       updates.payment_status = 'approved';
+      
+      // Si se marca como pagado, asignar el nivel según el plan guardado
+      if (currentUser?.plan) {
+        const nivelFromPlan = getLevelFromPlan(currentUser.plan);
+        if (nivelFromPlan > 0) {
+          updates.nivel = nivelFromPlan;
+          console.log(`✅ Asignando nivel ${nivelFromPlan} según plan ${currentUser.plan}`);
+        }
+      }
+      
+      // Si se marca como pagado, establecer trial de 7 días
+      const trialExpiresAt = new Date();
+      trialExpiresAt.setDate(trialExpiresAt.getDate() + 7);
+      updates.trial_expires_at = trialExpiresAt.toISOString();
     } else {
-      // Si se desmarca como pagado, limpiar el estado de pago
+      // Si se desmarca como pagado, limpiar el estado de pago y volver a nivel 0
       updates.payment_status = null;
+      updates.nivel = 0;
+      updates.trial_expires_at = null;
     }
 
     // Si se marca como pagado y hay fecha, agregarla
@@ -150,7 +168,6 @@ const AdminPanelPage = () => {
       updates.paid_until = null;
     } else if (isPaid && !date) {
       // Si se marca como pagado pero no hay fecha, mantener la fecha existente si existe
-      const currentUser = users.find(u => u.id === userId);
       if (currentUser?.paid_until) {
         updates.paid_until = currentUser.paid_until;
       }

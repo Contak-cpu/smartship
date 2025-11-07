@@ -86,7 +86,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         setSuccess(true);
         
         setTimeout(() => {
-          onSuccess(username, 3);
+          // Pasar nivel 0 ya que el usuario está pendiente de pago
+          onSuccess(username, 0);
           onClose();
         }, 3000);
       }
