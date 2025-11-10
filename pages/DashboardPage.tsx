@@ -222,26 +222,25 @@ const DashboardPage: React.FC = () => {
         </svg>
       ),
     },
-    // TEMPORALMENTE OCULTO - Gestión de Stock
-    // {
-    //   id: 'stock',
-    //   title: 'Gestión de Stock',
-    //   description: 'Administra tu inventario de productos. Registra SKUs con sus cantidades y descontá automáticamente desde la sección de rótulos.',
-    //   path: '/stock',
-    //   color: 'orange',
-    //   stats: 'Control de Inventario',
-    //   requiredLevel: 3,
-    //   icon: (
-    //     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //       <path
-    //         strokeLinecap="round"
-    //         strokeLinejoin="round"
-    //         strokeWidth={2}
-    //         d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-    //       />
-    //     </svg>
-    //   ),
-    // },
+    {
+      id: 'stock',
+      title: 'Gestión de Stock',
+      description: 'Carga tu inventario base, define equivalencias por SKU y descontá automáticamente cada vez que generás rótulos.',
+      path: '/stock',
+      color: 'orange',
+      stats: 'Plan Pro+',
+      requiredLevel: 4,
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+          />
+        </svg>
+      ),
+    },
     {
       id: 'historial',
       title: 'Historial de Archivos',
@@ -324,6 +323,16 @@ const DashboardPage: React.FC = () => {
         text: 'text-green-500',
         border: 'border-green-500',
         shadow: 'hover:shadow-green-500/50',
+      };
+    }
+
+    if (color === 'orange') {
+      return {
+        bg: 'bg-gradient-to-r from-orange-600 to-orange-700',
+        hover: 'hover:from-orange-700 hover:to-orange-800',
+        text: 'text-orange-500',
+        border: 'border-orange-500',
+        shadow: 'hover:shadow-orange-500/50',
       };
     }
     
@@ -423,6 +432,14 @@ const DashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {features.map((feature) => {
               const colors = getColorClasses(feature.color);
+              const shadowColor =
+                feature.color === 'red'
+                  ? 'red'
+                  : feature.color === 'green'
+                  ? 'green'
+                  : feature.color === 'orange'
+                  ? 'orange'
+                  : 'blue';
               
               // Si requiredLevel es -1, verificar pago en lugar de nivel
               let accessResult = true;
@@ -450,6 +467,8 @@ const DashboardPage: React.FC = () => {
                       ? 'border-red-500/50 hover:border-red-500 hover:shadow-xl hover:shadow-red-500/20 hover:-translate-y-1 hover:bg-gray-800'
                       : feature.color === 'green'
                       ? 'border-gray-700/50 hover:border-green-500/50 hover:shadow-xl hover:shadow-green-500/10 hover:-translate-y-1 hover:bg-gray-800'
+                      : feature.color === 'orange'
+                      ? 'border-gray-700/50 hover:border-orange-500/50 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-1 hover:bg-gray-800'
                       : 'border-gray-700/50 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 hover:bg-gray-800'
                   }`}
                 >
@@ -501,7 +520,7 @@ const DashboardPage: React.FC = () => {
                     className={`w-full font-bold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 ${
                       isLocked
                         ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 hover:shadow-yellow-500/50 text-gray-900'
-                        : `${colors.bg} ${colors.hover} text-white hover:shadow-2xl hover:shadow-${colors.bg.includes('green') ? 'green' : 'blue'}-500/20`
+                        : `${colors.bg} ${colors.hover} text-white hover:shadow-2xl hover:shadow-${shadowColor}-500/20`
                     }`}
                   >
                     {isLocked ? (

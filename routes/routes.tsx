@@ -155,7 +155,7 @@ export const routes: RouteObject[] = [
   {
     path: '/stock',
     element: (
-      <LevelProtectedRoute requiredLevel={3} sectionName="Gestión de Stock">
+      <LevelProtectedRoute requiredLevel={4} sectionName="Gestión de Stock">
         <StockPage />
       </LevelProtectedRoute>
     ),

@@ -52,6 +52,11 @@ export const LEVEL_CONFIG: Record<string, LevelConfig> = {
     sectionName: 'Integrar SKU en Rótulos Andreani',
     description: 'Generador de rótulos con SKU'
   },
+  'stock': {
+    requiredLevel: 4,
+    sectionName: 'Gestión de Stock',
+    description: 'Control avanzado de inventario con descuentos automáticos'
+  },
   
   // Secciones de nivel Dios (nivel 999)
   'admin': {
@@ -67,6 +72,7 @@ export const LEVEL_NAMES: Record<number, string> = {
   1: 'Starter',
   2: 'Basic',
   3: 'Cliente VIP',
+  4: 'Pro+',
   999: 'Dios'
 };
 
@@ -76,6 +82,7 @@ export const LEVEL_COLORS: Record<number, string> = {
   1: 'green',
   2: 'blue',
   3: 'purple', // Cliente VIP - color púrpura elegante
+  4: 'amber', // Pro+ - resalta beneficios premium
   999: 'red'
 };
 

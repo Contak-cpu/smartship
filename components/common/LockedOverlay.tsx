@@ -38,10 +38,10 @@ const LockedOverlay: React.FC<LockedOverlayProps> = ({ requiredLevel, sectionNam
 
         {/* Mensaje */}
         <p className="text-xl text-yellow-400 mb-2 font-semibold">
-          Solo disponible para
+          {requiredLevel >= 4 ? 'Requiere Pago' : 'Solo disponible para'}
         </p>
         <p className="text-2xl text-yellow-500 font-bold mb-6">
-          Acceso Nivel {requiredLevel}
+          {requiredLevel === 4 ? 'Plan Pro+' : `Acceso Nivel ${requiredLevel}`}
         </p>
 
         {/* Sección bloqueada */}
@@ -61,6 +61,10 @@ const LockedOverlay: React.FC<LockedOverlayProps> = ({ requiredLevel, sectionNam
               <>
                 Obtén <span className="text-yellow-400 font-semibold">Nivel 3 (Administrador)</span> para desbloquear todas las funcionalidades premium y tener control total sobre tu sistema.
               </>
+            ) : requiredLevel === 4 ? (
+              <>
+                Contratá el <span className="text-yellow-400 font-semibold">Plan Pro+</span> para habilitar la gestión avanzada de stock, descuentos automáticos y reportes exclusivos.
+              </>
             ) : (
               <>
                 Mejora tu nivel de acceso para desbloquear esta funcionalidad y muchas más herramientas profesionales.
@@ -72,7 +76,7 @@ const LockedOverlay: React.FC<LockedOverlayProps> = ({ requiredLevel, sectionNam
         {/* Características del nivel requerido */}
         <div className="text-left mb-6 space-y-2">
           <p className="text-xs text-gray-400 font-semibold mb-3 text-center">
-            ✨ Nivel {requiredLevel} incluye:
+            ✨ {requiredLevel === 4 ? 'Plan Pro+ incluye:' : `Nivel ${requiredLevel} incluye:`}
           </p>
           {requiredLevel === 2 && (
             <>
@@ -118,17 +122,38 @@ const LockedOverlay: React.FC<LockedOverlayProps> = ({ requiredLevel, sectionNam
               </div>
             </>
           )}
+          {requiredLevel === 4 && (
+            <>
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <p className="text-sm text-gray-300">Gestión completa de inventario y control de equivalencias por SKU</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <p className="text-sm text-gray-300">Descuento automático de stock al generar rótulos con SKU</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <p className="text-sm text-gray-300">Historial de despachos y reportes priorizados</p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Botón de contacto/upgrade */}
         <button
           onClick={() => {
-            // Aquí podrías agregar lógica para contacto o upgrade
             window.history.back();
           }}
           className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-900 font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
         >
-          Solicitar Upgrade a Nivel {requiredLevel}
+          {requiredLevel === 4 ? 'Solicitar Plan Pro+' : `Solicitar Upgrade a Nivel ${requiredLevel}`}
         </button>
 
         {/* Botón secundario para volver */}
