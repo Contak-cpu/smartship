@@ -8,10 +8,10 @@ import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { guardarEnHistorialSKU } from '../../src/utils/historialStorage';
 import { useAuth } from '../../hooks/useAuth';
 import { guardarStockDespachado, StockDespachado } from '../../services/informacionService';
-import { descontarStockMultiple } from '../../services/stockService';
+import { descontarStockMultiple, obtenerStock, crearClaveSku } from '../../services/stockService';
 
 const PDFGenerator = () => {
-  const { username, userId } = useAuth();
+  const { username, userId, userLevel } = useAuth();
   const [csvData, setCsvData] = useState<string[][]>([]);
   const [csvFileName, setCsvFileName] = useState<string>('');
   const [pdfTemplate, setPdfTemplate] = useState<ArrayBuffer | null>(null);
@@ -31,7 +31,9 @@ const PDFGenerator = () => {
   const [showPositionConfig, setShowPositionConfig] = useState(false);
   const [isEditingPosition, setIsEditingPosition] = useState(false);
   const [showDescontarStockModal, setShowDescontarStockModal] = useState(false);
-  const [stockParaDescontar, setStockParaDescontar] = useState<Array<{sku: string, cantidad: number}>>([]);
+  const [stockParaDescontar, setStockParaDescontar] = useState<Array<{sku: string; cantidad: number; equivalencia: number; totalReal: number}>>([]);
+  const canManageStock = userLevel >= 4;
+  const formatNumber = (value: number) => new Intl.NumberFormat('es-AR').format(value);
   const [pdfjsWorkerReady, setPdfjsWorkerReady] = useState(false);
 
   // Configurar el worker de PDF.js una vez al montar el componente
@@ -136,6 +138,32 @@ const PDFGenerator = () => {
       // Fallback: eliminar todo lo que no sea ASCII básico
       return String(text).replace(/[^\x20-\x7E]/g, '').trim().replace(/\s+/g, ' ');
     }
+  };
+
+  const parsearSkuConCantidad = (rawSku: string) => {
+    let texto = rawSku.trim();
+
+    // Buscar prefijo tipo "3x-" o "2 X "
+    const prefijoMatch = texto.match(/^(\d+)\s*x\s*[-_ ]*/i);
+    let multiplicador = 1;
+
+    if (prefijoMatch) {
+      multiplicador = parseInt(prefijoMatch[1], 10) || 1;
+      texto = texto.slice(prefijoMatch[0].length);
+    }
+
+    // Buscar sufijo tipo "(x3)" o "x3" al final
+    const sufijoMatch = texto.match(/\(x\s*(\d+)\s*\)$/i) || texto.match(/x\s*(\d+)\s*$/i);
+    if (sufijoMatch) {
+      multiplicador *= parseInt(sufijoMatch[1], 10) || 1;
+      texto = texto.replace(sufijoMatch[0], '');
+    }
+
+    const skuNormalizado = normalizarTextoWinAnsi(texto.trim());
+    return {
+      skuLimpio: skuNormalizado,
+      multiplicadorDesdeTexto: Math.max(multiplicador, 1),
+    };
   };
 
   const handleCSVUpload = (file: File) => {
@@ -916,29 +944,30 @@ const PDFGenerator = () => {
             
             skuParts.forEach(skuPart => {
               if (skuPart) {
-                // Normalizar el SKU antes de procesarlo (por si acaso hay caracteres residuales)
-                const skuPartNormalizado = normalizarTextoWinAnsi(skuPart);
-                // Verificar que la normalización funcionó
-                if (skuPart !== skuPartNormalizado) {
-                  console.log(`SKU normalizado: "${skuPart}" -> "${skuPartNormalizado}"`);
-                }
-                // Agregar cantidad solo si existe y no está ya incluida en el SKU
-                const productText = quantity.trim() !== '' && !skuPartNormalizado.includes('(x') 
-                  ? normalizarTextoWinAnsi(`${skuPartNormalizado} (x${quantity})`)
-                  : skuPartNormalizado;
+                const {
+                  skuLimpio,
+                  multiplicadorDesdeTexto
+                } = parsearSkuConCantidad(skuPart);
+
+                const cantidadCsv = parseInt(quantity) || 1;
+                const cantidadReal = cantidadCsv * multiplicadorDesdeTexto;
+
+                // Texto para imprimir en el PDF (mostrar siempre la cantidad real)
+        const productText = normalizarTextoWinAnsi(
+          `${skuLimpio} (x${cantidadReal})`
+        );
                 allProducts.push(productText);
 
-                // Registrar para stock despachado
-                const cantidadNumerica = parseInt(quantity) || 1;
+                // Registrar para stock despachado con la cantidad real
                 stockDespachado.push({
                   user_id: userId,
                   username,
-                  sku: skuPartNormalizado,
-                  nombreproducto: skuPartNormalizado, // Usar nombre en minúsculas para coincidir con la BD
-                  cantidad: cantidadNumerica,
-                  numeropedido: orderNumber || '', // Usar nombre en minúsculas
-                  fechadespacho: hoy, // Usar nombre en minúsculas
-                  archivorotulo: csvFileName || 'documento', // Usar nombre en minúsculas
+                  sku: skuLimpio,
+                  nombreproducto: skuLimpio,
+                  cantidad: cantidadReal,
+                  numeropedido: orderNumber || '',
+                  fechadespacho: hoy,
+                  archivorotulo: csvFileName || 'documento',
                 });
               }
             });
@@ -1414,36 +1443,64 @@ const PDFGenerator = () => {
         // No interrumpir el flujo si falla el guardado del historial
       }
 
-      // TEMPORALMENTE OCULTO - Funcionalidad de stock
-      // Guardar stock despachado en Supabase
-      // if (stockDespachado.length > 0) {
-      //   try {
-      //     console.log(`Guardando ${stockDespachado.length} items de stock despachado en Supabase...`);
-      //     await guardarStockDespachado(stockDespachado);
-      //     console.log(`✅ Stock despachado guardado: ${stockDespachado.length} items`);
-      //   } catch (stockError) {
-      //     console.error('Error al guardar stock despachado:', stockError);
-      //     // No interrumpir el flujo si falla
-      //   }
-      // }
+      if (stockDespachado.length > 0) {
+        if (canManageStock) {
+          try {
+            console.log(`Guardando ${stockDespachado.length} items de stock despachado en Supabase...`);
+            await guardarStockDespachado(stockDespachado);
+            console.log(`✅ Stock despachado guardado: ${stockDespachado.length} items`);
+          } catch (stockError) {
+            console.error('Error al guardar stock despachado:', stockError);
+            // No interrumpir el flujo si falla
+          }
 
-      // TEMPORALMENTE OCULTO - Modal de descontar stock
-      // Crear resumen de stock para descontar
-      // const stockSummaryMap = new Map<string, number>();
-      // stockDespachado.forEach(item => {
-      //   const current = stockSummaryMap.get(item.sku) || 0;
-      //   stockSummaryMap.set(item.sku, current + item.cantidad);
-      // });
-      // 
-      // const stockArray = Array.from(stockSummaryMap.entries()).map(([sku, cantidad]) => ({
-      //   sku,
-      //   cantidad
-      // }));
-      // 
-      // setStockParaDescontar(stockArray);
-      // setShowDescontarStockModal(true);
+          const stockSummaryMap = new Map<string, number>();
+          stockDespachado.forEach(item => {
+            const current = stockSummaryMap.get(item.sku) || 0;
+            stockSummaryMap.set(item.sku, current + item.cantidad);
+          });
+
+          const stockArray = Array.from(stockSummaryMap.entries()).map(([sku, cantidad]) => ({
+            sku,
+            cantidad
+          }));
+
+          if (stockArray.length > 0) {
+            if (!userId) {
+              console.warn('⚠️ No se pudo preparar el modal de stock: userId no disponible');
+            } else {
+              let mapaEquivalencias = new Map<string, number>();
+              try {
+                const stockUsuario = await obtenerStock(userId);
+                mapaEquivalencias = new Map(
+                  stockUsuario.map(item => [crearClaveSku(item.sku), item.equivalencia ?? 1])
+                );
+              } catch (error) {
+                console.error('Error obteniendo stock para equivalencias:', error);
+              }
+
+              const stockConEquivalencias = stockArray.map(item => {
+                const claveSku = crearClaveSku(item.sku);
+                const equivalencia = mapaEquivalencias.get(claveSku) ?? 1;
+                const totalReal = item.cantidad * equivalencia;
+                return { ...item, equivalencia, totalReal };
+              });
+
+              setStockParaDescontar(stockConEquivalencias);
+              setShowDescontarStockModal(true);
+            }
+          }
+        } else {
+          console.log('ℹ️ Requiere plan Pro+ para descontar stock automáticamente.');
+        }
+      }
       
-      showMessage('success', `PDF generado con ${finalPdfDoc.getPageCount()} páginas (incluye resumen de productos)`);
+      const mensajeBase = `PDF generado con ${finalPdfDoc.getPageCount()} páginas (incluye resumen de productos)`;
+      if (!canManageStock && stockDespachado.length > 0) {
+        showMessage('success', `${mensajeBase}. Requiere pago (Plan Pro+) para descontar stock automáticamente.`);
+      } else {
+        showMessage('success', mensajeBase);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       log('❌ ERROR al generar PDF:', error);
@@ -1903,8 +1960,7 @@ const PDFGenerator = () => {
         </footer>
       </div>
 
-      {/* TEMPORALMENTE OCULTO - Modal de confirmación para descontar stock */}
-      {false && showDescontarStockModal && (
+      {canManageStock && showDescontarStockModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full border border-gray-700 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -1946,9 +2002,12 @@ const PDFGenerator = () => {
                     >
                       <div className="flex-1">
                         <p className="text-white font-medium">{item.sku}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {formatNumber(item.cantidad)} pack(s) · Equivalencia {formatNumber(item.equivalencia)} → {formatNumber(item.totalReal)} unidades reales
+                        </p>
                       </div>
                       <div className="bg-orange-900/30 text-orange-400 px-3 py-1 rounded-full text-sm font-bold border border-orange-500/30">
-                        -{item.cantidad} unidades
+                        -{formatNumber(item.totalReal)} unidades
                       </div>
                     </div>
                   ))}
@@ -1965,8 +2024,24 @@ const PDFGenerator = () => {
                     }
 
                     try {
-                      const exitosos = await descontarStockMultiple(userId, stockParaDescontar);
-                      showMessage('success', `Stock actualizado: ${exitosos} productos descontados`);
+                      const payload = stockParaDescontar.map(item => ({
+                        sku: item.sku,
+                        cantidad: item.cantidad,
+                      }));
+
+                      const { exitosos, errores } = await descontarStockMultiple(userId, payload);
+
+                      if (errores.length > 0) {
+                        const detalleErrores = errores.map(err => `${err.sku}: ${err.motivo}`).join(' | ');
+                        if (exitosos > 0) {
+                          showMessage('info', `Stock actualizado parcialmente: ${exitosos} SKU(s) descontados. Revisá los pendientes: ${detalleErrores}`);
+                        } else {
+                          showMessage('error', `No se descontó ningún SKU. Revisá los pendientes: ${detalleErrores}`);
+                        }
+                      } else {
+                        showMessage('success', `Stock actualizado: ${exitosos} SKU(s) descontados correctamente.`);
+                      }
+
                       setShowDescontarStockModal(false);
                       setStockParaDescontar([]);
                     } catch (error) {
