@@ -130,8 +130,8 @@ const CorreoArgentinoPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4 transition-colors duration-300">
+        <div className="w-full max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 border-2 border-gray-200 dark:border-gray-700">
           <div className="text-center mb-4">
             <div className="flex items-center justify-center gap-3 mb-2">
               <div className="text-blue-500 size-8 sm:size-10">
@@ -146,7 +146,7 @@ const CorreoArgentinoPage: React.FC = () => {
                   </defs>
                 </svg>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white">Correo Argentino</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Correo Argentino</h1>
             </div>
             <p className="text-blue-400 font-medium text-sm sm:text-base">Transformador de Pedidos para Correo Argentino</p>
           </div>
@@ -157,7 +157,7 @@ const CorreoArgentinoPage: React.FC = () => {
           <button
             onClick={handleProcessClick}
             disabled={!selectedFile || status === ProcessStatus.PROCESSING}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
+            className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-900/50 disabled:text-gray-300 dark:disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
           >
             {status === ProcessStatus.PROCESSING ? 'Procesando...' : 'Procesar Archivo'}
           </button>
@@ -171,8 +171,8 @@ const CorreoArgentinoPage: React.FC = () => {
         />
         
         {status === ProcessStatus.SUCCESS && results && (
-          <div className="bg-gray-900/50 p-4 sm:p-6 rounded-lg animate-fade-in border border-gray-700/50 shadow-xl">
-            <h3 className="text-lg sm:text-xl font-bold text-center text-white mb-4 sm:mb-6">📥 Descargar Archivos Procesados</h3>
+          <div className="bg-gray-100 dark:bg-gray-900/50 p-4 sm:p-6 rounded-lg animate-fade-in border-2 border-gray-200 dark:border-gray-700/50 shadow-xl">
+            <h3 className="text-lg sm:text-xl font-bold text-center text-gray-900 dark:text-white mb-4 sm:mb-6">📥 Descargar Archivos Procesados</h3>
             
             <div className="space-y-3">
               <button

@@ -1532,8 +1532,8 @@ const PDFGenerator = () => {
   }, [csvData.length, originalPdfDoc, canGenerate]);
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-6xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4 transition-colors duration-300">
+      <div className="w-full max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 border-2 border-gray-200 dark:border-gray-700">
         {/* Header */}
         <header className="text-center mb-4">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -1542,25 +1542,25 @@ const PDFGenerator = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
               PDF Generator
             </h1>
           </div>
-          <p className="text-green-400 font-medium text-sm sm:text-base">
+          <p className="text-green-600 dark:text-green-400 font-medium text-sm sm:text-base">
             Generador de PDFs desde CSV
           </p>
         </header>
 
         {/* Mensaje de estado */}
         {message && (
-          <div className={`p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-900/50 border border-green-500' :
-            message.type === 'error' ? 'bg-red-900/50 border border-red-500' :
-            'bg-blue-900/50 border border-blue-500'
+          <div className={`p-4 rounded-lg border-2 ${
+            message.type === 'success' ? 'bg-green-50 dark:bg-green-900/50 border-green-300 dark:border-green-500' :
+            message.type === 'error' ? 'bg-red-50 dark:bg-red-900/50 border-red-300 dark:border-red-500' :
+            'bg-blue-50 dark:bg-blue-900/50 border-blue-300 dark:border-blue-500'
           }`}>
             <p className={`font-medium ${
-              message.type === 'success' ? 'text-green-400' :
-              message.type === 'error' ? 'text-red-400' : 'text-blue-400'
+              message.type === 'success' ? 'text-green-700 dark:text-green-400' :
+              message.type === 'error' ? 'text-red-700 dark:text-red-400' : 'text-blue-700 dark:text-blue-400'
             }`}>
               {message.text}
             </p>
@@ -1570,17 +1570,17 @@ const PDFGenerator = () => {
         {/* Sección de carga de archivos */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Upload CSV */}
-          <div className="bg-gray-700 p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-green-500 transition-colors cursor-pointer"
+          <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-green-500 dark:hover:border-green-500 transition-colors cursor-pointer"
                onClick={() => document.getElementById('csv-input')?.click()}>
             <div className="flex flex-col items-center justify-center space-y-3">
-              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-12 h-12 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <div className="text-center">
-                <h3 className="font-semibold text-white">Archivo CSV</h3>
-                <p className="text-sm mt-1 text-gray-400">Arrastra o haz clic para cargar tu CSV</p>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Archivo CSV</h3>
+                <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">Arrastra o haz clic para cargar tu CSV</p>
                 {csvFileName && (
-                  <p className="text-sm font-medium mt-2 text-green-400">📄 {csvFileName}</p>
+                  <p className="text-sm font-medium mt-2 text-green-600 dark:text-green-400">📄 {csvFileName}</p>
                 )}
               </div>
               <input
@@ -1597,15 +1597,15 @@ const PDFGenerator = () => {
           </div>
 
           {/* Upload PDF */}
-          <div className="bg-gray-700 p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-green-500 transition-colors cursor-pointer"
+          <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-green-500 dark:hover:border-green-500 transition-colors cursor-pointer"
                onClick={() => document.getElementById('pdf-input')?.click()}>
             <div className="flex flex-col items-center justify-center space-y-3">
-              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-12 h-12 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <div className="text-center">
-                <h3 className="font-semibold text-white">PDF Plantilla</h3>
-                <p className="text-sm mt-1 text-gray-400">Tu documento base donde se insertará el texto</p>
+                <h3 className="font-semibold text-gray-900 dark:text-white">PDF Plantilla</h3>
+                <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">Tu documento base donde se insertará el texto</p>
                 {pdfFileName && (
                   <p className="text-sm font-medium mt-2 text-green-400">📄 {pdfFileName}</p>
                 )}
@@ -1626,18 +1626,18 @@ const PDFGenerator = () => {
 
         {/* CSV Preview */}
         {csvData.length > 0 && (
-          <div className="bg-gray-700 p-6 rounded-lg">
-            <h2 className="text-xl font-bold mb-4 text-white">Vista previa del CSV</h2>
+          <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg border-2 border-gray-200 dark:border-gray-600">
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Vista previa del CSV</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block text-gray-300">
+                  <label className="text-sm font-medium mb-2 block text-gray-700 dark:text-gray-300">
                     Columna con el texto a insertar (SKU)
                   </label>
                   <select 
                     value={selectedColumn} 
                     onChange={(e) => setSelectedColumn(parseInt(e.target.value))}
-                    className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none">
+                    className="w-full p-2 border-2 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500 focus:border-green-500 focus:outline-none">
                     {csvData[0].map((header, index) => (
                       <option key={index} value={index}>
                         {header || `Columna ${index + 1}`}
@@ -1647,13 +1647,13 @@ const PDFGenerator = () => {
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium mb-2 block text-gray-300">
+                  <label className="text-sm font-medium mb-2 block text-gray-700 dark:text-gray-300">
                     Columna con el número de orden
                   </label>
                   <select 
                     value={selectedOrderColumn} 
                     onChange={(e) => setSelectedOrderColumn(parseInt(e.target.value))}
-                    className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none">
+                    className="w-full p-2 border-2 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500 focus:border-green-500 focus:outline-none">
                     {csvData[0].map((header, index) => (
                       <option key={index} value={index}>
                         {header || `Columna ${index + 1}`}
@@ -1663,13 +1663,13 @@ const PDFGenerator = () => {
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium mb-2 block text-gray-300">
+                  <label className="text-sm font-medium mb-2 block text-gray-700 dark:text-gray-300">
                     Columna con la cantidad
                   </label>
                   <select 
                     value={selectedQuantityColumn} 
                     onChange={(e) => setSelectedQuantityColumn(parseInt(e.target.value))}
-                    className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none">
+                    className="w-full p-2 border-2 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500 focus:border-green-500 focus:outline-none">
                     {csvData[0].map((header, index) => (
                       <option key={index} value={index}>
                         {header || `Columna ${index + 1}`}
@@ -1679,14 +1679,14 @@ const PDFGenerator = () => {
                 </div>
               </div>
 
-              <div className="overflow-x-auto border border-gray-600 rounded-lg">
+              <div className="overflow-x-auto border-2 border-gray-200 dark:border-gray-600 rounded-lg">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gray-600">
+                    <tr className="bg-gray-200 dark:bg-gray-600">
                       {csvData[0].map((header, index) => (
                         <th 
                           key={index}
-                          className={`p-3 text-left text-sm font-medium text-white ${
+                          className={`p-3 text-left text-sm font-medium text-gray-900 dark:text-white ${
                             selectedColumn === index || selectedOrderColumn === index || selectedQuantityColumn === index
                               ? 'bg-green-900/50'
                               : ''
@@ -1698,11 +1698,11 @@ const PDFGenerator = () => {
                   </thead>
                   <tbody>
                     {csvData.slice(1, 6).map((row, rowIndex) => (
-                      <tr key={rowIndex} className="border-b border-gray-600">
+                      <tr key={rowIndex} className="border-b border-gray-200 dark:border-gray-600">
                         {row.map((cell, cellIndex) => (
                           <td 
                             key={cellIndex}
-                            className={`p-3 text-sm text-gray-300 ${
+                            className={`p-3 text-sm text-gray-700 dark:text-gray-300 ${
                               selectedColumn === cellIndex || selectedOrderColumn === cellIndex || selectedQuantityColumn === cellIndex
                                 ? 'bg-green-900/30 font-medium'
                                 : ''
@@ -1715,7 +1715,7 @@ const PDFGenerator = () => {
                   </tbody>
                 </table>
               </div>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-gray-600 dark:text-gray-400">
                 <p>Mostrando 5 de {csvData.length - 1} filas</p>
                 <p className="mt-1">💡 Si un pedido aparece varias veces, se concatenarán todos los SKUs con cantidades</p>
               </div>
@@ -1728,35 +1728,35 @@ const PDFGenerator = () => {
           <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
             <button
               onClick={() => setShowPdfPages(!showPdfPages)}
-              className="w-full p-4 flex items-center justify-between hover:bg-gray-600 transition-colors"
+              className="w-full p-4 flex items-center justify-between hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <svg
-                  className={`w-5 h-5 text-gray-400 transition-transform ${showPdfPages ? 'rotate-90' : ''}`}
+                  className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform ${showPdfPages ? 'rotate-90' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-                <h3 className="text-lg font-bold text-white">Páginas del PDF detectadas</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Páginas del PDF detectadas</h3>
               </div>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
                 {pdfPagesData.filter(p => p.orderNumber).length} de {pdfPagesData.length} con número de orden
               </span>
             </button>
             
             {showPdfPages && (
-              <div className="p-6 pt-2 border-t border-gray-600">
+              <div className="p-6 pt-2 border-t border-gray-200 dark:border-gray-600">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                   {pdfPagesData.map((page) => (
                     <div 
                       key={page.pageNumber}
-                      className={`p-3 rounded-lg text-xs ${
-                        page.orderNumber ? 'bg-green-900/50 border border-green-500' : 'bg-gray-600 border border-gray-500'
+                      className={`p-3 rounded-lg text-xs border-2 ${
+                        page.orderNumber ? 'bg-green-50 dark:bg-green-900/50 border-green-300 dark:border-green-500' : 'bg-gray-50 dark:bg-gray-600 border-gray-200 dark:border-gray-500'
                       }`}>
-                      <div className="font-medium text-white">Página {page.pageNumber}</div>
-                      <div className={`text-xs ${page.orderNumber ? 'text-green-400' : 'text-gray-400'}`}>
+                      <div className="font-medium text-gray-900 dark:text-white">Página {page.pageNumber}</div>
+                      <div className={`text-xs ${page.orderNumber ? 'text-green-700 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`}>
                         {page.orderNumber || 'Sin orden'}
                       </div>
                     </div>
@@ -1769,10 +1769,10 @@ const PDFGenerator = () => {
 
         {/* Position Config - Colapsable con botón de edición */}
         {pdfTemplate && (
-          <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600">
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold text-white">Configuración de posición</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Configuración de posición</h3>
                 <button
                   onClick={() => {
                     setIsEditingPosition(!isEditingPosition);
@@ -1782,8 +1782,8 @@ const PDFGenerator = () => {
                   }}
                   className={`p-2 rounded-lg transition-colors ${
                     isEditingPosition 
-                      ? 'bg-green-600 text-white' 
-                      : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                      ? 'bg-green-600 dark:bg-green-700 text-white' 
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
                   }`}
                   title={isEditingPosition ? 'Guardar cambios' : 'Editar posición'}
                 >
@@ -1798,7 +1798,7 @@ const PDFGenerator = () => {
               </div>
               
               {!isEditingPosition && (
-                <div className="text-sm text-gray-400">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   X: {posX}px, Y: {posY}px, Tamaño: {fontSize}pt
                 </div>
               )}
@@ -1819,12 +1819,12 @@ const PDFGenerator = () => {
             </div>
             
             {showPositionConfig && (
-              <div className="p-6 pt-2 border-t border-gray-600">
+              <div className="p-6 pt-2 border-t border-gray-200 dark:border-gray-600">
                 {isEditingPosition ? (
                   <>
                     {/* Selector de perfiles predefinidos */}
                     <div className="mb-4 space-y-2">
-                      <label className="text-sm font-medium text-gray-300">Perfil predefinido</label>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Perfil predefinido</label>
                       <select
                         value={
                           (posX === 14 && posY === 212 && fontSize === 7) ? 'rotulos' :
@@ -1844,26 +1844,26 @@ const PDFGenerator = () => {
                           }
                           // Si es 'personalizado', no hacer nada (dejar valores actuales)
                         }}
-                        className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
+                        className="w-full p-2 border-2 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500 focus:border-green-500 focus:outline-none"
                       >
                         <option value="rotulos">Impresora de Rotulos (X=14, Y=212, Tamaño=7pt)</option>
                         <option value="a4">Hoja A4 Comun (X=20, Y=706, Tamaño=9pt)</option>
                         <option value="personalizado">Personalizado (X={posX}, Y={posY}, Tamaño={fontSize}pt)</option>
                       </select>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         💡 Selecciona un perfil para aplicar automáticamente la configuración
                       </p>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">Posición X (px)</label>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Posición X (px)</label>
                         <input
                           type="number"
                           value={posX}
                           onChange={(e) => setPosX(parseInt(e.target.value) || 0)}
                           min={0}
-                          className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
+                          className="w-full p-2 border-2 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500 focus:border-green-500 focus:outline-none"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1873,7 +1873,7 @@ const PDFGenerator = () => {
                           value={posY}
                           onChange={(e) => setPosY(parseInt(e.target.value) || 0)}
                           min={0}
-                          className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
+                          className="w-full p-2 border-2 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500 focus:border-green-500 focus:outline-none"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1884,23 +1884,23 @@ const PDFGenerator = () => {
                           onChange={(e) => setFontSize(parseInt(e.target.value) || 6)}
                           min={6}
                           max={72}
-                          className="w-full p-2 border rounded-lg bg-gray-600 text-white border-gray-500 focus:border-green-500 focus:outline-none"
+                          className="w-full p-2 border-2 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500 focus:border-green-500 focus:outline-none"
                         />
                       </div>
                     </div>
-                    <p className="text-xs mt-3 text-gray-400">
+                    <p className="text-xs mt-3 text-gray-600 dark:text-gray-400">
                       💡 El punto (0,0) está en la esquina inferior izquierda del PDF
                     </p>
                   </>
                 ) : (
-                  <div className="bg-gray-600 p-4 rounded-lg">
-                    <p className="text-sm text-gray-300 mb-2">
+                  <div className="bg-gray-100 dark:bg-gray-600 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-500">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                       <strong>Posición configurada:</strong>
                     </p>
-                    <ul className="text-sm text-gray-400 space-y-1">
-                      <li>• Coordenada X: <span className="text-white font-medium">{posX}px</span></li>
-                      <li>• Coordenada Y: <span className="text-white font-medium">{posY}px</span></li>
-                      <li>• Tamaño de fuente: <span className="text-white font-medium">{fontSize}pt</span></li>
+                    <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                      <li>• Coordenada X: <span className="text-gray-900 dark:text-white font-medium">{posX}px</span></li>
+                      <li>• Coordenada Y: <span className="text-gray-900 dark:text-white font-medium">{posY}px</span></li>
+                      <li>• Tamaño de fuente: <span className="text-gray-900 dark:text-white font-medium">{fontSize}pt</span></li>
                       <li className="mt-2 text-xs">• Los productos se organizan en pares (2 por línea)</li>
                     </ul>
                   </div>
@@ -1914,14 +1914,14 @@ const PDFGenerator = () => {
         {(csvData.length > 1 || pdfTemplate) && (
           <div className="space-y-3">
             {!canGenerate && (
-              <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-4">
+              <div className="bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-300 dark:border-yellow-500/50 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-yellow-400 font-medium mb-1">Faltan archivos para generar el PDF</p>
-                    <ul className="text-sm text-yellow-300 space-y-1">
+                    <p className="text-yellow-700 dark:text-yellow-400 font-medium mb-1">Faltan archivos para generar el PDF</p>
+                    <ul className="text-sm text-yellow-600 dark:text-yellow-300 space-y-1">
                       {csvData.length <= 1 && <li>• Carga un archivo CSV con datos</li>}
                       {!originalPdfDoc && <li>• Carga un archivo PDF plantilla</li>}
                     </ul>
@@ -1932,7 +1932,7 @@ const PDFGenerator = () => {
             <button
               onClick={generatePDFs}
               disabled={!canGenerate || processing}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 disabled:hover:scale-100 flex items-center justify-center gap-2"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 disabled:bg-indigo-400 dark:disabled:bg-indigo-900/50 disabled:text-gray-300 dark:disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 disabled:hover:scale-100 flex items-center justify-center gap-2"
             >
               {processing ? (
                 <>
@@ -1954,15 +1954,15 @@ const PDFGenerator = () => {
           </div>
         )}
         
-        <footer className="text-center mt-6 text-gray-500 text-xs sm:text-sm">
+        <footer className="text-center mt-6 text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
           <p>Creado para automatizar la generación de PDFs desde CSV.</p>
-          <p className="mt-1 text-gray-600">by pictoN</p>
+          <p className="mt-1 text-gray-600 dark:text-gray-500">by pictoN</p>
         </footer>
       </div>
 
       {canManageStock && showDescontarStockModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full border border-gray-700 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full border-2 border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-start gap-4 mb-6">
                 <div className="text-orange-500 flex-shrink-0">

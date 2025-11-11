@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { levelService, LEVEL_CONFIG, getLevelName, getLevelColor } from '../../services/levelService';
+import { ThemeToggle } from '../common/ThemeToggle';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface MenuItem {
   id: string;
@@ -74,6 +76,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { username, userLevel, logout, hasAccess, isPaid } = useAuth();
   const [userPaidStatus, setUserPaidStatus] = React.useState<boolean | null>(null);
+  const { theme } = useTheme();
 
   // Verificar si el usuario pagó al cargar
   React.useEffect(() => {
@@ -244,7 +247,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex transition-colors duration-300">
       {/* Overlay para móvil */}
       {isSidebarOpen && (
         <div
@@ -256,15 +259,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed md:sticky top-0 left-0 h-screen border-r border-gray-700 
+          fixed md:sticky top-0 left-0 h-screen border-r border-gray-300 dark:border-gray-700
           transition-all duration-300 z-30 flex flex-col
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           ${isSidebarOpen ? 'w-96' : 'md:w-20'}
+          bg-white dark:bg-gray-800
         `}
-        style={{ backgroundColor: '#202020' }}
       >
         {/* Header del Sidebar */}
-        <div className="p-6 border-b border-gray-700 flex items-center justify-between">
+        <div className="p-6 border-b border-gray-300 dark:border-gray-700 flex items-center justify-between">
           {isSidebarOpen && (
             <button
               onClick={() => {
@@ -279,8 +282,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 className="w-32 h-32 flex-shrink-0 drop-shadow-lg transition-transform duration-300 hover:scale-110"
               />
               <div className="text-left flex-1">
-                <h2 className="text-2xl font-bold text-white">FACIL.UNO</h2>
-                <p className="text-sm text-gray-400">Panel de Control</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">FACIL.UNO</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Panel de Control</p>
               </div>
             </button>
           )}
@@ -306,7 +309,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               console.log('🔄 [DashboardLayout] Botón toggle sidebar clickeado');
               toggleSidebar();
             }}
-            className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700 rounded-lg"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
           >
             <svg
               className="w-5 h-5"
@@ -333,25 +336,85 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </button>
         </div>
 
-        {/* Usuario */}
-        <div className="p-4 border-b border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-blue-600/30">
-              {username?.charAt(0).toUpperCase()}
-            </div>
-            {isSidebarOpen && (
+        {/* Usuario con logout y tema integrados */}
+        <div className="p-4 border-b border-gray-300 dark:border-gray-700">
+          {isSidebarOpen ? (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-600 dark:bg-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                {username?.charAt(0).toUpperCase()}
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{username}</p>
-                <p className="text-xs text-gray-400">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{username}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Nivel {userLevel} {getLevelName(userLevel)} {userLevel === 999 ? '👑' : ''}
                 </p>
               </div>
-            )}
-          </div>
+              {/* Botón de logout compacto */}
+              <button
+                onClick={() => {
+                  console.log('🔄 [DashboardLayout] Botón logout clickeado');
+                  handleLogout();
+                }}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200 flex-shrink-0"
+                title="Cerrar Sesión"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+              </button>
+              {/* Selector de tema compacto */}
+              <div className="flex-shrink-0">
+                <ThemeToggle size="default" />
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 bg-blue-600 dark:bg-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                {username?.charAt(0).toUpperCase()}
+              </div>
+              {/* Botón de logout compacto */}
+              <button
+                onClick={() => {
+                  console.log('🔄 [DashboardLayout] Botón logout clickeado');
+                  handleLogout();
+                }}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+                title="Cerrar Sesión"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+              </button>
+              {/* Selector de tema compacto */}
+              <div className="flex-shrink-0">
+                <ThemeToggle size="compact" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Menú de navegación */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-3 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             
@@ -372,17 +435,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   handleNavigation(item.path);
                 }}
                 className={`
-                  group/menuitem w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300
+                  group/menuitem w-full flex items-center gap-3 p-4 rounded-xl transition-all duration-300
                   ${
                     isActive && item.id === 'admin'
-                      ? 'bg-gradient-to-r from-red-600 to-purple-600 text-white shadow-lg shadow-red-600/50'
+                      ? 'bg-red-600 dark:bg-red-700 text-white shadow-lg'
                       : isActive
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/50'
+                      ? 'bg-blue-600 dark:bg-blue-700 text-white shadow-lg'
                       : isLocked
-                      ? 'text-gray-500 hover:bg-gray-700/50 hover:text-gray-400 border border-gray-700/50'
+                      ? 'text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-600 dark:hover:text-gray-400 border border-gray-300 dark:border-gray-700'
                       : item.id === 'admin'
-                      ? 'text-red-400 hover:bg-red-900/20 hover:text-red-300 hover:shadow-lg border border-red-500/30'
-                      : 'text-gray-400 hover:bg-gray-700/80 hover:text-white hover:shadow-lg'
+                      ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 hover:shadow-lg border border-red-300 dark:border-red-700/30'
+                      : 'text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/80 hover:text-gray-900 dark:hover:text-white hover:shadow-lg'
                   }
                   ${!isSidebarOpen && 'justify-center'}
                   active:scale-95
@@ -411,7 +474,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     <div className="flex items-center gap-2">
                       <p className="font-semibold truncate">{item.label}</p>
                       {isLocked && (
-                        <span className="text-xs bg-gradient-to-r from-yellow-500/30 to-yellow-600/30 text-yellow-400 px-2 py-1 rounded-full border border-yellow-500/40 flex-shrink-0 shadow-sm">
+                        <span className="text-xs bg-yellow-500/20 dark:bg-yellow-600/30 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded-full border border-yellow-500/40 dark:border-yellow-500/40 flex-shrink-0 shadow-sm">
                           {item.requiredLevel === -1 ? 'Requiere Pago' : `Nivel ${item.requiredLevel}`}
                         </span>
                       )}
@@ -431,37 +494,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           })}
         </nav>
 
-        {/* Footer con botón de logout */}
-        <div className="p-4 border-t border-gray-700">
-          <button
-            onClick={() => {
-              console.log('🔄 [DashboardLayout] Botón logout clickeado');
-              handleLogout();
-            }}
-            className={`
-              w-full flex items-center gap-3 p-3 rounded-lg 
-              bg-red-600 hover:bg-red-700 text-white 
-              transition-colors duration-200
-              ${!isSidebarOpen && 'justify-center'}
-            `}
-            title={!isSidebarOpen ? 'Cerrar Sesión' : undefined}
-          >
-            <svg
-              className="w-5 h-5 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-            {isSidebarOpen && <span className="font-medium">Cerrar Sesión</span>}
-          </button>
-        </div>
       </aside>
 
       {/* Botón flotante para abrir sidebar en móvil */}

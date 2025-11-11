@@ -376,8 +376,8 @@ const HomePage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative">
-        <div className="w-full max-w-2xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 relative">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4 relative transition-colors duration-300">
+        <div className="w-full max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 relative border-2 border-gray-200 dark:border-gray-700">
           {/* Componente de configuración */}
           <SmartShipConfig onConfigChange={handleConfigChange} />
           
@@ -395,9 +395,9 @@ const HomePage: React.FC = () => {
                   </defs>
                 </svg>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white">SmartShip</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">SmartShip</h1>
             </div>
-            <p className="text-green-400 font-medium text-sm sm:text-base">Transformador de Pedidos Andreani</p>
+            <p className="text-green-600 dark:text-green-400 font-medium text-sm sm:text-base">Transformador de Pedidos Andreani</p>
           </div>
 
         <div className="space-y-4">
@@ -406,7 +406,7 @@ const HomePage: React.FC = () => {
           <button
             onClick={handleProcessClick}
             disabled={!selectedFile || status === ProcessStatus.PROCESSING}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 disabled:bg-indigo-400 dark:disabled:bg-indigo-900/50 disabled:text-gray-300 dark:disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm sm:text-base"
           >
             {status === ProcessStatus.PROCESSING ? 'Procesando...' : 'Procesar Archivo'}
           </button>
@@ -564,9 +564,9 @@ const HomePage: React.FC = () => {
           />
         )}
         </div>
-        <footer className="text-center mt-6 sm:mt-8 text-gray-500 text-xs sm:text-sm">
+        <footer className="text-center mt-6 sm:mt-8 text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
           <p>Creado para automatizar la logística de envíos.</p>
-          <p className="mt-1 text-gray-600">by pictoN</p>
+          <p className="mt-1 text-gray-600 dark:text-gray-500">by pictoN</p>
         </footer>
       </div>
     </DashboardLayout>

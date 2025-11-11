@@ -1,36 +1,28 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { useAuth } from '../hooks/useAuth';
 import { levelService, LEVEL_CONFIG, getLevelName, getLevelColor } from '../services/levelService';
 import { TrialStatus } from '../components/common/TrialStatus';
 import { PaymentRequest } from '../components/common/PaymentRequest';
 import { PaidPlanStatus } from '../components/common/PaidPlanStatus';
+import { FeatureCard } from '../components/common/FeatureCard';
+import { PlanStatusHeader } from '../components/common/PlanStatusHeader';
 
-interface FeatureCard {
+interface Feature {
   id: string;
   title: string;
   description: string;
   icon: React.ReactNode;
   path: string;
-  color: string;
   stats?: string;
   requiredLevel: number;
+  variant: 'default' | 'primary' | 'success' | 'warning' | 'danger';
+  category?: 'primary' | 'secondary' | 'tools';
 }
 
 // Función para obtener el ícono de cada feature
 const getIconForFeature = (featureKey: string) => {
   const icons: Record<string, React.ReactNode> = {
-    'rentabilidad': (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    'breakeven-roas': (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
     'smartship': (
       <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -41,26 +33,36 @@ const getIconForFeature = (featureKey: string) => {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
     ),
+    'correo-argentino': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+    'rentabilidad': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
     'historial': (
       <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    'informacion': (
+    'stock': (
       <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
-      'admin': (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
       </svg>
     ),
     'cupones': (
       <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4m-6 4h6a2 2 0 002-2v-3a2 2 0 00-2-2h-6v7m-6 0h6a2 2 0 002-2V9a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z" />
       </svg>
-    )
+    ),
+    'admin': (
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+    ),
   };
   
   return icons[featureKey] || (
@@ -71,535 +73,317 @@ const getIconForFeature = (featureKey: string) => {
 };
 
 const DashboardPage: React.FC = () => {
-  const navigate = useNavigate();
   const { username, userLevel, hasAccess, isPaid, user } = useAuth();
   const [userPaidStatus, setUserPaidStatus] = React.useState<boolean>(false);
   const [paymentStatus, setPaymentStatus] = React.useState<string | null>(null);
 
-  // Verificar si el usuario pagó y estado de pago
   React.useEffect(() => {
     const checkPaidStatus = async () => {
       try {
         const paid = await isPaid();
         setUserPaidStatus(paid);
-        
-        // Verificar payment_status
         const paymentStatusValue = user?.user_metadata?.payment_status;
         if (paymentStatusValue) {
           setPaymentStatus(paymentStatusValue);
         }
-        
-        console.log('🔍 [DashboardPage] Estado de pago:', {
-          isPaid: paid,
-          paymentStatus: paymentStatusValue,
-          userId: user?.id,
-          email: user?.email,
-          metadata: user?.user_metadata
-        });
       } catch (error) {
         console.error('Error verificando estado de pago:', error);
         setUserPaidStatus(false);
       }
     };
-    
     checkPaidStatus();
   }, [isPaid, user]);
 
-  const allFeatures: FeatureCard[] = [
-    // Panel Admin - Solo para nivel Dios (999)
+  // Reorganizar: SmartShip y SKU primero (las más usadas)
+  const allFeatures: Feature[] = [
     ...(userLevel === 999 ? [{
       id: 'admin',
-      title: 'Panel de Administración Dios',
-      description: 'Control total del sistema. Gestiona usuarios, asigna niveles, crea nuevas cuentas con autoconfirmación, resetea contraseñas y visualiza estadísticas globales. Solo accesible para usuarios nivel Dios.',
+      title: 'Panel de Administración',
+      description: 'Control total del sistema. Gestiona usuarios, asigna niveles y visualiza estadísticas globales.',
       path: '/admin',
-      color: 'red',
       stats: '👑 Nivel Dios',
       requiredLevel: 999,
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      ),
+      variant: 'danger' as const,
+      category: 'primary' as const,
+      icon: getIconForFeature('admin'),
     }] : []),
-    {
-      id: 'rentabilidad',
-      title: 'Calculadora de Rentabilidad',
-      description: 'Analiza la rentabilidad diaria de tu ecommerce. Calcula márgenes, gastos y porcentajes de rentabilidad en tiempo real con soporte para múltiples monedas.',
-      path: '/rentabilidad',
-      color: 'blue',
-      stats: 'Análisis Financiero',
-      requiredLevel: 0, // Disponible para invitados
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
-    },
-    // TEMPORALMENTE OCULTO - Breakeven & ROAS
-    // {
-    //   id: 'breakeven-roas',
-    //   title: 'Calcula tu Breakeven y ROAS',
-    //   description: 'Determina tu punto de equilibrio y ROAS objetivo. Calcula el CPA máximo, comisiones, costos totales y el retorno de inversión necesario en publicidad.',
-    //   path: '/breakeven-roas',
-    //   color: 'blue',
-    //   stats: 'Análisis de Inversión',
-    //   requiredLevel: 1, // Plan Starter
-    //   icon: (
-    //     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //       <path
-    //         strokeLinecap="round"
-    //         strokeLinejoin="round"
-    //         strokeWidth={2}
-    //         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-    //       />
-    //     </svg>
-    //   ),
-    // },
     {
       id: 'smartship',
       title: 'SmartShip',
       description: 'Procesa y transforma archivos CSV de pedidos de Andreani automáticamente. Separa envíos a domicilio y sucursal con un solo clic.',
       path: '/smartship',
-      color: 'blue',
       stats: 'Procesador de Pedidos',
       requiredLevel: 2,
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-          />
-        </svg>
-      ),
+      variant: 'primary' as const,
+      category: 'primary' as const,
+      icon: getIconForFeature('smartship'),
+    },
+    {
+      id: 'pdf-generator',
+      title: 'SKU en Rótulos',
+      description: 'Integra automáticamente los SKUs de tus productos en los rótulos de envío de Andreani. Genera PDFs personalizados con códigos SKU.',
+      path: '/pdf-generator',
+      stats: 'Nivel Admin',
+      requiredLevel: 3,
+      variant: 'primary' as const,
+      category: 'primary' as const,
+      icon: getIconForFeature('pdf-generator'),
     },
     {
       id: 'correo-argentino',
       title: 'Correo Argentino',
-      description: 'Procesa y transforma archivos CSV de pedidos para Correo Argentino automáticamente. Genera archivos de carga masiva en formato CP (PAQ.AR CLASICO).',
+      description: 'Procesa y transforma archivos CSV de pedidos para Correo Argentino automáticamente. Genera archivos de carga masiva en formato CP.',
       path: '/correo-argentino',
-      color: 'blue',
       stats: 'Procesador de Pedidos',
       requiredLevel: 2,
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-          />
-        </svg>
-      ),
+      variant: 'primary' as const,
+      category: 'secondary' as const,
+      icon: getIconForFeature('correo-argentino'),
     },
     {
-      id: 'pdf-generator',
-      title: 'Integrar SKU en Rótulos Andreani',
-      description: 'Integra automáticamente los SKUs de tus productos en los rótulos de envío de Andreani. Genera PDFs personalizados con códigos SKU para identificación rápida.',
-      path: '/pdf-generator',
-      color: 'blue',
-      stats: 'Nivel Admin',
-      requiredLevel: 3,
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-      ),
+      id: 'historial',
+      title: 'Historial de Archivos',
+      description: 'Accede a todos tus archivos procesados sin necesidad de volver a cargarlos. Descarga archivos previos en cualquier momento.',
+      path: '/historial',
+      stats: 'Gestión de Archivos',
+      requiredLevel: 2,
+      variant: 'default' as const,
+      category: 'tools' as const,
+      icon: getIconForFeature('historial'),
     },
     {
       id: 'stock',
       title: 'Gestión de Stock',
       description: 'Carga tu inventario base, define equivalencias por SKU y descontá automáticamente cada vez que generás rótulos.',
       path: '/stock',
-      color: 'orange',
       stats: 'Plan Pro+',
       requiredLevel: 4,
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 'historial',
-      title: 'Historial de Archivos',
-      description: 'Accede a todos tus archivos procesados (SmartShip y SKU en Rótulos) sin necesidad de volver a cargarlos. Descarga archivos previos en cualquier momento.',
-      path: '/historial',
-      color: 'blue',
-      stats: 'Gestión de Archivos',
-      requiredLevel: 2,
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
+      variant: 'warning' as const,
+      category: 'tools' as const,
+      icon: getIconForFeature('stock'),
     },
     {
       id: 'cupones',
       title: 'Cupones de Descuento',
-      description: 'Obtén descuentos exclusivos para Andreani. Copia tus códigos activos y utilízalos al cargar tus rótulos en Andreani para obtener desde un 20% hasta un 40% de descuento.',
+      description: 'Obtén descuentos exclusivos para Andreani. Copia tus códigos activos y utilízalos al cargar tus rótulos para obtener desde un 20% hasta un 40% de descuento.',
       path: '/cupones',
-      color: 'green',
       stats: 'Promociones Exclusivas',
-      requiredLevel: -1, // Usamos -1 para indicar que requiere pago, no nivel
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4m-6 4h6a2 2 0 002-2v-3a2 2 0 00-2-2h-6v7m-6 0h6a2 2 0 002-2V9a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z"
-          />
-        </svg>
-      ),
+      requiredLevel: -1,
+      variant: 'success' as const,
+      category: 'tools' as const,
+      icon: getIconForFeature('cupones'),
     },
-    // TEMPORALMENTE OCULTO - Información y Estadísticas
-    // {
-    //   id: 'informacion',
-    //   title: 'Información y Estadísticas',
-    //   description: 'Panel de control completo con estadísticas de pedidos, clientes recurrentes, stock despachado y análisis de tu operación. Control automático de duplicados y seguimiento de inventario.',
-    //   path: '/informacion',
-    //   color: 'blue',
-    //   stats: 'Análisis Inteligente',
-    //   requiredLevel: 2,
-    //   icon: (
-    //     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //       <path
-    //         strokeLinecap="round"
-    //         strokeLinejoin="round"
-    //         strokeWidth={2}
-    //         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-    //       />
-    //     </svg>
-    //   ),
-    // },
+    {
+      id: 'rentabilidad',
+      title: 'Calculadora de Rentabilidad',
+      description: 'Analiza la rentabilidad diaria de tu ecommerce. Calcula márgenes, gastos y porcentajes de rentabilidad en tiempo real con soporte para múltiples monedas.',
+      path: '/rentabilidad',
+      stats: 'Análisis Financiero',
+      requiredLevel: 0,
+      variant: 'default' as const,
+      category: 'tools' as const,
+      icon: getIconForFeature('rentabilidad'),
+    },
   ];
 
-  // NO filtrar - mostrar todas pero marcar las bloqueadas
-  const features = allFeatures;
-
-  const getColorClasses = (color: string) => {
-    // Colores según tipo de feature
-    if (color === 'red') {
-      return {
-        bg: 'bg-gradient-to-r from-red-600 to-purple-600',
-        hover: 'hover:from-red-700 hover:to-purple-700',
-        text: 'text-red-500',
-        border: 'border-red-500',
-        shadow: 'hover:shadow-red-500/50',
-      };
-    }
-    
-    if (color === 'green') {
-      return {
-        bg: 'bg-gradient-to-r from-green-600 to-green-700',
-        hover: 'hover:from-green-700 hover:to-green-800',
-        text: 'text-green-500',
-        border: 'border-green-500',
-        shadow: 'hover:shadow-green-500/50',
-      };
-    }
-
-    if (color === 'orange') {
-      return {
-        bg: 'bg-gradient-to-r from-orange-600 to-orange-700',
-        hover: 'hover:from-orange-700 hover:to-orange-800',
-        text: 'text-orange-500',
-        border: 'border-orange-500',
-        shadow: 'hover:shadow-orange-500/50',
-      };
-    }
-    
-    // Por defecto azul
-    return {
-      bg: 'bg-blue-600',
-      hover: 'hover:bg-blue-700',
-      text: 'text-blue-500',
-      border: 'border-blue-500',
-      shadow: 'hover:shadow-blue-500/50',
-    };
-  };
+  const primaryFeatures = allFeatures.filter(f => f.category === 'primary');
+  const secondaryFeatures = allFeatures.filter(f => f.category === 'secondary');
+  const toolFeatures = allFeatures.filter(f => f.category === 'tools');
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-950 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+        {/* Header con información del plan - NUEVO CONCEPTO */}
+        <PlanStatusHeader 
+          userPaidStatus={userPaidStatus}
+          paymentStatus={paymentStatus}
+          userLevel={userLevel}
+          username={username}
+        />
 
-        {/* Features Grid */}
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-8 px-2">
-            Buenos días <span className="text-blue-400">{username}</span>, ¿en qué vas a trabajar hoy?
-          </h2>
-          
+        {/* Contenido principal */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Saludo personalizado */}
+          <div className="mb-10">
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-3">
+              Bienvenido de vuelta, <span className="text-blue-600 dark:text-blue-400">{username}</span>
+            </h1>
+            <p className="text-lg text-gray-600 dark:text-gray-400">
+              Selecciona una herramienta para comenzar
+            </p>
+          </div>
+
+          {/* Sección Principal - Herramientas más usadas */}
+          {primaryFeatures.length > 0 && (
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-1 w-12 bg-blue-600 dark:bg-blue-500 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Herramientas Principales</h2>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {primaryFeatures.map((feature) => {
+                  let isLocked = false;
+                  if (feature.requiredLevel === -1) {
+                    isLocked = userPaidStatus !== true;
+                  } else {
+                    isLocked = !hasAccess(feature.requiredLevel);
+                  }
+                  
+                  return (
+                    <FeatureCard
+                      key={feature.id}
+                      id={feature.id}
+                      title={feature.title}
+                      description={feature.description}
+                      icon={feature.icon}
+                      path={feature.path}
+                      stats={feature.stats}
+                      requiredLevel={feature.requiredLevel}
+                      isLocked={isLocked}
+                      variant={feature.variant}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Sección Secundaria */}
+          {secondaryFeatures.length > 0 && (
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-1 w-12 bg-purple-600 dark:bg-purple-500 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Procesadores Adicionales</h2>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {secondaryFeatures.map((feature) => {
+                  let isLocked = false;
+                  if (feature.requiredLevel === -1) {
+                    isLocked = userPaidStatus !== true;
+                  } else {
+                    isLocked = !hasAccess(feature.requiredLevel);
+                  }
+                  
+                  return (
+                    <FeatureCard
+                      key={feature.id}
+                      id={feature.id}
+                      title={feature.title}
+                      description={feature.description}
+                      icon={feature.icon}
+                      path={feature.path}
+                      stats={feature.stats}
+                      requiredLevel={feature.requiredLevel}
+                      isLocked={isLocked}
+                      variant={feature.variant}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Sección de Herramientas */}
+          {toolFeatures.length > 0 && (
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-1 w-12 bg-green-600 dark:bg-green-500 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Más Herramientas</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {toolFeatures.map((feature) => {
+                  let isLocked = false;
+                  if (feature.requiredLevel === -1) {
+                    isLocked = userPaidStatus !== true;
+                  } else {
+                    isLocked = !hasAccess(feature.requiredLevel);
+                  }
+                  
+                  return (
+                    <FeatureCard
+                      key={feature.id}
+                      id={feature.id}
+                      title={feature.title}
+                      description={feature.description}
+                      icon={feature.icon}
+                      path={feature.path}
+                      stats={feature.stats}
+                      requiredLevel={feature.requiredLevel}
+                      isLocked={isLocked}
+                      variant={feature.variant}
+                      size="compact"
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Mensaje de plan expirado si el nivel es 0 */}
           {userLevel === 0 && (
-            <div className="mb-8 px-2">
-              <div className="bg-gradient-to-r from-red-900/50 to-orange-900/50 border-2 border-red-500/50 rounded-2xl p-6 shadow-xl">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="bg-red-500/20 p-3 rounded-full">
-                      <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
+            <div className="mt-12 bg-red-50 dark:bg-red-900/20 border-2 border-red-500 dark:border-red-500/50 rounded-2xl p-8 shadow-xl">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="bg-red-500/20 dark:bg-red-500/30 p-4 rounded-full">
+                    <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-white mb-2">
-                      Tu plan expiró
-                    </h3>
-                    <p className="text-gray-300 mb-4 text-lg">
-                      Tu suscripción ha vencido. Para continuar usando todas las funcionalidades, necesitas renovar tu plan.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <button
-                        onClick={() => {
-                          // Mostrar PaymentRequest
-                          const paymentSection = document.getElementById('payment-section');
-                          if (paymentSection) {
-                            paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          }
-                        }}
-                        className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-green-500/50 flex items-center justify-center gap-2"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                        </svg>
-                        ¿Querés realizar el pago?
-                      </button>
-                      <button
-                        onClick={() => navigate('/precios')}
-                        className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
-                      >
-                        Ver planes disponibles
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </button>
-                    </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                    Tu plan expiró
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300 mb-6 text-lg">
+                    Tu suscripción ha vencido. Para continuar usando todas las funcionalidades, necesitas renovar tu plan.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => {
+                        const paymentSection = document.getElementById('payment-section');
+                        if (paymentSection) {
+                          paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }}
+                      className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      ¿Querés realizar el pago?
+                    </button>
+                    <button
+                      onClick={() => window.location.href = '/precios'}
+                      className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      Ver planes disponibles
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           )}
-          
-          {/* Status del Plan - Mostrar PaidPlanStatus si está pagado, sino TrialStatus */}
-          <div id="payment-section" className="mb-8 px-2">
-            {userPaidStatus ? (
-              <PaidPlanStatus />
-            ) : (
+
+          {/* Payment Request Section */}
+          <div id="payment-section" className="mt-12">
+            {!userPaidStatus && (
               <>
-                {userLevel !== 0 && <TrialStatus />}
-                {/* Payment Request (solo para usuarios que no pagaron Y no tienen solicitud pendiente) */}
-                {paymentStatus !== 'pending' && userLevel !== 0 && (
-                  <div className="mt-4">
-                    <PaymentRequest currentPlan="Trial" onPaymentRequested={(plan) => console.log('Solicitud de pago:', plan)} />
-                  </div>
+                {userLevel !== 0 && paymentStatus !== 'pending' && (
+                  <PaymentRequest currentPlan="Trial" onPaymentRequested={(plan) => console.log('Solicitud de pago:', plan)} />
                 )}
-                {/* Mostrar PaymentRequest también si el nivel es 0 */}
                 {userLevel === 0 && paymentStatus !== 'pending' && (
-                  <div className="mt-4">
-                    <PaymentRequest currentPlan="Expirado" onPaymentRequested={(plan) => console.log('Solicitud de pago:', plan)} />
-                  </div>
+                  <PaymentRequest currentPlan="Expirado" onPaymentRequested={(plan) => console.log('Solicitud de pago:', plan)} />
                 )}
               </>
             )}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {features.map((feature) => {
-              const colors = getColorClasses(feature.color);
-              const shadowColor =
-                feature.color === 'red'
-                  ? 'red'
-                  : feature.color === 'green'
-                  ? 'green'
-                  : feature.color === 'orange'
-                  ? 'orange'
-                  : 'blue';
-              
-              // Si requiredLevel es -1, verificar pago en lugar de nivel
-              let accessResult = true;
-              let isLocked = false;
-              
-              if (feature.requiredLevel === -1) {
-                // Requiere pago, no nivel
-                accessResult = userPaidStatus === true;
-                isLocked = !accessResult;
-              } else {
-                accessResult = hasAccess(feature.requiredLevel);
-                isLocked = !accessResult;
-              }
-              
-              console.log(`🎯 [DashboardPage] ${feature.id}: accessResult=${accessResult}, isLocked=${isLocked}`);
-              
-              
-              return (
-                <div
-                  key={feature.id}
-                  className={`group bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 sm:p-10 border transition-all duration-300 relative ${
-                    isLocked 
-                      ? 'border-gray-700/50 opacity-75' 
-                      : feature.color === 'red'
-                      ? 'border-red-500/50 hover:border-red-500 hover:shadow-xl hover:shadow-red-500/20 hover:-translate-y-1 hover:bg-gray-800'
-                      : feature.color === 'green'
-                      ? 'border-gray-700/50 hover:border-green-500/50 hover:shadow-xl hover:shadow-green-500/10 hover:-translate-y-1 hover:bg-gray-800'
-                      : feature.color === 'orange'
-                      ? 'border-gray-700/50 hover:border-orange-500/50 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-1 hover:bg-gray-800'
-                      : 'border-gray-700/50 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 hover:bg-gray-800'
-                  }`}
-                >
-                  {/* Badge de nivel requerido si está bloqueado */}
-                  {isLocked && (
-                    <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-500/30 to-yellow-600/30 text-yellow-400 px-3 py-1.5 rounded-full text-xs font-bold border border-yellow-500/40 flex items-center gap-1.5 shadow-lg backdrop-blur-sm">
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                      </svg>
-                      {feature.requiredLevel === -1 ? 'Requiere Pago' : `Nivel ${feature.requiredLevel}`}
-                    </div>
-                  )}
-
-                  <div className="flex items-start gap-5 mb-6">
-                    <div className={`${colors.text} flex-shrink-0 ${isLocked && 'opacity-50'} transition-transform duration-300 group-hover:scale-110`}>
-                      {feature.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`text-2xl sm:text-3xl font-bold mb-3 ${isLocked ? 'text-gray-400' : 'text-white'}`}>
-                        {feature.title}
-                      </h3>
-                      {feature.stats && (
-                        <span className={`inline-block px-4 py-1.5 rounded-full text-xs font-bold mb-3 ${
-                          isLocked 
-                            ? 'bg-gray-700 text-gray-500' 
-                            : `${colors.bg} text-white shadow-lg`
-                        }`}>
-                          {feature.stats}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <p className={`mb-8 leading-relaxed text-base ${isLocked ? 'text-gray-500' : 'text-gray-300'}`}>
-                    {feature.description}
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      console.log(`🖱️  [DashboardPage] Click en ${feature.id}: isLocked=${isLocked}`);
-                      if (!isLocked) {
-                        console.log(`🚀 [DashboardPage] Navegando a ${feature.path}`);
-                        navigate(feature.path);
-                      } else {
-                        console.log(`❌ [DashboardPage] Botón bloqueado para ${feature.id}`);
-                      }
-                    }}
-                    className={`w-full font-bold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 ${
-                      isLocked
-                        ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 hover:shadow-yellow-500/50 text-gray-900'
-                        : `${colors.bg} ${colors.hover} text-white hover:shadow-2xl hover:shadow-${shadowColor}-500/20`
-                    }`}
-                  >
-                    {isLocked ? (
-                      <>
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                        </svg>
-                        {feature.requiredLevel === -1 ? 'Ver Planes' : 'Ver Detalles del Upgrade'}
-                      </>
-                    ) : (
-                      <>
-                        Acceder
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </>
-                    )}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-
-
-
-          {/* Info adicional */}
-          <div className="mt-10 bg-gradient-to-br from-gray-800/80 to-gray-800/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 shadow-xl">
-            <div className="flex items-start gap-5">
-              <div className="text-blue-500 flex-shrink-0">
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-                  Bienvenido a FACIL.UNO
-                  <span className="text-2xl">🚀</span>
-                </h3>
-                <p className="text-gray-300 text-base leading-relaxed mb-4">
-                  Tu suite completa de herramientas profesionales para optimizar y escalar tu ecommerce. 
-                  Desde análisis financiero hasta automatización de envíos, todo en un solo lugar.
-                </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-                  <div className={`${userLevel === 999 ? 'bg-red-900/20 border-red-500/30' : 'bg-blue-900/20 border-blue-500/30'} border rounded-lg p-3`}>
-                    <p className={`${userLevel === 999 ? 'text-red-400' : 'text-blue-400'} font-bold`}>Tu Nivel</p>
-                    <p className="text-white text-lg font-bold">{getLevelName(userLevel)} {userLevel === 999 ? '👑' : ''}</p>
-                  </div>
-                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
-                    <p className="text-blue-400 font-bold">Herramientas</p>
-                    <p className="text-white text-lg font-bold">{features.filter(f => hasAccess(f.requiredLevel)).length}/{features.length}</p>
-                  </div>
-                  <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                    <p className="text-green-400 font-bold">Planes</p>
-                    <button
-                      onClick={() => navigate('/precios')}
-                      className="text-white text-sm font-medium hover:text-green-300 transition-colors underline"
-                    >
-                      Ver planes
-                    </button>
-                  </div>
-                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 col-span-2 sm:col-span-1">
-                    <p className="text-blue-400 font-bold">Estado</p>
-                    <p className="text-white text-lg font-bold">Activo</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-
       </div>
     </DashboardLayout>
   );
 };
 
 export default DashboardPage;
-

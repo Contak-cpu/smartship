@@ -59,14 +59,14 @@ const CuponesPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-950 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Cupones de Descuento
             </h1>
-            <p className="text-gray-400 text-lg">
+            <p className="text-gray-600 dark:text-gray-400 text-lg">
               Obtén descuentos exclusivos para Andreani. Copia tus códigos activos y utilízalos al cargar tus rótulos en Andreani para obtener desde un 20% hasta un 40% de descuento.
             </p>
           </div>
@@ -76,7 +76,7 @@ const CuponesPage: React.FC = () => {
             {cupones.map((cupon, index) => (
               <div
                 key={cupon.id}
-                className="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-500/30 rounded-2xl p-8 hover:border-green-500/50 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300"
+                className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/10 border-2 border-green-300 dark:border-green-500/30 rounded-2xl p-8 hover:border-green-500 dark:hover:border-green-500/50 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300"
               >
                 {/* Badge de Descuento */}
                 <div className="flex items-start justify-between mb-6">
@@ -84,7 +84,7 @@ const CuponesPage: React.FC = () => {
                     {cupon.descuento}
                   </div>
                   {cupon.activo && (
-                    <div className="flex items-center gap-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-medium">
+                    <div className="flex items-center gap-2 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-xs font-medium border-2 border-green-300 dark:border-green-500/30">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
@@ -95,17 +95,17 @@ const CuponesPage: React.FC = () => {
 
                 {/* Código del Cupón */}
                 <div className="mb-4">
-                  <p className="text-gray-400 text-sm mb-2 font-medium">Código del Cupón</p>
-                  <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 flex items-center justify-between gap-4">
-                    <code className="text-green-400 font-mono text-lg font-bold">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 font-medium">Código del Cupón</p>
+                  <div className="bg-gray-100 dark:bg-gray-900/50 border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 flex items-center justify-between gap-4">
+                    <code className="text-green-600 dark:text-green-400 font-mono text-lg font-bold">
                       {cupon.codigo}
                     </code>
                     <button
                       onClick={() => copyToClipboard(cupon.codigo, index)}
                       className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                         copiedIndex === index
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                          ? 'bg-green-600 dark:bg-green-700 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {copiedIndex === index ? (
@@ -128,8 +128,8 @@ const CuponesPage: React.FC = () => {
                 </div>
 
                 {/* Descripción */}
-                <div className="border-t border-gray-700 pt-4">
-                  <p className="text-gray-300 text-sm leading-relaxed">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
                     {cupon.descripcion}
                   </p>
                 </div>
@@ -138,9 +138,9 @@ const CuponesPage: React.FC = () => {
           </div>
 
           {/* Información adicional */}
-          <div className="mt-10 bg-gradient-to-br from-gray-800/80 to-gray-800/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50">
+          <div className="mt-10 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/80 dark:to-gray-800/60 backdrop-blur-sm rounded-2xl p-8 border-2 border-gray-200 dark:border-gray-700/50">
             <div className="flex items-start gap-5">
-              <div className="text-green-500 flex-shrink-0">
+              <div className="text-green-500 dark:text-green-400 flex-shrink-0">
                 <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
@@ -151,26 +151,26 @@ const CuponesPage: React.FC = () => {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-white mb-3">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                   💡 ¿Cómo usar los cupones?
                 </h3>
-                <p className="text-gray-300 text-base leading-relaxed mb-4">
+                <p className="text-gray-700 dark:text-gray-300 text-base leading-relaxed mb-4">
                   Copia el código del cupón haciendo clic en el botón "Copiar" y utilízalo 
                   al momento de cargar tus rótulos en la plataforma de Andreani. Los cupones te permiten 
                   obtener descuentos que van desde el 20% hasta el 40% en el costo de tus envíos.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-3 bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                    <svg className="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-500/30 rounded-lg p-3">
+                    <svg className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    <p className="text-gray-300 text-sm">Descuentos del 20% al 40%</p>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm">Descuentos del 20% al 40%</p>
                   </div>
-                  <div className="flex items-center gap-3 bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                    <svg className="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-500/30 rounded-lg p-3">
+                    <svg className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    <p className="text-gray-300 text-sm">Válido al cargar rótulos</p>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm">Válido al cargar rótulos</p>
                   </div>
                 </div>
               </div>

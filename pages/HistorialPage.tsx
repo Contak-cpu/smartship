@@ -596,7 +596,7 @@ const HistorialPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-950 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -607,14 +607,14 @@ const HistorialPage: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-white">
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
                   Historial de Archivos
                 </h1>
               </div>
               <button
                 onClick={recargarHistorial}
                 disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-300"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-300"
               >
                 <svg 
                   className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} 
@@ -627,20 +627,20 @@ const HistorialPage: React.FC = () => {
                 {loading ? 'Cargando...' : 'Recargar'}
               </button>
             </div>
-            <p className="text-gray-400 text-sm sm:text-base">
+            <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
               Accede a todos tus archivos procesados sin necesidad de volver a cargarlos
             </p>
           </div>
 
           {/* Tabs */}
-          <div className="bg-gray-800/90 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
-            <div className="flex border-b border-gray-700/50">
+          <div className="bg-white dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl border-2 border-gray-200 dark:border-gray-700/50 overflow-hidden">
+            <div className="flex border-b border-gray-200 dark:border-gray-700/50">
               <button
                 onClick={() => setActiveTab('smartship')}
                 className={`flex-1 px-6 py-4 font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                   activeTab === 'smartship'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800/50 text-gray-400 hover:text-white hover:bg-gray-700/50'
+                    ? 'bg-blue-600 dark:bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700/50'
                 }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -658,8 +658,8 @@ const HistorialPage: React.FC = () => {
                 onClick={() => setActiveTab('sku')}
                 className={`flex-1 px-6 py-4 font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                   activeTab === 'sku'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800/50 text-gray-400 hover:text-white hover:bg-gray-700/50'
+                    ? 'bg-blue-600 dark:bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700/50'
                 }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -679,7 +679,7 @@ const HistorialPage: React.FC = () => {
               {loading && !hasLoaded ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                  <p className="text-gray-400">Cargando historial...</p>
+                  <p className="text-gray-600 dark:text-gray-400">Cargando historial...</p>
                 </div>
               ) : (
                 <>
@@ -696,23 +696,23 @@ const HistorialPage: React.FC = () => {
                       )}
                       {historialSmartShip.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="text-gray-500 mb-4">
+                      <div className="text-gray-500 dark:text-gray-500 mb-4">
                         <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-400 mb-2">
+                      <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">
                         No hay archivos en el historial
                       </h3>
-                      <p className="text-gray-500 text-sm">
+                      <p className="text-gray-500 dark:text-gray-500 text-sm">
                         Los archivos procesados en SmartShip aparecerán aquí
                       </p>
                     </div>
                   ) : (
                     <>
                       <div className="flex justify-between items-center mb-4">
-                        <p className="text-gray-400 text-sm">
-                          Total: <span className="text-white font-semibold">{historialSmartShip.length}</span> archivo(s)
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                          Total: <span className="text-gray-900 dark:text-white font-semibold">{historialSmartShip.length}</span> archivo(s)
                         </p>
                         <button
                           onClick={handleLimpiarHistorial}
@@ -728,20 +728,20 @@ const HistorialPage: React.FC = () => {
                       {historialSmartShip.map((item) => (
                         <div
                           key={item.id}
-                          className="bg-gray-800/50 rounded-xl p-5 border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300"
+                          className="bg-white dark:bg-gray-800/50 rounded-xl p-5 border-2 border-gray-200 dark:border-gray-700/50 hover:border-blue-500 dark:hover:border-blue-500/50 transition-all duration-300"
                         >
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex-1">
-                              <h3 className="text-lg font-bold text-white mb-1">
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                                 {item.nombreArchivo}
                               </h3>
-                              <p className="text-sm text-gray-400">
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
                                 {formatFecha(item.fecha, item.hora)}
                               </p>
                             </div>
                             <button
                               onClick={() => handleEliminarSmartShip(item.id)}
-                              className="text-gray-500 hover:text-red-400 transition-colors p-2"
+                              className="text-gray-600 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-2"
                               title="Eliminar"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -752,33 +752,33 @@ const HistorialPage: React.FC = () => {
 
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             {/* Domicilio */}
-                            <div className="bg-gray-700/30 rounded-lg p-4 border border-gray-600/50">
+                            <div className="bg-gray-100 dark:bg-gray-700/30 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-600/50">
                               <div className="flex items-center gap-2 mb-2">
-                                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                                 </svg>
-                                <h4 className="font-semibold text-white text-sm">A Domicilio</h4>
+                                <h4 className="font-semibold text-gray-900 dark:text-white text-sm">A Domicilio</h4>
                               </div>
-                              <p className="text-2xl font-bold text-blue-400">
+                              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                                 {item.domicilio.cantidad}
                               </p>
                             </div>
 
                             {/* Sucursal */}
-                            <div className="bg-gray-700/30 rounded-lg p-4 border border-gray-600/50">
+                            <div className="bg-gray-100 dark:bg-gray-700/30 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-600/50">
                               <div className="flex items-center gap-2 mb-2">
-                                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                 </svg>
-                                <h4 className="font-semibold text-white text-sm">A Sucursal</h4>
+                                <h4 className="font-semibold text-gray-900 dark:text-white text-sm">A Sucursal</h4>
                               </div>
-                              <p className="text-2xl font-bold text-green-400">
+                              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                                 {item.sucursal.cantidad}
                               </p>
                             </div>
 
                             {/* Botón Excel */}
-                            <div className="bg-gray-700/30 rounded-lg p-4 border border-gray-600/50 flex items-center justify-center">
+                            <div className="bg-gray-100 dark:bg-gray-700/30 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-600/50 flex items-center justify-center">
                               <button
                                 onClick={() => handleDescargarExcel(item)}
                                 className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 px-4 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2"
@@ -791,9 +791,9 @@ const HistorialPage: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="mt-4 pt-4 border-t border-gray-700/50">
-                            <p className="text-sm text-gray-400">
-                              Total de registros: <span className="text-white font-semibold">{item.totalRegistros}</span>
+                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700/50">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Total de registros: <span className="text-gray-900 dark:text-white font-semibold">{item.totalRegistros}</span>
                             </p>
                           </div>
                         </div>
@@ -816,23 +816,23 @@ const HistorialPage: React.FC = () => {
                   )}
                   {historialSKU.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="text-gray-500 mb-4">
+                      <div className="text-gray-500 dark:text-gray-500 mb-4">
                         <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-400 mb-2">
+                      <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">
                         No hay archivos en el historial
                       </h3>
-                      <p className="text-gray-500 text-sm">
+                      <p className="text-gray-500 dark:text-gray-500 text-sm">
                         Los PDFs generados con SKU aparecerán aquí
                       </p>
                     </div>
                   ) : (
                     <>
                       <div className="flex justify-between items-center mb-4">
-                        <p className="text-gray-400 text-sm">
-                          Total: <span className="text-white font-semibold">{historialSKU.length}</span> archivo(s)
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                          Total: <span className="text-gray-900 dark:text-white font-semibold">{historialSKU.length}</span> archivo(s)
                         </p>
                         <button
                           onClick={handleLimpiarHistorial}
@@ -848,23 +848,23 @@ const HistorialPage: React.FC = () => {
                       {historialSKU.map((item) => (
                         <div
                           key={item.id}
-                          className="bg-gray-800/50 rounded-xl p-5 border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300"
+                          className="bg-white dark:bg-gray-800/50 rounded-xl p-5 border-2 border-gray-200 dark:border-gray-700/50 hover:border-blue-500 dark:hover:border-blue-500/50 transition-all duration-300"
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h3 className="text-lg font-bold text-white mb-1">
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                                 {item.nombreArchivo}
                               </h3>
-                              <p className="text-sm text-gray-400 mb-3">
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                                 {formatFecha(item.fecha, item.hora)}
                               </p>
                               <div className="flex items-center gap-4 text-sm mb-4">
                                 <div className="flex items-center gap-2">
-                                  <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                   </svg>
-                                  <span className="text-gray-400">
-                                    <span className="text-white font-semibold">{item.cantidadRegistros}</span> registros
+                                  <span className="text-gray-600 dark:text-gray-400">
+                                    <span className="text-gray-900 dark:text-white font-semibold">{item.cantidadRegistros}</span> registros
                                   </span>
                                 </div>
                               </div>
@@ -880,7 +880,7 @@ const HistorialPage: React.FC = () => {
                             </div>
                             <button
                               onClick={() => handleEliminarSKU(item.id)}
-                              className="text-gray-500 hover:text-red-400 transition-colors p-2"
+                              className="text-gray-600 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-2"
                               title="Eliminar"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
