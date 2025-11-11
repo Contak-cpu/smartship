@@ -48,7 +48,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden" style={{ backgroundColor: '#b5b5b5' }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: '#b5b5b5' }}>
       {/* Header simplificado */}
       <header className="border-b border-gray-400 flex-shrink-0" style={{ backgroundColor: '#b5b5b5' }}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -82,8 +82,8 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
       </header>
 
       {/* Contenido principal */}
-      <main className="flex-grow overflow-hidden flex flex-col">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-1 sm:py-2 flex-grow flex flex-col min-h-0">
+      <main className="flex-grow overflow-y-auto flex flex-col">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex-grow flex flex-col min-h-0 space-y-3">
           <div className="text-center mb-1 flex-shrink-0">
             {/* Logo arriba del título */}
             <div className="flex justify-center items-center mb-0.5" style={{ height: 'auto', minHeight: '0' }}>
@@ -225,7 +225,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onGoToLogin, onShowBas
           </div>
           
           {/* Footer con enlaces adicionales */}
-          <div className="text-center mt-2 pt-2 border-t border-gray-400 flex-shrink-0">
+          <div className="text-center pt-2 border-t border-gray-400 flex-shrink-0 pb-4">
             <p className="text-gray-700 text-xs mb-1">
               ¿Ya tienes una cuenta?
             </p>
