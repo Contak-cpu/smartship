@@ -10,6 +10,14 @@ import { useAuth } from '../../hooks/useAuth';
 import { guardarStockDespachado, StockDespachado } from '../../services/informacionService';
 import { descontarStockMultiple, obtenerStock, crearClaveSku } from '../../services/stockService';
 
+// Tipo para los logs de debug
+type DebugLogType = 'info' | 'success' | 'error' | 'warning';
+interface DebugLog {
+  timestamp: number;
+  message: string;
+  type?: DebugLogType;
+}
+
 const PDFGenerator = () => {
   const { username, userId, userLevel } = useAuth();
   const [csvData, setCsvData] = useState<string[][]>([]);
@@ -35,6 +43,8 @@ const PDFGenerator = () => {
   const canManageStock = userLevel >= 4;
   const formatNumber = (value: number) => new Intl.NumberFormat('es-AR').format(value);
   const [pdfjsWorkerReady, setPdfjsWorkerReady] = useState(false);
+  const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Configurar el worker de PDF.js una vez al montar el componente
   useEffect(() => {
@@ -258,12 +268,26 @@ const PDFGenerator = () => {
         }
         
         // Auto-seleccionar columna Cantidad del producto si existe
-        const quantityIndex = headers.findIndex(header => 
-          header.toLowerCase().includes('cantidad del producto') ||
-          header.toLowerCase().includes('cantidad')
+        // Prioridad 1: "Lineitem quantity" (Shopify)
+        const lineitemQuantityIndex = headers.findIndex(header => 
+          header.toLowerCase().includes('lineitem quantity') ||
+          header.toLowerCase().includes('lineitem_quantity')
         );
-        if (quantityIndex !== -1) {
-          setSelectedQuantityColumn(quantityIndex);
+        if (lineitemQuantityIndex !== -1) {
+          setSelectedQuantityColumn(lineitemQuantityIndex);
+          console.log(`✅ Columna de cantidad seleccionada: "${headers[lineitemQuantityIndex]}" (índice ${lineitemQuantityIndex})`);
+        } else {
+          // Prioridad 2: Cualquier columna con "cantidad"
+          const quantityIndex = headers.findIndex(header => 
+            header.toLowerCase().includes('cantidad del producto') ||
+            header.toLowerCase().includes('cantidad')
+          );
+          if (quantityIndex !== -1) {
+            setSelectedQuantityColumn(quantityIndex);
+            console.log(`✅ Columna de cantidad seleccionada: "${headers[quantityIndex]}" (índice ${quantityIndex})`);
+          } else {
+            console.warn('⚠️ No se encontró columna de cantidad, usando índice 0 por defecto');
+          }
         }
         
         showMessage('success', `CSV cargado: ${data.length - 1} filas detectadas`);
@@ -597,9 +621,10 @@ const PDFGenerator = () => {
             (curr.x - itemInterno.x) < (prev.x - itemInterno.x) ? curr : prev
           );
           const numeroLimpio = numeroMasCercano.text.replace(/[#\s]/g, '');
-          if (numeroLimpio.length >= 3) {
-            const numeroFinal = numeroLimpio.length >= 4 ? numeroLimpio.substring(0, 4) : numeroLimpio;
-            console.log(`✅ Número interno encontrado por posición (después de "#"): "${numeroFinal}"`);
+          // Aceptar números de 3, 4 o 5 dígitos completos (sin truncar)
+          if (numeroLimpio.length >= 3 && numeroLimpio.length <= 5) {
+            const numeroFinal = numeroLimpio; // Usar el número completo sin truncar
+            console.log(`✅ Número interno encontrado por posición (después de "#"): "${numeroFinal}" (${numeroFinal.length} dígitos)`);
             return numeroFinal;
           }
         }
@@ -624,9 +649,10 @@ const PDFGenerator = () => {
         curr.yFromTop < prev.yFromTop ? curr : prev
       );
       const numeroLimpio = numeroMasArriba.text.replace(/[#\s]/g, '');
+      // Aceptar números de 3, 4 o 5 dígitos completos (sin truncar)
       if (numeroLimpio.length >= 3 && numeroLimpio.length <= 5) {
-        const numeroFinal = numeroLimpio.length >= 4 ? numeroLimpio.substring(0, 4) : numeroLimpio;
-        console.log(`⚠️ Usando número de la parte superior como fallback: "${numeroFinal}"`);
+        const numeroFinal = numeroLimpio; // Usar el número completo sin truncar
+        console.log(`⚠️ Usando número de la parte superior como fallback: "${numeroFinal}" (${numeroFinal.length} dígitos)`);
         return numeroFinal;
       }
     }
@@ -741,10 +767,10 @@ const PDFGenerator = () => {
             const posicion = match.index || 0;
             // Verificar que NO sea un número inválido (código postal, seguimiento, etc.)
             if (!esNumeroInvalido(normalizedText, posicion, number)) {
-              // Si el número tiene más de 4 dígitos, tomar solo los primeros 4
-              // Si tiene menos de 4, completar con ceros a la izquierda o tomar como está
-              const numeroFinal = number.length >= 4 ? number.substring(0, 4) : number;
-              console.log(`✅ Número INTERNO encontrado con patrón específico: "${match[0]}" -> ${numeroFinal}`);
+              // Aceptar números de 3, 4 o 5 dígitos completos (sin truncar)
+              // El número puede tener 3, 4 o 5 dígitos según el formato del PDF
+              const numeroFinal = number; // Usar el número completo sin truncar
+              console.log(`✅ Número INTERNO encontrado con patrón específico: "${match[0]}" -> ${numeroFinal} (${numeroFinal.length} dígitos)`);
               console.log(`   Contexto completo: "${normalizedText.substring(Math.max(0, posicion - 100), Math.min(normalizedText.length, posicion + match[0].length + 100))}"`);
               return numeroFinal;
             } else {
@@ -763,12 +789,68 @@ const PDFGenerator = () => {
     return null;
   };
 
+  // Función helper para agregar logs al panel de debug
+  const addDebugLog = (message: string, type: DebugLogType = 'info') => {
+    const timestamp = Date.now();
+    setDebugLogs(prev => [...prev, { timestamp, message, type }]);
+    // También mantener en consola para debugging completo
+    const consoleMethod = type === 'error' ? console.error : type === 'warning' ? console.warn : console.log;
+    consoleMethod(`[${type.toUpperCase()}]`, message);
+  };
+
   const generatePDFs = async () => {
+    // Limpiar logs anteriores
+    setDebugLogs([]);
+    setShowDebugPanel(true);
+    
     // Usar múltiples métodos de logging para asegurar que se vean
     const log = (...args: any[]) => {
+      // Convertir todos los argumentos a string de forma más legible
+      const messageParts = args.map(arg => {
+        if (arg === null) return 'null';
+        if (arg === undefined) return 'undefined';
+        if (typeof arg === 'object') {
+          try {
+            // Si es un array, mostrar de forma más compacta
+            if (Array.isArray(arg)) {
+              if (arg.length === 0) return '[]';
+              // Si el array tiene objetos complejos, usar JSON
+              if (arg.length > 0 && typeof arg[0] === 'object') {
+                return JSON.stringify(arg, null, 2);
+              }
+              // Si son strings simples, mostrar como lista
+              return `[${arg.map(item => `"${item}"`).join(', ')}]`;
+            }
+            return JSON.stringify(arg, null, 2);
+          } catch {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      });
+      
+      const message = messageParts.join(' ');
+      
+      // Determinar tipo de log basado en el contenido
+      let logType: DebugLogType = 'info';
+      if (message.includes('❌') || message.includes('ERROR') || message.includes('Error')) {
+        logType = 'error';
+      } else if (message.includes('⚠️') || message.includes('WARNING') || message.includes('Warning')) {
+        logType = 'warning';
+      } else if (message.includes('✅') || message.includes('SUCCESS') || message.includes('Success')) {
+        logType = 'success';
+      }
+      
+      // Agregar al panel de debug
+      addDebugLog(message, logType);
+      
+      // También mantener logs en consola
       console.log(...args);
-      console.error('LOG:', ...args); // También como error para forzar visibilidad
-      console.warn('LOG:', ...args); // Y como warning
+      if (logType === 'error') {
+        console.error('LOG:', ...args);
+      } else if (logType === 'warning') {
+        console.warn('LOG:', ...args);
+      }
     };
     
     log('🚀 ===== INICIANDO GENERACIÓN DE PDF =====');
@@ -932,30 +1014,63 @@ const PDFGenerator = () => {
         // Procesar cada fila y separar productos que vengan unidos con " + "
         const allProducts: string[] = [];
         
+        // 🔍 DEBUG: Log de configuración de columnas
+        log(`🔍 [DEBUG SKU] Configuración de columnas para orden ${orderNumber}:`);
+        log(`   - Columna SKU seleccionada: índice ${selectedColumn} ("${headers[selectedColumn]}")`);
+        log(`   - Columna Quantity seleccionada: índice ${selectedQuantityColumn} ("${headers[selectedQuantityColumn] || 'N/A'}")`);
+        log(`   - Total filas encontradas: ${matchingRows.length}`);
+        
         matchingRows.forEach((row, matchIdx) => {
-          const sku = row[selectedColumn] || '';
-          const quantity = row[selectedQuantityColumn] || '';
+          // 🔍 DEBUG: Leer valores directamente del CSV
+          const skuRaw = row[selectedColumn] || '';
+          const quantityRaw = row[selectedQuantityColumn] || '';
           
-          log(`   📦 Fila ${matchIdx + 1}: SKU="${sku}", Cantidad="${quantity}"`);
+          log(`\n🔍 [DEBUG SKU] === PROCESANDO FILA ${matchIdx + 1}/${matchingRows.length} ===`);
+          log(`   📋 Valores RAW del CSV:`);
+          log(`      - SKU (columna ${selectedColumn}): "${skuRaw}" (tipo: ${typeof skuRaw}, longitud: ${skuRaw.length})`);
+          log(`      - Quantity (columna ${selectedQuantityColumn}): "${quantityRaw}" (tipo: ${typeof quantityRaw}, longitud: ${quantityRaw.length})`);
+          log(`   📋 Fila completa (primeras 5 columnas):`, row.slice(0, 5));
           
-          if (sku.trim() !== '') {
+          // Normalizar valores
+          const sku = skuRaw.trim();
+          const quantity = quantityRaw.trim();
+          
+          log(`   📦 Valores normalizados: SKU="${sku}", Quantity="${quantity}"`);
+          
+          if (sku !== '') {
             // Separar SKUs que contengan " + " (productos múltiples en un solo SKU)
             const skuParts = sku.split('+').map(part => part.trim());
+            log(`   🔄 SKU dividido en ${skuParts.length} parte(s):`, skuParts);
             
-            skuParts.forEach(skuPart => {
+            skuParts.forEach((skuPart, partIdx) => {
               if (skuPart) {
+                log(`   🔍 [DEBUG SKU] Procesando parte ${partIdx + 1}/${skuParts.length}: "${skuPart}"`);
+                
                 const {
                   skuLimpio,
                   multiplicadorDesdeTexto
                 } = parsearSkuConCantidad(skuPart);
+                
+                log(`   ✅ Resultado del parseo:`);
+                log(`      - skuLimpio: "${skuLimpio}"`);
+                log(`      - multiplicadorDesdeTexto: ${multiplicadorDesdeTexto}`);
 
                 const cantidadCsv = parseInt(quantity) || 1;
                 const cantidadReal = cantidadCsv * multiplicadorDesdeTexto;
+                
+                log(`   🧮 Cálculo de cantidad:`);
+                log(`      - quantity del CSV (parseado): ${cantidadCsv}`);
+                log(`      - multiplicadorDesdeTexto: ${multiplicadorDesdeTexto}`);
+                log(`      - cantidadReal (cantidadCsv * multiplicador): ${cantidadReal}`);
 
                 // Texto para imprimir en el PDF (mostrar siempre la cantidad real)
-        const productText = normalizarTextoWinAnsi(
-          `${skuLimpio} (x${cantidadReal})`
-        );
+                const productText = normalizarTextoWinAnsi(
+                  `${skuLimpio} (x${cantidadReal})`
+                );
+                
+                log(`   📝 Texto final generado para PDF: "${productText}"`);
+                log(`   ✅ Agregando producto a allProducts`);
+                
                 allProducts.push(productText);
 
                 // Registrar para stock despachado con la cantidad real
@@ -969,10 +1084,20 @@ const PDFGenerator = () => {
                   fechadespacho: hoy,
                   archivorotulo: csvFileName || 'documento',
                 });
+                
+                log(`   💾 Registrado en stockDespachado: SKU="${skuLimpio}", cantidad=${cantidadReal}`);
+              } else {
+                log(`   ⚠️ Parte ${partIdx + 1} está vacía, saltando...`);
               }
             });
+          } else {
+            log(`   ⚠️ SKU está vacío, saltando esta fila`);
           }
         });
+        
+        log(`\n🔍 [DEBUG SKU] === RESUMEN PARA ORDEN ${orderNumber} ===`);
+        log(`   📊 Total productos en allProducts: ${allProducts.length}`);
+        log(`   📋 Lista completa de productos:`, allProducts);
 
         if (allProducts.length === 0) {
           log(`⚠️ No hay productos para orden ${orderNumber}`);
@@ -1018,18 +1143,28 @@ const PDFGenerator = () => {
         
         // Agrupar productos de 2 en 2 y crear líneas
         const lines: string[] = [];
+        log(`\n🔍 [DEBUG SKU] === AGRUPANDO PRODUCTOS EN LÍNEAS ===`);
+        log(`   📊 Total productos a agrupar: ${allProducts.length}`);
+        log(`   📋 Productos antes de agrupar:`, allProducts);
         log(`🔄 Agrupando ${allProducts.length} productos en líneas...`);
         for (let j = 0; j < allProducts.length; j += 2) {
           const productosEnLinea = allProducts.slice(j, j + 2);
+          log(`   🔍 [DEBUG SKU] Procesando grupo ${Math.floor(j/2) + 1}:`, productosEnLinea);
           const line = normalizarTextoWinAnsi(productosEnLinea.join(', '));
-          log(`   Línea ${lines.length + 1}: "${line}" (de productos: ${productosEnLinea.join(', ')})`);
+          log(`   📝 Línea ${lines.length + 1} generada: "${line}"`);
+          log(`      - Productos originales: ${productosEnLinea.join(', ')}`);
+          log(`      - Después de normalizar: "${line}"`);
+          log(`      - Longitud: ${line.length}, Vacía: ${!line || !line.trim()}`);
           if (line && line.trim()) {
             lines.push(line);
+            log(`   ✅ Línea ${lines.length} agregada exitosamente`);
           } else {
-            log(`   ⚠️ Línea vacía después de normalizar`);
+            log(`   ⚠️ Línea vacía después de normalizar, NO se agregará`);
           }
         }
-        log(`✅ Total líneas creadas: ${lines.length}`);
+        log(`\n🔍 [DEBUG SKU] === RESUMEN DE LÍNEAS ===`);
+        log(`   ✅ Total líneas creadas: ${lines.length}`);
+        log(`   📋 Líneas completas:`, lines);
         
         if (lines.length === 0) {
           log(`⚠️ No hay líneas para dibujar en orden ${orderNumber}`);
@@ -1078,7 +1213,10 @@ const PDFGenerator = () => {
         
         for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
           const line = lines[lineIndex];
+          log(`\n🔍 [DEBUG SKU] === DIBUJANDO LÍNEA ${lineIndex + 1}/${lines.length} ===`);
           log(`🔄 [ITERACIÓN ${lineIndex}] Procesando línea ${lineIndex + 1}/${lines.length}: "${line}"`);
+          log(`   📋 Contenido original de la línea: "${line}"`);
+          log(`   📏 Longitud de la línea: ${line.length} caracteres`);
           
           // ✅ VERIFICAR VALORES DE CONFIGURACIÓN antes de calcular
           log(`   🔍 Valores de configuración: posX=${posX}, posY=${posY}, fontSize=${fontSize}`);
@@ -1091,10 +1229,18 @@ const PDFGenerator = () => {
           
           // Normalizar el texto antes de dibujarlo para asegurar compatibilidad WinAnsi
           const lineNormalizada = normalizarTextoWinAnsi(line);
+          log(`   🔍 [DEBUG SKU] Normalización de texto:`);
+          log(`      - Línea original: "${line}"`);
+          log(`      - Línea normalizada: "${lineNormalizada}"`);
+          log(`      - ¿Son iguales?: ${line === lineNormalizada}`);
+          log(`      - Longitud original: ${line.length}, normalizada: ${lineNormalizada.length}`);
           
           // Verificar que la línea no esté vacía
           if (!lineNormalizada || !lineNormalizada.trim()) {
-            log(`⚠️ Línea ${lineIndex + 1} está vacía después de normalizar, saltando...`);
+            log(`   ⚠️ Línea ${lineIndex + 1} está vacía después de normalizar, saltando...`);
+            log(`      - lineNormalizada: "${lineNormalizada}"`);
+            log(`      - lineNormalizada.trim(): "${lineNormalizada.trim()}"`);
+            log(`      - ¿Está vacía?: ${!lineNormalizada || !lineNormalizada.trim()}`);
             continue;
           }
           
@@ -1147,18 +1293,41 @@ const PDFGenerator = () => {
             log(`   📝 Llamando drawText en página COPIADA con: x=${finalX}, y=${finalY}, size=${finalFontSize}, texto="${lineNormalizada.substring(0, 30)}..."`);
             log(`   🔤 Fuente: Helvetica, Tamaño: ${finalFontSize}pt (configurado: ${fontSize}pt)`);
             
+            // 🔍 DEBUG: Log detallado antes de dibujar
+            log(`\n🔍 [DEBUG SKU] === ANTES DE DIBUJAR EN PDF ===`);
+            log(`   📄 Página: ${pageIndex + 1} (índice ${pageIndex})`);
+            log(`   📝 Texto completo a dibujar: "${lineNormalizada}"`);
+            log(`   📏 Longitud del texto: ${lineNormalizada.length} caracteres`);
+            log(`   📍 Coordenadas: X=${finalX}, Y=${finalY}`);
+            log(`   🔤 Fuente: Helvetica, Tamaño: ${finalFontSize}pt`);
+            log(`   🎨 Color: negro (rgb(0, 0, 0))`);
+            log(`   ✅ targetPage existe: ${!!targetPage}`);
+            log(`   ✅ helveticaFont existe: ${!!helveticaFont}`);
+            
             // ✅ DIBUJAR EN LA PÁGINA COPIADA - Esta es la página que está en finalPdfDoc
             // Usar las coordenadas finales (finalX, finalY) y el tamaño de fuente configurado
-            targetPage.drawText(lineNormalizada, {
-              x: finalX,
-              y: finalY,
-              size: finalFontSize,
-              font: helveticaFont,
-              color: rgb(0, 0, 0),
-            });
-            
-            // Verificar inmediatamente después de dibujar
-            log(`   ✅ drawText ejecutado sin errores`);
+            try {
+              targetPage.drawText(lineNormalizada, {
+                x: finalX,
+                y: finalY,
+                size: finalFontSize,
+                font: helveticaFont,
+                color: rgb(0, 0, 0),
+              });
+              
+              // 🔍 DEBUG: Log después de dibujar
+              log(`\n🔍 [DEBUG SKU] === DESPUÉS DE DIBUJAR EN PDF ===`);
+              log(`   ✅ drawText ejecutado sin errores`);
+              log(`   📝 Texto dibujado: "${lineNormalizada}"`);
+              log(`   📍 Posición: X=${finalX}, Y=${finalY}`);
+            } catch (drawTextError: any) {
+              log(`\n❌ [DEBUG SKU] === ERROR AL DIBUJAR ===`);
+              log(`   ❌ Error en drawText:`, drawTextError);
+              log(`   📝 Texto que intentó dibujar: "${lineNormalizada}"`);
+              log(`   📍 Coordenadas: X=${finalX}, Y=${finalY}`);
+              log(`   🔤 Fuente: ${helveticaFont ? 'existe' : 'NO EXISTE'}`);
+              throw drawTextError;
+            }
             
             lineasDibujadas++;
             log(`✅ Línea ${lineIndex + 1} dibujada exitosamente en página ${pageIndex + 1} con fuente Helvetica`);
@@ -1530,6 +1699,28 @@ const PDFGenerator = () => {
       canGenerate
     });
   }, [csvData.length, originalPdfDoc, canGenerate]);
+
+  // Auto-scroll del panel de debug cuando se agregan nuevos logs
+  useEffect(() => {
+    if (showDebugPanel && debugLogs.length > 0) {
+      const panel = document.getElementById('debug-panel-content');
+      if (panel) {
+        panel.scrollTop = panel.scrollHeight;
+      }
+    }
+  }, [debugLogs, showDebugPanel]);
+
+  // Cerrar panel de debug cuando termine el procesamiento
+  useEffect(() => {
+    if (!processing && showDebugPanel) {
+      // Mantener el panel abierto por 5 segundos después de terminar para que el usuario pueda ver los logs
+      const timer = setTimeout(() => {
+        // No cerrar automáticamente, dejar que el usuario lo cierre manualmente
+        // setShowDebugPanel(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [processing, showDebugPanel]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4 transition-colors duration-300">
@@ -1951,6 +2142,107 @@ const PDFGenerator = () => {
                 </>
               )}
             </button>
+          </div>
+        )}
+
+        {/* Panel de Debug - Visible durante el procesamiento */}
+        {/* COMENTADO PARA PRODUCCIÓN - Descomentar para debugging */}
+        {false && showDebugPanel && (
+          <div className="bg-gray-900 dark:bg-gray-950 rounded-lg border-2 border-gray-700 dark:border-gray-600 overflow-hidden">
+            <div className="bg-gray-800 dark:bg-gray-800 p-4 flex items-center justify-between border-b border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <h3 className="text-lg font-bold text-white">Panel de Debug - Procesamiento</h3>
+                <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">
+                  {debugLogs.length} logs
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setDebugLogs([])}
+                  className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+                  title="Limpiar logs"
+                >
+                  Limpiar
+                </button>
+                <button
+                  onClick={() => setShowDebugPanel(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Cerrar panel"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="debug-panel-content" className="p-4 max-h-96 overflow-y-auto font-mono text-xs">
+              {debugLogs.length === 0 ? (
+                <div className="text-gray-500 text-center py-8">
+                  Esperando logs de procesamiento...
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {debugLogs.map((log, index) => {
+                    const getLogColor = () => {
+                      switch (log.type) {
+                        case 'error':
+                          return 'text-red-400';
+                        case 'warning':
+                          return 'text-yellow-400';
+                        case 'success':
+                          return 'text-green-400';
+                        default:
+                          return 'text-gray-300';
+                      }
+                    };
+                    
+                    const getLogBg = () => {
+                      switch (log.type) {
+                        case 'error':
+                          return 'bg-red-900/20';
+                        case 'warning':
+                          return 'bg-yellow-900/20';
+                        case 'success':
+                          return 'bg-green-900/20';
+                        default:
+                          return '';
+                      }
+                    };
+
+                    const isDebugSKU = log.message.includes('[DEBUG SKU]');
+                    const isImportant = isDebugSKU || log.message.includes('RESUMEN') || log.message.includes('PROCESANDO');
+
+                    return (
+                      <div
+                        key={index}
+                        className={`p-2 rounded ${getLogBg()} ${getLogColor()} break-words ${
+                          isDebugSKU ? 'font-bold border-l-4 border-blue-500 pl-3' : ''
+                        } ${
+                          isImportant ? 'bg-opacity-30' : ''
+                        }`}
+                      >
+                        <span className="text-gray-500 mr-2 text-xs">
+                          {new Date(log.timestamp).toLocaleTimeString('es-AR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            second: '2-digit',
+                            fractionalSecondDigits: 3
+                          })}
+                        </span>
+                        <span className={isDebugSKU ? 'text-blue-300' : ''}>{log.message}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {debugLogs.length > 0 && (
+              <div className="bg-gray-800 dark:bg-gray-800 p-2 border-t border-gray-700 text-xs text-gray-400 text-center">
+                Última actualización: {new Date().toLocaleTimeString('es-AR')} | 
+                Scroll automático activado
+              </div>
+            )}
           </div>
         )}
         
