@@ -17,6 +17,7 @@ import AdminPanelPage from '../pages/AdminPanelPage';
 import EmailConfirmationPage from '../pages/EmailConfirmationPage';
 import CuponesPage from '../pages/CuponesPage';
 import StockPage from '../pages/StockPage';
+import LogsPage from '../pages/LogsPage';
 import { Login } from '../components/Login';
 import { PricingPage } from '../components/PricingPage';
 
@@ -174,6 +175,14 @@ export const routes: RouteObject[] = [
     element: (
       <LevelProtectedRoute requiredLevel={999} sectionName="Panel de Administración Dios">
         <AdminPanelPage />
+      </LevelProtectedRoute>
+    ),
+  },
+  {
+    path: '/logs',
+    element: (
+      <LevelProtectedRoute requiredLevel={999} sectionName="Logs de Actividad - Administración">
+        <LogsPage />
       </LevelProtectedRoute>
     ),
   },

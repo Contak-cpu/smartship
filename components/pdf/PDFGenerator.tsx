@@ -9,6 +9,7 @@ import { guardarEnHistorialSKU } from '../../src/utils/historialStorage';
 import { useAuth } from '../../hooks/useAuth';
 import { guardarStockDespachado, StockDespachado } from '../../services/informacionService';
 import { descontarStockMultiple, obtenerStock, crearClaveSku } from '../../services/stockService';
+import { registrarActividad } from '../../services/logsService';
 
 // Tipo para los logs de debug
 type DebugLogType = 'info' | 'success' | 'error' | 'warning';
@@ -1597,6 +1598,27 @@ const PDFGenerator = () => {
         await guardarEnHistorialSKU(nombreArchivo, cantidadRegistros, base64, username, userId);
         console.log('✅ [PDFGenerator] PDF guardado exitosamente en historial');
         showMessage('success', `PDF guardado en historial`);
+        
+        // Registrar log de SKU agregados en rótulos
+        if (userId && stockDespachado.length > 0) {
+          // Contar SKU únicos
+          const skuUnicos = new Set(stockDespachado.map(item => item.sku));
+          const totalCantidad = stockDespachado.reduce((sum, item) => sum + item.cantidad, 0);
+          
+          await registrarActividad(
+            userId,
+            username,
+            'sku_rotulo_agregado',
+            skuUnicos.size, // Cantidad de SKU únicos
+            nombreArchivo,
+            {
+              sku_unicos: skuUnicos.size,
+              total_cantidad_items: totalCantidad,
+              total_registros: stockDespachado.length,
+              seccion: 'pdf_generator',
+            }
+          );
+        }
       } catch (historialError) {
         console.error('❌ [PDFGenerator] Error al guardar en historial:', historialError);
         if (historialError instanceof Error) {

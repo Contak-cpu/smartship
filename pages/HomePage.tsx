@@ -11,6 +11,7 @@ import { useAuth } from '../hooks/useAuth';
 import { guardarPedidosDesdeCSV, PedidoProcesado } from '../services/informacionService';
 import SmartShipConfig, { SmartShipConfigValues } from '../components/SmartShipConfig';
 import { agregarSugerenciasAceptadasAlCSV } from '../services/sugerenciasProcessor';
+import { registrarActividad } from '../services/logsService';
 
 // Función para normalizar caracteres problemáticos en el CSV final
 const normalizarCSVFinal = (content: string): string => {
@@ -164,6 +165,7 @@ const HomePage: React.FC = () => {
   const [results, setResults] = useState<{ domicilioCSV: string; sucursalCSV: string; processingInfo: ProcessingInfo } | null>(null);
   const [sugerenciasPendientes, setSugerenciasPendientes] = useState<SucursalSugerencia[] | null>(null);
   const [mostrarModalSugerencias, setMostrarModalSugerencias] = useState(false);
+  const [pedidosUnicosCSV, setPedidosUnicosCSV] = useState<number>(0);
   const [config, setConfig] = useState<SmartShipConfigValues>({
     peso: 400,
     alto: 10,
@@ -201,6 +203,104 @@ const HomePage: React.FC = () => {
         const normalizedCsv = csvText.replace(/[àáâãäå]/gi, 'a').replace(/[èéêë]/gi, 'e').replace(/[ìíîï]/gi, 'i').replace(/[òóôõö]/gi, 'o').replace(/[ùúûü]/gi, 'u').replace(/[ñ]/gi, 'n');
         const isVentasFile = normalizedCsv.includes('Número de orden') && normalizedCsv.includes('Email') && normalizedCsv.includes('Estado de la orden');
         
+        // Contar pedidos únicos del CSV original antes de procesar
+        let pedidosUnicosOriginales = 0;
+        try {
+          const lines = csvText.trim().split('\n');
+          if (lines.length > 1) {
+            // Detectar delimitador: Shopify usa coma, Tiendanube usa punto y coma
+            const firstLine = lines[0];
+            const delimiter = firstLine.includes(';') ? ';' : ',';
+            console.log(`📊 Delimitador detectado: "${delimiter}"`);
+            
+            const headers = firstLine.split(delimiter).map(h => h.trim());
+            console.log(`📊 Headers encontrados (primeros 5):`, headers.slice(0, 5));
+            
+            // Buscar columna de número de pedido
+            let numeroPedidoIndex = -1;
+            
+            if (isVentasFile) {
+              // Para archivos de ventas, buscar "Número de orden"
+              numeroPedidoIndex = headers.findIndex(h => 
+                h.toLowerCase().includes('número de orden') || 
+                h.toLowerCase().includes('numero de orden')
+              );
+            } else {
+              // Para archivos Shopify, buscar "Name" (primera columna, índice 0)
+              numeroPedidoIndex = headers.findIndex((h, idx) => {
+                const hLower = h.toLowerCase().trim();
+                // Prioridad: "Name" en las primeras columnas
+                if (hLower === 'name' && idx < 5) {
+                  return true;
+                }
+                return false;
+              });
+              
+              // Si no se encuentra "Name", buscar alternativas
+              if (numeroPedidoIndex === -1) {
+                numeroPedidoIndex = headers.findIndex(h => 
+                  h.toLowerCase().includes('id') ||
+                  h.toLowerCase().includes('número') ||
+                  h.toLowerCase().includes('numero') ||
+                  h.toLowerCase().includes('orden')
+                );
+              }
+            }
+            
+            console.log(`📊 Índice de columna de pedido encontrado: ${numeroPedidoIndex} (${headers[numeroPedidoIndex]})`);
+            
+            if (numeroPedidoIndex !== -1) {
+              const pedidosSet = new Set<string>();
+              for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue; // Saltar líneas vacías
+                
+                // Parsear la línea respetando comas dentro de comillas
+                const values: string[] = [];
+                let currentValue = '';
+                let insideQuotes = false;
+                
+                for (let j = 0; j < line.length; j++) {
+                  const char = line[j];
+                  if (char === '"') {
+                    insideQuotes = !insideQuotes;
+                  } else if ((char === delimiter || char === ';') && !insideQuotes) {
+                    values.push(currentValue.trim());
+                    currentValue = '';
+                  } else {
+                    currentValue += char;
+                  }
+                }
+                // Agregar el último valor
+                if (currentValue) {
+                  values.push(currentValue.trim());
+                }
+                
+                if (values[numeroPedidoIndex]) {
+                  const pedido = values[numeroPedidoIndex].trim();
+                  if (pedido) {
+                    // Limpiar formato de pedido (ej: "#17214" -> "17214")
+                    const pedidoLimpio = pedido.replace(/^#/, '').trim();
+                    if (pedidoLimpio && pedidoLimpio !== '') {
+                      pedidosSet.add(pedidoLimpio);
+                    }
+                  }
+                }
+              }
+              pedidosUnicosOriginales = pedidosSet.size;
+              console.log(`📊 Pedidos únicos encontrados en CSV: ${pedidosUnicosOriginales}`);
+              console.log(`📊 Primeros 10 pedidos únicos:`, Array.from(pedidosSet).slice(0, 10));
+            } else {
+              console.warn('⚠️ No se encontró columna de número de pedido');
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error contando pedidos únicos del CSV original:', error);
+        }
+        
+        // Guardar en estado para usar después
+        setPedidosUnicosCSV(pedidosUnicosOriginales);
+        
         let processedData;
         if (isVentasFile) {
           console.log('Detectado archivo de ventas, usando processVentasOrders...');
@@ -236,6 +336,67 @@ const HomePage: React.FC = () => {
           } catch (historialError) {
             console.error('Error al guardar en historial:', historialError);
             // No interrumpir el flujo si falla el guardado del historial
+          }
+
+          // Registrar log de archivo procesado (separado para que siempre se registre)
+          try {
+            if (userId) {
+              const datosDomicilio = csvToArray(processedData.domicilioCSV);
+              const datosSucursal = csvToArray(processedData.sucursalCSV);
+              
+              // Contar pedidos únicos desde los datos procesados (domicilio + sucursal)
+              const pedidosUnicosProcesados = new Set<string>();
+              
+              // Extraer pedidos únicos de domicilio
+              datosDomicilio.forEach((item: any) => {
+                const numeroPedido = item['Numero Interno Ej: '] || item['Numero Interno'] || '';
+                if (numeroPedido) {
+                  // Limpiar formato de pedido (ej: "#17214" -> "17214")
+                  const pedidoLimpio = numeroPedido.replace(/^#/, '').trim();
+                  if (pedidoLimpio) {
+                    pedidosUnicosProcesados.add(pedidoLimpio);
+                  }
+                }
+              });
+              
+              // Extraer pedidos únicos de sucursal
+              datosSucursal.forEach((item: any) => {
+                const numeroPedido = item['Numero Interno Ej: '] || item['Numero Interno'] || '';
+                if (numeroPedido) {
+                  // Limpiar formato de pedido (ej: "#17214" -> "17214")
+                  const pedidoLimpio = numeroPedido.replace(/^#/, '').trim();
+                  if (pedidoLimpio) {
+                    pedidosUnicosProcesados.add(pedidoLimpio);
+                  }
+                }
+              });
+              
+              const totalPedidosUnicos = pedidosUnicosProcesados.size;
+              console.log(`📊 Pedidos únicos procesados (domicilio + sucursal): ${totalPedidosUnicos}`);
+              
+              const resultado = await registrarActividad(
+                userId,
+                username,
+                'archivo_procesado',
+                1, // 1 archivo procesado
+                selectedFile.name,
+                {
+                  total_registros_domicilio: datosDomicilio.length,
+                  total_registros_sucursal: datosSucursal.length,
+                  pedidos_unicos_csv: totalPedidosUnicos, // Usar pedidos únicos procesados
+                  seccion: 'smartship',
+                }
+              );
+              if (!resultado.success) {
+                console.error('❌ Error registrando actividad de archivo:', resultado.error);
+              } else {
+                console.log('✅ Log de archivo procesado registrado correctamente');
+              }
+            } else {
+              console.warn('⚠️ No se puede registrar actividad: userId no disponible');
+            }
+          } catch (logError) {
+            console.error('❌ Excepción registrando actividad de archivo:', logError);
           }
 
           // Guardar pedidos en Supabase para la sección Información
@@ -317,6 +478,44 @@ const HomePage: React.FC = () => {
             if (pedidosParaGuardar.length > 0) {
               const resultado = await guardarPedidosDesdeCSV(pedidosParaGuardar);
               console.log(`✅ Pedidos procesados: ${resultado.guardados} guardados, ${resultado.duplicados} duplicados, ${resultado.errores} errores`);
+              
+              // Registrar log de pedidos procesados (total de pedidos procesados: domicilios + sucursales)
+              try {
+                if (userId) {
+                  // Obtener totales de domicilios y sucursales desde los datos procesados
+                  const datosDomicilio = csvToArray(processedData.domicilioCSV);
+                  const datosSucursal = csvToArray(processedData.sucursalCSV);
+                  const totalPedidosProcesados = datosDomicilio.length + datosSucursal.length;
+                  
+                  // Contar pedidos únicos por número de pedido
+                  const pedidosUnicos = new Set(pedidosParaGuardar.map(p => p.numeroPedido));
+                  const resultadoLog = await registrarActividad(
+                    userId,
+                    username,
+                    'pedido_procesado',
+                    totalPedidosProcesados, // Total de pedidos procesados (domicilios + sucursales)
+                    selectedFile.name,
+                    {
+                      pedidos_unicos: pedidosUnicos.size,
+                      total_domicilios: datosDomicilio.length,
+                      total_sucursales: datosSucursal.length,
+                      guardados: resultado.guardados,
+                      duplicados: resultado.duplicados,
+                      errores: resultado.errores,
+                      seccion: 'smartship',
+                    }
+                  );
+                  if (!resultadoLog.success) {
+                    console.error('❌ Error registrando actividad de pedidos:', resultadoLog.error);
+                  } else {
+                    console.log(`✅ Log de pedidos procesados registrado correctamente: ${totalPedidosProcesados} pedidos totales`);
+                  }
+                } else {
+                  console.warn('⚠️ No se puede registrar actividad de pedidos: userId no disponible');
+                }
+              } catch (logError) {
+                console.error('❌ Excepción registrando actividad de pedidos:', logError);
+              }
             }
           } catch (infoError) {
             console.error('Error al guardar pedidos para Información:', infoError);
@@ -461,6 +660,66 @@ const HomePage: React.FC = () => {
               } catch (historialError) {
                 console.error('Error al guardar en historial:', historialError);
               }
+
+              // Registrar log de archivo procesado (después de procesar sugerencias)
+              try {
+                if (userId) {
+                  const datosDomicilio = csvToArray(results.domicilioCSV);
+                  const datosSucursal = csvToArray(sucursalCSVActualizado);
+                  
+                  // Contar pedidos únicos desde los datos procesados (domicilio + sucursal)
+                  const pedidosUnicosProcesados = new Set<string>();
+                  
+                  // Extraer pedidos únicos de domicilio
+                  datosDomicilio.forEach((item: any) => {
+                    const numeroPedido = item['Numero Interno Ej: '] || item['Numero Interno'] || '';
+                    if (numeroPedido) {
+                      const pedidoLimpio = numeroPedido.replace(/^#/, '').trim();
+                      if (pedidoLimpio) {
+                        pedidosUnicosProcesados.add(pedidoLimpio);
+                      }
+                    }
+                  });
+                  
+                  // Extraer pedidos únicos de sucursal
+                  datosSucursal.forEach((item: any) => {
+                    const numeroPedido = item['Numero Interno Ej: '] || item['Numero Interno'] || '';
+                    if (numeroPedido) {
+                      const pedidoLimpio = numeroPedido.replace(/^#/, '').trim();
+                      if (pedidoLimpio) {
+                        pedidosUnicosProcesados.add(pedidoLimpio);
+                      }
+                    }
+                  });
+                  
+                  console.log(`📊 Pedidos únicos procesados (con sugerencias): ${pedidosUnicosProcesados.size}`);
+                  
+                  const resultado = await registrarActividad(
+                    userId,
+                    username,
+                    'archivo_procesado',
+                    1,
+                    selectedFile?.name || 'archivo.csv',
+                    {
+                    total_registros_domicilio: datosDomicilio.length,
+                    total_registros_sucursal: datosSucursal.length,
+                    pedidos_unicos_csv: pedidosUnicosProcesados.size,
+                    sugerencias_aceptadas: sugerenciasAceptadas.length,
+                    sugerencias_rechazadas: sugerenciasRechazadas.length,
+                    seccion: 'smartship',
+                  }
+                );
+                  if (!resultado.success) {
+                    console.error('❌ Error registrando actividad de archivo (con sugerencias):', resultado.error);
+                  } else {
+                    console.log('✅ Log de archivo procesado (con sugerencias) registrado correctamente');
+                  }
+                } else {
+                  console.warn('⚠️ No se puede registrar actividad: userId no disponible');
+                }
+              } catch (logError) {
+                console.error('❌ Excepción registrando actividad de archivo (con sugerencias):', logError);
+              }
               
               // Guardar pedidos en Supabase (incluyendo sugerencias aceptadas)
               try {
@@ -540,6 +799,44 @@ const HomePage: React.FC = () => {
                 if (pedidosParaGuardar.length > 0) {
                   const resultado = await guardarPedidosDesdeCSV(pedidosParaGuardar);
                   console.log(`✅ Pedidos procesados: ${resultado.guardados} guardados, ${resultado.duplicados} duplicados, ${resultado.errores} errores`);
+                  
+                  // Registrar log de pedidos procesados (total de pedidos procesados: domicilios + sucursales)
+                  try {
+                    if (userId) {
+                      // Obtener totales de domicilios y sucursales desde los datos procesados
+                      const datosDomicilio = csvToArray(results.domicilioCSV);
+                      const datosSucursal = csvToArray(sucursalCSVActualizado);
+                      const totalPedidosProcesados = datosDomicilio.length + datosSucursal.length;
+                      
+                      const pedidosUnicos = new Set(pedidosParaGuardar.map(p => p.numeroPedido));
+                      const resultadoLog = await registrarActividad(
+                        userId,
+                        username,
+                        'pedido_procesado',
+                        totalPedidosProcesados, // Total de pedidos procesados (domicilios + sucursales)
+                        selectedFile?.name || 'archivo.csv',
+                        {
+                          pedidos_unicos: pedidosUnicos.size,
+                          total_domicilios: datosDomicilio.length,
+                          total_sucursales: datosSucursal.length,
+                          guardados: resultado.guardados,
+                          duplicados: resultado.duplicados,
+                          errores: resultado.errores,
+                          sugerencias_aceptadas: sugerenciasAceptadas.length,
+                          seccion: 'smartship',
+                        }
+                      );
+                      if (!resultadoLog.success) {
+                        console.error('❌ Error registrando actividad de pedidos (con sugerencias):', resultadoLog.error);
+                      } else {
+                        console.log(`✅ Log de pedidos procesados (con sugerencias) registrado correctamente: ${totalPedidosProcesados} pedidos totales`);
+                      }
+                    } else {
+                      console.warn('⚠️ No se puede registrar actividad de pedidos: userId no disponible');
+                    }
+                  } catch (logError) {
+                    console.error('❌ Excepción registrando actividad de pedidos (con sugerencias):', logError);
+                  }
                 }
               } catch (infoError) {
                 console.error('Error al guardar pedidos para Información:', infoError);
