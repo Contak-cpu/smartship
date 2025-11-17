@@ -29,6 +29,7 @@ const UserModal: React.FC<UserModalProps> = ({ user, onClose, onSuccess }) => {
     is_paid: user?.is_paid ?? false,
     paid_until: user?.paid_until ? new Date(user.paid_until).toISOString().split('T')[0] : '',
     pagos_empresa: user?.pagos_empresa ?? false,
+    cantidad_tiendas: user?.cantidad_tiendas || null,
   });
 
   const [loading, setLoading] = useState(false);
@@ -38,6 +39,10 @@ const UserModal: React.FC<UserModalProps> = ({ user, onClose, onSuccess }) => {
   // Actualizar formData cuando cambie el usuario
   useEffect(() => {
     if (user) {
+      console.log('📋 [UserModal] Cargando usuario:', { 
+        pagos_empresa: user.pagos_empresa, 
+        cantidad_tiendas: user.cantidad_tiendas 
+      });
       setFormData({
         email: user.email || '',
         username: user.username || '',
@@ -46,7 +51,21 @@ const UserModal: React.FC<UserModalProps> = ({ user, onClose, onSuccess }) => {
         nivel: user.nivel ?? 0,
         is_paid: user.is_paid ?? false,
         paid_until: user.paid_until ? new Date(user.paid_until).toISOString().split('T')[0] : '',
-        pagos_empresa: user.pagos_empresa ?? false,
+        pagos_empresa: user.pagos_empresa === true, // Asegurar que sea boolean explícito
+        cantidad_tiendas: user.cantidad_tiendas || null,
+      });
+    } else {
+      // Resetear cuando no hay usuario (crear nuevo)
+      setFormData({
+        email: '',
+        username: '',
+        password: '',
+        confirmPassword: '',
+        nivel: 0,
+        is_paid: false,
+        paid_until: '',
+        pagos_empresa: false,
+        cantidad_tiendas: null,
       });
     }
   }, [user]);
@@ -103,10 +122,13 @@ const UserModal: React.FC<UserModalProps> = ({ user, onClose, onSuccess }) => {
           nivel: formData.nivel,
           is_paid: formData.is_paid,
           paid_until: formData.paid_until ? new Date(formData.paid_until).toISOString() : null,
-          pagos_empresa: formData.pagos_empresa,
+          pagos_empresa: formData.pagos_empresa, // Enviar explícitamente true o false
+          cantidad_tiendas: formData.pagos_empresa ? (formData.cantidad_tiendas || null) : null,
         };
 
+        console.log('💾 [UserModal] Actualizando usuario con:', updates);
         const result = await updateUserProfile(user.id, updates);
+        console.log('✅ [UserModal] Resultado de actualización:', result);
 
         if (result.success) {
           // Si se proporcionó una nueva contraseña, actualizarla
@@ -430,20 +452,52 @@ const UserModal: React.FC<UserModalProps> = ({ user, onClose, onSuccess }) => {
               </div>
 
               {/* Plan Empresa */}
-              <div className="flex items-center gap-3 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
-                <input
-                  type="checkbox"
-                  id="pagos_empresa"
-                  checked={formData.pagos_empresa}
-                  onChange={(e) => setFormData({ ...formData, pagos_empresa: e.target.checked })}
-                  className="w-5 h-5 text-purple-600 bg-gray-800 border-gray-600 rounded focus:ring-purple-500"
-                />
-                <label htmlFor="pagos_empresa" className="text-gray-300 font-medium cursor-pointer flex-1">
-                  Plan Empresa
-                </label>
-                <span className="text-xs text-purple-400 bg-purple-900/30 px-2 py-1 rounded">
-                  Multi-tienda
-                </span>
+              <div className="flex flex-col gap-3 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="pagos_empresa"
+                    checked={formData.pagos_empresa}
+                    onChange={(e) => {
+                      const isEmpresa = e.target.checked;
+                      setFormData({ 
+                        ...formData, 
+                        pagos_empresa: isEmpresa,
+                        // Si se desactiva Plan Empresa, limpiar cantidad_tiendas
+                        cantidad_tiendas: isEmpresa ? formData.cantidad_tiendas : null
+                      });
+                    }}
+                    className="w-5 h-5 text-purple-600 bg-gray-800 border-gray-600 rounded focus:ring-purple-500"
+                  />
+                  <label htmlFor="pagos_empresa" className="text-gray-300 font-medium cursor-pointer flex-1">
+                    Plan Empresa
+                  </label>
+                  <span className="text-xs text-purple-400 bg-purple-900/30 px-2 py-1 rounded">
+                    Multi-tienda
+                  </span>
+                </div>
+                {/* Campo para cantidad de tiendas (solo si Plan Empresa está activo) */}
+                {formData.pagos_empresa && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Cantidad de Tiendas
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.cantidad_tiendas || ''}
+                      onChange={(e) => {
+                        const value = e.target.value ? parseInt(e.target.value) : null;
+                        setFormData({ ...formData, cantidad_tiendas: value });
+                      }}
+                      className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
+                      placeholder="Sin límite (dejar vacío)"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Dejar vacío para permitir todas las tiendas
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           )}

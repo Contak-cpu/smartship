@@ -541,6 +541,36 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ domicilioCSV, su
     <div className="bg-gray-900/50 p-4 sm:p-6 rounded-lg animate-fade-in border border-gray-700/50 shadow-xl">
         <h3 className="text-lg sm:text-xl font-bold text-center text-white mb-4 sm:mb-6">📥 Descargar Archivos Procesados</h3>
         
+        {/* 🐛 DEBUG LOCAL: Mostrar pedidos no procesados (solo en desarrollo) */}
+        {(process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost') && 
+         processingInfo?.droppedOrders && processingInfo.droppedOrders.length > 0 && (
+          <div className="mb-4 p-4 rounded bg-red-900/40 border-2 border-red-600/70 text-xs">
+            <div className="text-red-200 font-bold mb-3 flex items-center justify-between">
+              <span>🐛 DEBUG LOCAL: {processingInfo.droppedOrders.length} Pedido(s) NO PROCESADO(S)</span>
+              <button 
+                onClick={() => {
+                  console.group('🚨 DEBUG LOCAL: PEDIDOS NO PROCESADOS');
+                  console.log(`Total: ${processingInfo.droppedOrders?.length}`);
+                  processingInfo.droppedOrders?.forEach((pedido, idx) => {
+                    console.log(`${idx + 1}. ${pedido}`);
+                  });
+                  console.groupEnd();
+                }}
+                className="px-2 py-1 bg-red-700 hover:bg-red-600 rounded text-xs"
+              >
+                Ver en consola
+              </button>
+            </div>
+            <div className="text-red-200/90 space-y-2 max-h-60 overflow-y-auto">
+              {processingInfo.droppedOrders.map((pedido, idx) => (
+                <div key={idx} className="bg-red-900/50 p-2 rounded border border-red-700/50">
+                  <div className="font-mono text-red-100 text-xs">{pedido}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Mostrar advertencia si hay pedidos excluidos */}
         {processingInfo?.erroresSucursalDetallados && processingInfo.erroresSucursalDetallados.length > 0 && (
           <div className="mb-4 p-3 rounded bg-orange-900/30 border-2 border-orange-600/50 text-xs">

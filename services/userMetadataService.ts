@@ -15,6 +15,7 @@ export interface UserMetadata {
   payment_status?: 'pending' | 'approved' | 'rejected';
   paid_until?: string; // Fecha de finalización del plan pagado
   pagos_empresa?: boolean; // Indica si tiene Plan Empresa
+  cantidad_tiendas?: number; // Número de tiendas que puede manejar (solo para Plan Empresa)
 }
 
 /**

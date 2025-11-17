@@ -163,6 +163,36 @@ const DashboardPage: React.FC = () => {
       icon: getIconForFeature('stock'),
     },
     {
+      id: 'tiendas-clientes',
+      title: 'Tiendas de Clientes',
+      description: 'Configura múltiples tiendas de clientes para descontar stock desde PDFs de Andreani. Gestiona tu inventario por tienda.',
+      path: '/tiendas-clientes',
+      stats: 'Plan Pro+',
+      requiredLevel: 4,
+      variant: 'warning' as const,
+      category: 'tools' as const,
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      ),
+    },
+    {
+      id: 'descontar-stock-pdf',
+      title: 'Descontar Stock desde PDF',
+      description: 'Sube un PDF de Andreani con stock descontado (generado en "Sku en Rotulos") para actualizar automáticamente tu inventario por tienda.',
+      path: '/descontar-stock-pdf',
+      stats: 'Plan Pro+',
+      requiredLevel: 4,
+      variant: 'warning' as const,
+      category: 'tools' as const,
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
+    },
+    {
       id: 'cupones',
       title: 'Cupones de Descuento',
       description: 'Obtén descuentos exclusivos para Andreani. Copia tus códigos activos y utilízalos al cargar tus rótulos para obtener desde un 20% hasta un 40% de descuento.',

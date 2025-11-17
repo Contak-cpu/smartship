@@ -35,6 +35,9 @@ const AdminPanelPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [editingPayment, setEditingPayment] = useState<string | null>(null);
   const [paymentDate, setPaymentDate] = useState<string>('');
+  const [updatingEmpresaPlan, setUpdatingEmpresaPlan] = useState<string | null>(null);
+  const [editingCantidadTiendas, setEditingCantidadTiendas] = useState<string | null>(null);
+  const [cantidadTiendas, setCantidadTiendas] = useState<string>('');
 
   // Verificar que el usuario es nivel Dios
   const isDios = userLevel === 999;
@@ -196,6 +199,73 @@ const AdminPanelPage = () => {
       await loadData();
     } else {
       alert(`Error al actualizar fecha de vencimiento: ${result.error?.message || 'Desconocido'}`);
+    }
+  };
+
+  // Manejar cambio de Plan Empresa
+  const handleChangeEmpresaPlan = async (userId: string, isEmpresa: boolean) => {
+    console.log('🔄 Cambiando Plan Empresa:', { userId, isEmpresa });
+    setUpdatingEmpresaPlan(userId);
+    
+    try {
+      const updates: any = {
+        pagos_empresa: isEmpresa,
+      };
+      
+      // Si se desactiva el Plan Empresa, limpiar cantidad_tiendas
+      if (!isEmpresa) {
+        updates.cantidad_tiendas = null;
+      }
+
+      console.log('📝 Actualizando perfil con:', updates);
+      const result = await updateUserProfile(userId, updates);
+      
+      console.log('✅ Resultado de actualización:', result);
+      
+      if (result.success) {
+        // Actualizar el estado local inmediatamente para feedback visual
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId 
+              ? { ...user, pagos_empresa: isEmpresa, cantidad_tiendas: isEmpresa ? user.cantidad_tiendas : null }
+              : user
+          )
+        );
+        
+        console.log('✅ Plan Empresa actualizado exitosamente');
+        
+        // Recargar datos para asegurar sincronización
+        await loadData();
+      } else {
+        console.error('❌ Error al actualizar Plan Empresa:', result.error);
+        alert(`Error al actualizar Plan Empresa: ${result.error?.message || 'Desconocido'}`);
+        // Revertir el cambio en caso de error
+        await loadData();
+      }
+    } catch (error: any) {
+      console.error('❌ Excepción al actualizar Plan Empresa:', error);
+      alert(`Error al actualizar Plan Empresa: ${error.message || 'Desconocido'}`);
+      // Revertir el cambio en caso de error
+      await loadData();
+    } finally {
+      setUpdatingEmpresaPlan(null);
+    }
+  };
+
+  // Manejar cambio de cantidad de tiendas
+  const handleChangeCantidadTiendas = async (userId: string, cantidad: number | null) => {
+    const updates = {
+      cantidad_tiendas: cantidad,
+    };
+
+    const result = await updateUserProfile(userId, updates);
+    
+    if (result.success) {
+      setEditingCantidadTiendas(null);
+      setCantidadTiendas('');
+      await loadData();
+    } else {
+      alert(`Error al actualizar cantidad de tiendas: ${result.error?.message || 'Desconocido'}`);
     }
   };
 
@@ -550,15 +620,94 @@ const AdminPanelPage = () => {
                               </div>
                             )}
 
-                            {/* Badges adicionales */}
-                            {user.pagos_empresa && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                                </svg>
-                                Plan Empresa
-                              </span>
-                            )}
+                            {/* Select Plan Empresa */}
+                            <div className="flex flex-col gap-2 min-w-[140px]">
+                              <select
+                                value={user.pagos_empresa === true ? 'empresa' : 'normal'}
+                                onChange={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const isEmpresa = e.target.value === 'empresa';
+                                  console.log('📋 Select cambiado:', { userId: user.id, value: e.target.value, isEmpresa });
+                                  handleChangeEmpresaPlan(user.id, isEmpresa);
+                                }}
+                                disabled={updatingEmpresaPlan === user.id}
+                                className="bg-gray-700 text-white border border-gray-500 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-gray-600 transition-colors cursor-pointer w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <option value="normal" className="bg-gray-800 text-white">
+                                  Plan Normal
+                                </option>
+                                <option value="empresa" className="bg-gray-800 text-white">
+                                  Plan Empresa
+                                </option>
+                              </select>
+                              {updatingEmpresaPlan === user.id && (
+                                <span className="text-xs text-purple-400">Guardando...</span>
+                              )}
+                              {user.pagos_empresa === true && (
+                                <>
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                                    </svg>
+                                    Multi-tienda
+                                  </span>
+                                  {/* Campo para cantidad de tiendas */}
+                                  {editingCantidadTiendas === user.id ? (
+                                    <div className="flex flex-col gap-1">
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        value={cantidadTiendas}
+                                        onChange={(e) => setCantidadTiendas(e.target.value)}
+                                        placeholder="Cantidad"
+                                        className="bg-gray-700 text-white border border-gray-500 px-2 py-1 rounded text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+                                      />
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => {
+                                            const cantidad = cantidadTiendas ? parseInt(cantidadTiendas) : null;
+                                            if (cantidad && cantidad > 0) {
+                                              handleChangeCantidadTiendas(user.id, cantidad);
+                                            } else {
+                                              handleChangeCantidadTiendas(user.id, null);
+                                            }
+                                          }}
+                                          className="text-xs text-green-400 hover:text-green-300 font-semibold"
+                                        >
+                                          ✓ Guardar
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setEditingCantidadTiendas(null);
+                                            setCantidadTiendas('');
+                                          }}
+                                          className="text-xs text-red-400 hover:text-red-300"
+                                        >
+                                          ✕ Cancelar
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-gray-400">
+                                        Tiendas: {user.cantidad_tiendas || 'Sin límite'}
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          setEditingCantidadTiendas(user.id);
+                                          setCantidadTiendas(user.cantidad_tiendas?.toString() || '');
+                                        }}
+                                        className="text-xs text-purple-400 hover:text-purple-300"
+                                        title="Editar cantidad de tiendas"
+                                      >
+                                        ✏️
+                                      </button>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
                             {user.payment_status && (
                               <span className="text-xs text-gray-400">
                                 {user.payment_status === 'approved' ? '✅ Aprobado' : 

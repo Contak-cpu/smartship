@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authService } from '../services/authService';
+import { supabase } from '../lib/supabase';
 import { 
   getUserMetadata, 
   updateUserMetadata, 
@@ -40,6 +41,7 @@ export const useAuth = () => {
         payment_status: currentUser.user_metadata?.payment_status,
         paid_until: currentUser.user_metadata?.paid_until,
         pagos_empresa: currentUser.user_metadata?.pagos_empresa,
+        cantidad_tiendas: currentUser.user_metadata?.cantidad_tiendas,
       };
 
       const userLevel: UserLevel = {
@@ -69,6 +71,7 @@ export const useAuth = () => {
         payment_status: currentUser.user_metadata?.payment_status,
         paid_until: currentUser.user_metadata?.paid_until,
         pagos_empresa: currentUser.user_metadata?.pagos_empresa,
+        cantidad_tiendas: currentUser.user_metadata?.cantidad_tiendas,
       };
 
       const expired = hasTrialExpired(metadata);
@@ -174,6 +177,43 @@ export const useAuth = () => {
     };
   }, []);
 
+  // Refrescar metadatos periódicamente (cada 2 minutos) para detectar cambios desde el admin
+  useEffect(() => {
+    if (!user) return;
+
+    const refreshInterval = setInterval(async () => {
+      console.log('🔄 [useAuth] Refresco periódico de metadatos...');
+      try {
+        // Obtener usuario actualizado del servidor
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser && currentUser.id === user.id) {
+          // Solo actualizar si el usuario es el mismo
+          const currentMetadata = currentUser.user_metadata || {};
+          const existingMetadata = user.user_metadata || {};
+          
+          // Verificar si hay cambios en metadatos importantes
+          const hasChanges = 
+            currentMetadata.pagos_empresa !== existingMetadata.pagos_empresa ||
+            currentMetadata.cantidad_tiendas !== existingMetadata.cantidad_tiendas ||
+            currentMetadata.nivel !== existingMetadata.nivel ||
+            currentMetadata.is_paid !== existingMetadata.is_paid;
+          
+          if (hasChanges) {
+            console.log('🔄 [useAuth] Cambios detectados en metadatos, actualizando...');
+            setUser(currentUser);
+            await loadUserProfile(currentUser);
+          }
+        }
+      } catch (error) {
+        console.error('❌ [useAuth] Error en refresco periódico:', error);
+      }
+    }, 120000); // Cada 2 minutos
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, [user]);
+
   // Función de login
   const signIn = async (email: string, password: string): Promise<{ error?: any }> => {
     console.log('🔐 [useAuth] signIn llamado para:', email);
@@ -254,14 +294,40 @@ export const useAuth = () => {
 
   // Valores computados
   const username = userProfile?.username || user?.email?.split('@')[0] || 'Usuario';
-  const userLevel = userProfile?.nivel || 0;
+  
+  // Obtener si tiene Plan Empresa y cantidad de tiendas
+  const hasEmpresaPlan = user?.user_metadata?.pagos_empresa === true;
+  const cantidadTiendas = user?.user_metadata?.cantidad_tiendas;
+  
+  // Si tiene Plan Empresa, usar nivel 3 (Intermedio), sino usar el nivel real
+  const baseUserLevel = userProfile?.nivel || 0;
+  const userLevel = hasEmpresaPlan ? 3 : baseUserLevel;
+  
   const userId = user?.id || '';
   const isAuthenticated = !!user;
 
   // Función para verificar acceso
+  // Plan Empresa tiene permisos de nivel 3 (Intermedio)
   const hasAccess = (requiredLevel: number): boolean => {
+    // Si tiene Plan Empresa, tiene acceso a todo lo que requiere nivel 3 o menos
+    if (hasEmpresaPlan && requiredLevel <= 3) {
+      return true;
+    }
+    // Para nivel 4 (Pro+), verificar también usuarios específicos como "yael"
+    if (requiredLevel === 4) {
+      // Usuarios Pro+ tienen nivel 4 o son usuarios específicos permitidos
+      if (userLevel >= 4) {
+        return true;
+      }
+      // Verificar usuarios específicos permitidos (como "yael")
+      const allowedUsers = ['yael', 'yaelamallo02'];
+      if (username && allowedUsers.includes(username.toLowerCase())) {
+        return true;
+      }
+    }
+    // Para niveles superiores a 3, usar el nivel real del usuario
     const result = userLevel >= requiredLevel;
-    console.log(`🔍 [hasAccess] userLevel: ${userLevel}, requiredLevel: ${requiredLevel}, result: ${result}`);
+    console.log(`🔍 [hasAccess] userLevel: ${userLevel}, requiredLevel: ${requiredLevel}, hasEmpresaPlan: ${hasEmpresaPlan}, username: ${username}, result: ${result}`);
     return result;
   };
 
@@ -282,6 +348,7 @@ export const useAuth = () => {
           payment_status: currentUser.user_metadata?.payment_status,
           paid_until: currentUser.user_metadata?.paid_until,
           pagos_empresa: currentUser.user_metadata?.pagos_empresa,
+          cantidad_tiendas: currentUser.user_metadata?.cantidad_tiendas,
         };
         
         console.log('🔍 [isPaid] Verificando estado de pago:', metadata.is_paid, 'para', metadata.email);
@@ -303,15 +370,51 @@ export const useAuth = () => {
       payment_status: user.user_metadata?.payment_status,
       paid_until: user.user_metadata?.paid_until,
       pagos_empresa: user.user_metadata?.pagos_empresa,
+      cantidad_tiendas: user.user_metadata?.cantidad_tiendas,
     };
     
     return isPaidUser(metadata);
   };
 
   // Función de compatibilidad para refresh
+  // Refresca la sesión para obtener los metadatos actualizados del servidor
   const refreshUserProfile = async () => {
-    if (user) {
-      await loadUserProfile(user);
+    if (!user) return;
+    
+    try {
+      console.log('🔄 [useAuth] Refrescando perfil de usuario...');
+      
+      // Forzar refresco de la sesión para obtener metadatos actualizados
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      
+      if (sessionError) {
+        console.error('❌ [useAuth] Error refrescando sesión:', sessionError);
+        // Si falla el refresh, intentar obtener el usuario directamente
+        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+        if (!userError && currentUser) {
+          setUser(currentUser);
+          await loadUserProfile(currentUser);
+        }
+        return;
+      }
+      
+      if (session?.user) {
+        console.log('✅ [useAuth] Sesión refrescada, actualizando usuario');
+        setUser(session.user);
+        await loadUserProfile(session.user);
+      }
+    } catch (error) {
+      console.error('❌ [useAuth] Error en refreshUserProfile:', error);
+      // Fallback: obtener usuario directamente
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          setUser(currentUser);
+          await loadUserProfile(currentUser);
+        }
+      } catch (err) {
+        console.error('❌ [useAuth] Error en fallback de refresh:', err);
+      }
     }
   };
 
@@ -347,8 +450,10 @@ export const useAuth = () => {
     
     // Información del usuario
     username,
-    userLevel,
+    userLevel, // Nivel efectivo (3 si tiene Plan Empresa, sino el nivel real)
     userId,
+    hasEmpresaPlan, // Indicador de Plan Empresa
+    cantidadTiendas, // Cantidad de tiendas permitidas (solo para Plan Empresa)
     
     // Funciones de autenticación
     signIn,

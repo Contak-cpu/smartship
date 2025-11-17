@@ -33,6 +33,7 @@ export interface ProcessingInfo {
   }>; // Detalles completos de errores de sucursal
   tasaEfectividad?: number; // Porcentaje de pedidos procesados exitosamente
   sugerenciasSucursal?: SucursalSugerencia[]; // Sugerencias de sucursales para pedidos sin coincidencias exactas
+  droppedOrders?: string[]; // Lista de pedidos que no se procesaron con el motivo
 }
 
 // Sugerencia de sucursal para pedidos sin coincidencias exactas
@@ -125,4 +126,50 @@ export interface AndreaniSucursalOutput {
   'Celular código *': string;
   'Celular número *': string;
   'Sucursal *': string;
+}
+
+// Tipos para Stock (si no están definidos en otro lugar)
+export interface Stock {
+  id: string;
+  user_id: string;
+  username: string;
+  sku: string;
+  nombreproducto?: string;
+  cantidad: number;
+  equivalencia?: number;
+  fecha_actualizacion: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockInput {
+  sku: string;
+  nombreproducto?: string;
+  cantidad: number;
+  equivalencia?: number;
+}
+
+// Tipos para Tiendas de Clientes (Pro+)
+export interface TiendaCliente {
+  id: string;
+  user_id: string;
+  username: string;
+  nombre_tienda: string;
+  descripcion?: string;
+  activa: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TiendaClienteInput {
+  nombre_tienda: string;
+  descripcion?: string;
+  activa?: boolean;
+}
+
+// Stock descontado desde PDF de Andreani
+export interface StockDescontadoPDF {
+  sku: string;
+  cantidad: number;
+  nombreProducto?: string;
 }

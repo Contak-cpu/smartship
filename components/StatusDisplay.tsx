@@ -128,17 +128,7 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ status, error, pro
                 </div>
               )}
 
-              {/* Avisos Shopify: pedidos descartados y emails autocompletados */}
-              {processingInfo.droppedOrders && processingInfo.droppedOrders.length > 0 && (
-                <div className="mt-2 p-2 rounded bg-yellow-900/20 border border-yellow-600/30 text-xs">
-                  <div className="text-yellow-300 font-semibold mb-1">⚠️ Pedidos descartados (Provincia/Localidad/CP no encontrados)</div>
-                  <div className="text-yellow-300 text-xs space-y-1">
-                    {processingInfo.droppedOrders.map((msg: string, idx: number) => (
-                      <div key={idx}>• {msg}</div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Los pedidos descartados se muestran en el panel DEBUG LOCAL de HomePage */}
 
               {processingInfo.autofilledEmails && processingInfo.autofilledEmails.length > 0 && (
                 <div className="mt-2 p-2 rounded bg-blue-900/20 border border-blue-600/30 text-xs">

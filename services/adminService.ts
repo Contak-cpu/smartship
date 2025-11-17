@@ -20,6 +20,7 @@ export interface UserAdmin {
   trial_expires_at: string | null;
   is_expired?: boolean;
   pagos_empresa?: boolean | null;
+  cantidad_tiendas?: number | null;
   plan?: string | null;
 }
 
@@ -36,6 +37,7 @@ export interface UpdateUserData {
   is_paid?: boolean;
   paid_until?: string | null;
   pagos_empresa?: boolean;
+  cantidad_tiendas?: number | null;
   trial_expires_at?: string | null;
   payment_status?: string | null;
 }
@@ -146,16 +148,37 @@ export const updateUserProfile = async (
 ): Promise<{ success: boolean; error: any }> => {
   try {
     // Primero intentar usar la función RPC (no requiere service_role_key)
-    const { error: rpcError } = await supabase.rpc('update_user_metadata', {
+    // Construir parámetros explícitamente para asegurar que los valores booleanos se pasen correctamente
+    const rpcParams: any = {
       p_user_id: userId,
-      p_username: updates.username || null,
-      p_nivel: updates.nivel !== undefined ? updates.nivel : null,
-      p_is_paid: updates.is_paid !== undefined ? updates.is_paid : null,
-      p_paid_until: updates.paid_until !== undefined ? (updates.paid_until || '') : null,
-      p_pagos_empresa: updates.pagos_empresa !== undefined ? updates.pagos_empresa : null,
-      p_trial_expires_at: updates.trial_expires_at !== undefined ? (updates.trial_expires_at || '') : null,
-      p_payment_status: updates.payment_status !== undefined ? (updates.payment_status || '') : null,
-    });
+    };
+    
+    if (updates.username !== undefined) {
+      rpcParams.p_username = updates.username || null;
+    }
+    if (updates.nivel !== undefined) {
+      rpcParams.p_nivel = updates.nivel;
+    }
+    if (updates.is_paid !== undefined) {
+      rpcParams.p_is_paid = updates.is_paid;
+    }
+    if (updates.paid_until !== undefined) {
+      rpcParams.p_paid_until = updates.paid_until || null;
+    }
+    if (updates.pagos_empresa !== undefined) {
+      rpcParams.p_pagos_empresa = updates.pagos_empresa; // Pasar explícitamente true o false
+    }
+    if (updates.cantidad_tiendas !== undefined) {
+      rpcParams.p_cantidad_tiendas = updates.cantidad_tiendas !== null ? updates.cantidad_tiendas : null;
+    }
+    if (updates.trial_expires_at !== undefined) {
+      rpcParams.p_trial_expires_at = updates.trial_expires_at || null;
+    }
+    if (updates.payment_status !== undefined) {
+      rpcParams.p_payment_status = updates.payment_status || null;
+    }
+    
+    const { error: rpcError } = await supabase.rpc('update_user_metadata', rpcParams);
 
     if (!rpcError) {
       return { success: true, error: null };
@@ -191,16 +214,35 @@ export const updateUserProfile = async (
     const currentMetadata = userData.user?.user_metadata || {};
 
     // Combinar metadata existente con las actualizaciones
-    const newMetadata = {
+    const newMetadata: any = {
       ...currentMetadata,
-      ...(updates.username && { username: updates.username }),
-      ...(updates.nivel !== undefined && { nivel: updates.nivel }),
-      ...(updates.is_paid !== undefined && { is_paid: updates.is_paid }),
-      ...(updates.paid_until !== undefined && { paid_until: updates.paid_until }),
-      ...(updates.pagos_empresa !== undefined && { pagos_empresa: updates.pagos_empresa }),
-      ...(updates.trial_expires_at !== undefined && { trial_expires_at: updates.trial_expires_at }),
-      ...(updates.payment_status !== undefined && { payment_status: updates.payment_status }),
     };
+    
+    // Actualizar campos explícitamente (incluso si son false/null)
+    if (updates.username !== undefined) {
+      newMetadata.username = updates.username;
+    }
+    if (updates.nivel !== undefined) {
+      newMetadata.nivel = updates.nivel;
+    }
+    if (updates.is_paid !== undefined) {
+      newMetadata.is_paid = updates.is_paid;
+    }
+    if (updates.paid_until !== undefined) {
+      newMetadata.paid_until = updates.paid_until || null;
+    }
+    if (updates.pagos_empresa !== undefined) {
+      newMetadata.pagos_empresa = updates.pagos_empresa;
+    }
+    if (updates.cantidad_tiendas !== undefined) {
+      newMetadata.cantidad_tiendas = updates.cantidad_tiendas !== null ? updates.cantidad_tiendas : null;
+    }
+    if (updates.trial_expires_at !== undefined) {
+      newMetadata.trial_expires_at = updates.trial_expires_at || null;
+    }
+    if (updates.payment_status !== undefined) {
+      newMetadata.payment_status = updates.payment_status || null;
+    }
 
     // Actualizar metadata
     const updateResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {

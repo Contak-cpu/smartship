@@ -1504,7 +1504,7 @@ const isShopifyCSV = (text: string): boolean => {
   return head.includes('name,email,financial status') && head.includes('shipping method');
 };
 
-// Procesador específico para CSV de Shopify (todos los envíos a domicilio)
+// Procesador específico para CSV de Shopify (detecta envíos a domicilio y sucursal)
 const processShopifyOrders = async (
   csvText: string,
   config?: { peso: number; alto: number; ancho: number; profundidad: number; valorDeclarado: number }
@@ -1523,8 +1523,9 @@ const processShopifyOrders = async (
   };
   const finalConfig = config || defaultConfig;
   // Cargar datos auxiliares
-  const [codigosPostales] = await Promise.all([
+  const [codigosPostales, sucursales] = await Promise.all([
     fetchCodigosPostales(),
+    fetchSucursales(),
   ]);
 
   // Parsear con coma como delimitador
@@ -1540,8 +1541,10 @@ const processShopifyOrders = async (
 
   const rows = await parseWithPapa();
   const domicilios: any[] = [];
+  const sucursalesOutput: AndreaniSucursalOutput[] = [];
 
   let contadorDomicilios = 0;
+  let contadorSucursales = 0;
   let contadorNoProcesados = 0;
   const droppedOrders: string[] = [];
   const sugerenciasSucursalShopify: SucursalSugerencia[] = [];
@@ -1609,7 +1612,17 @@ const processShopifyOrders = async (
     const address1 = getRowField(row, 'Shipping Address1');
     const address2 = getRowField(row, 'Shipping Address2');
     const localidad = getRowField(row, 'Shipping City');
-    const codigoPostal = getRowField(row, 'Shipping Zip').replace(/[^\d]/g, '');
+    // Mejorar extracción de código postal: extraer solo los dígitos (4-5 dígitos consecutivos)
+    const zipRaw = getRowField(row, 'Shipping Zip');
+    let codigoPostal = '';
+    // Buscar secuencia de 4-5 dígitos en el código postal
+    const cpMatch = zipRaw.match(/\d{4,5}/);
+    if (cpMatch) {
+      codigoPostal = cpMatch[0];
+    } else {
+      // Si no hay secuencia de 4-5 dígitos, usar solo dígitos (fallback)
+      codigoPostal = zipRaw.replace(/[^\d]/g, '');
+    }
     const provincia = getRowField(row, 'Shipping Province Name') || getRowField(row, 'Shipping Province');
 
     // Extraer calle y número desde address1
@@ -1763,6 +1776,7 @@ const processShopifyOrders = async (
         }
         // Fallback por inclusión de localidad (maneja pequeñas diferencias)
         if (!encontradoPorProvinciaLocalidad && localidadNormalizada) {
+          // Primero buscar con localidad completa
           for (const [, formato] of codigosPostales.entries()) {
             const formatoNormalizado = formato
               .replace(/[áàäâ]/g, 'A')
@@ -1786,7 +1800,93 @@ const processShopifyOrders = async (
               }
             }
           }
+          
+          // Extraer localidad clave (última palabra significativa) para búsquedas más flexibles
+          // Ejemplo: "Villa Gesell" -> "GESELL", "San Miguel" -> "MIGUEL"
+          const palabrasLocalidad = localidadNormalizada.split(/\s+/).filter(p => p.length > 2);
+          const localidadClave = palabrasLocalidad.length > 0 ? palabrasLocalidad[palabrasLocalidad.length - 1] : '';
+          
+          // Si todavía no encontró, buscar con localidad clave (última palabra significativa)
+          if (!encontradoPorProvinciaLocalidad && localidadClave && localidadClave !== localidadNormalizada && localidadClave.length > 2) {
+            for (const [, formato] of codigosPostales.entries()) {
+              const formatoNormalizado = formato
+                .replace(/[áàäâ]/g, 'A')
+                .replace(/[éèëê]/g, 'E')
+                .replace(/[íìïî]/g, 'I')
+                .replace(/[óòöô]/g, 'O')
+                .replace(/[úùüû]/g, 'U')
+                .replace(/[ñ]/g, 'N')
+                .toUpperCase()
+                .replace(/\./g, ' ')
+                .replace(/,/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+              const partes = formatoNormalizado.split('/').map(p => p.trim());
+              if (partes.length >= 2) {
+                const localidadCatalogo = partes[1];
+                if (localidadCatalogo.includes(localidadClave) || localidadClave.includes(localidadCatalogo)) {
+                  // Verificar que la provincia también coincida si es posible
+                  if (partes.length >= 1 && (partes[0].includes(provinciaNormalizada) || provinciaNormalizada.includes(partes[0]))) {
+                    formatoProvinciaLocalidadCP = formato;
+                    encontradoPorProvinciaLocalidad = true;
+                    console.log(`✅ Encontrado por localidad clave "${localidadClave}" (de "${localidadNormalizada}") y provincia para pedido ${numeroOrden}`);
+                    break;
+                  }
+                }
+              }
+            }
+          }
         }
+        
+        // Fallback FINAL: buscar por código postal directamente en el catálogo
+        if (!encontradoPorProvinciaLocalidad && codigoPostal && codigoPostal.length >= 4) {
+          for (const [cpCatalogo, formato] of codigosPostales.entries()) {
+            // Comparar últimos 4 dígitos del código postal
+            if (cpCatalogo && codigoPostal.length >= 4 && cpCatalogo.length >= 4) {
+              const cpCatalogoLimpio = cpCatalogo.replace(/\D/g, '');
+              const cpPedidoLimpio = codigoPostal.replace(/\D/g, '');
+              
+              // Coincidencia exacta o últimos 4 dígitos
+              if (cpCatalogoLimpio === cpPedidoLimpio || 
+                  (cpCatalogoLimpio.length >= 4 && cpPedidoLimpio.length >= 4 && 
+                   cpCatalogoLimpio.slice(-4) === cpPedidoLimpio.slice(-4))) {
+                // Verificar que la provincia también coincida si es posible
+                const formatoNormalizado = formato
+                  .replace(/[áàäâ]/g, 'A')
+                  .replace(/[éèëê]/g, 'E')
+                  .replace(/[íìïî]/g, 'I')
+                  .replace(/[óòöô]/g, 'O')
+                  .replace(/[úùüû]/g, 'U')
+                  .replace(/[ñ]/g, 'N')
+                  .toUpperCase()
+                  .replace(/\./g, ' ')
+                  .replace(/,/g, ' ')
+                  .replace(/\s+/g, ' ')
+                  .trim();
+                const partes = formatoNormalizado.split('/').map(p => p.trim());
+                
+                // Si hay provincia en el formato, verificar coincidencia
+                if (partes.length >= 1) {
+                  const provinciaCatalogo = partes[0];
+                  // Buscar si la provincia coincide (flexible)
+                  if (!provinciaNormalizada || provinciaCatalogo.includes(provinciaNormalizada) || provinciaNormalizada.includes(provinciaCatalogo)) {
+                    formatoProvinciaLocalidadCP = formato;
+                    encontradoPorProvinciaLocalidad = true;
+                    console.log(`✅ Encontrado por código postal "${codigoPostal}" (CP catálogo: "${cpCatalogo}") para pedido ${numeroOrden}`);
+                    break;
+                  }
+                } else {
+                  // Si no hay provincia en el formato, aceptarlo de todas formas
+                  formatoProvinciaLocalidadCP = formato;
+                  encontradoPorProvinciaLocalidad = true;
+                  console.log(`✅ Encontrado por código postal "${codigoPostal}" (CP catálogo: "${cpCatalogo}") sin verificación de provincia para pedido ${numeroOrden}`);
+                  break;
+                }
+              }
+            }
+          }
+        }
+        
         // Fallback dirigido: forzar match por clave conocida de catálogo (sin depender de provincia)
         if (!encontradoPorProvinciaLocalidad) {
           if (localidadNormalizada === 'VILLA GESELL' || localidadNormalizada.includes('VILLA GESELL')) {
@@ -1812,20 +1912,273 @@ const processShopifyOrders = async (
       }
     }
 
-    // Si falta email, autocompletar con un placeholder y registrar
-    if (!email) {
-      email = 'ejemplo@gmail.com';
-      if (numeroOrden) {
-        autofilledEmails.push(numeroOrden);
-      }
+    // Verificar si el pedido tiene número de orden (OBLIGATORIO)
+    if (!numeroOrden) {
+      contadorNoProcesados++;
+      console.warn(`Pedido Shopify omitido: Sin número de orden`);
+      continue;
     }
 
-    // Todos los envíos se consideran a domicilio según requerimiento
-    if (numeroOrden && email) {
-      // Si no hay formato válido de Provincia/Localidad/CP, descartar pedido y notificar
+    // Si falta email, autocompletar con un placeholder y registrar (NO BLOQUEAR)
+    if (!email || !email.trim()) {
+      email = 'ejemplo@gmail.com';
+      autofilledEmails.push(numeroOrden);
+      console.log(`📧 Email autocompletado para pedido ${numeroOrden}: ejemplo@gmail.com`);
+    }
+
+    // Detectar tipo de envío basándose en Shipping Method
+    const normalizeText = (text: string) => {
+      return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\./g, ' ')
+        .replace(/[^\w\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const medioEnvioNormalizado = medioEnvio ? normalizeText(medioEnvio) : '';
+    
+    // Detectar envío a sucursal
+    const esSucursal = medioEnvioNormalizado && (
+      medioEnvioNormalizado.includes('sucursal') ||
+      medioEnvioNormalizado.includes('retiro') ||
+      medioEnvioNormalizado.includes('punto de retiro')
+    );
+
+    // Detectar envío a domicilio
+    const esDomicilio = !esSucursal && medioEnvioNormalizado && (
+      medioEnvioNormalizado.includes('domicilio') ||
+      medioEnvioNormalizado.includes('andreani') ||
+      medioEnvioNormalizado.includes('envio a domicilio') ||
+      medioEnvioNormalizado.includes('a domicilio')
+    );
+
+    // Si no se detecta ni domicilio ni sucursal, asumir domicilio por defecto
+    const tipoEnvio = esSucursal ? 'sucursal' : 'domicilio';
+
+    console.log(`🔍 Pedido ${numeroOrden}: Medio de envío="${medioEnvio}", Normalizado="${medioEnvioNormalizado}", Tipo="${tipoEnvio}"`);
+
+    if (tipoEnvio === 'sucursal') {
+      // Procesar como envío a sucursal
+      const baseData = {
+        'Paquete Guardado Ej:': '',
+        'Peso (grs)': finalConfig.peso,
+        'Alto (cm)': finalConfig.alto,
+        'Ancho (cm)': finalConfig.ancho,
+        'Profundidad (cm)': finalConfig.profundidad,
+        'Valor declarado ($ C/IVA) *': finalConfig.valorDeclarado,
+        'Numero Interno': numeroOrden,
+        'Nombre *': nombre ? normalizarNombre(nombre) : '',
+        'Apellido *': apellido ? normalizarNombre(apellido) : '',
+        'DNI *': dniProcesado,
+        'Email *': email,
+        'Celular código *': celularCodigo,
+        'Celular número *': celularNumero,
+      };
+
+      // Construir dirección completa para búsqueda de sucursal
+      let direccionCompleta = `${calle} ${numeroCalle}`.trim();
+      if (pisoDepto && pisoDepto.trim()) {
+        direccionCompleta += `, ${pisoDepto}`;
+      }
+      if (localidad && localidad.trim()) {
+        direccionCompleta += `, ${localidad}`;
+      }
+      if (codigoPostal && codigoPostal.trim()) {
+        direccionCompleta += `, ${codigoPostal}`;
+      }
+      if (provincia && provincia.trim()) {
+        direccionCompleta += `, ${provincia}`;
+      }
+
+      console.log(`🔍 Buscando sucursal para pedido ${numeroOrden}, dirección: ${direccionCompleta}`);
+
+      const nombreSucursal = findSucursalByAddress(direccionCompleta, sucursales, codigoPostal, provincia);
+
+      if (nombreSucursal === 'SUCURSAL NO ENCONTRADA') {
+        // Si no encontró coincidencia exacta, generar sugerencia automática primero
+        let sugerencia: { sucursal: AndreaniSucursalInfo | null; razon: string; score: number } | null = generarSugerenciaSucursal(
+          direccionCompleta,
+          sucursales,
+          codigoPostal,
+          provincia,
+          localidad,
+          localidad,
+          numeroOrden
+        );
+
+        // Si no se generó sugerencia, buscar por código postal primero, luego por ciudad
+        if (!sugerencia || !sugerencia.sucursal) {
+          console.log(`⚠️ No se generó sugerencia automática para ${numeroOrden}, buscando por código postal/ciudad...`);
+          
+          // Función auxiliar para extraer código postal de dirección de sucursal
+          const extraerCPDeDireccion = (direccion: string): string | null => {
+            if (!direccion) return null;
+            // Buscar códigos postales en formato estándar (B8000, C1200, etc. o solo números)
+            const matches = direccion.match(/\b([A-Z]?\d{4,5})\b/g);
+            if (matches && matches.length > 0) {
+              const cp = matches[0];
+              // Si tiene letra prefijo, extraer solo el número
+              if (/^[A-Z]/.test(cp)) {
+                return cp.substring(1);
+              }
+              return cp;
+            }
+            // Fallback: buscar solo números de 4-5 dígitos
+            const soloNumeros = direccion.match(/\b(\d{4,5})\b/);
+            if (soloNumeros) {
+              return soloNumeros[1];
+            }
+            return null;
+          };
+
+          // Buscar por código postal primero
+          if (codigoPostal && codigoPostal.trim()) {
+            const cpLimpio = codigoPostal.replace(/\D/g, '').trim();
+            console.log(`🔍 Buscando sucursal por código postal: ${cpLimpio}`);
+            
+            const sucursalPorCP = sucursales.find(s => {
+              const cpSucursal = extraerCPDeDireccion(s.direccion);
+              if (cpSucursal) {
+                // Comparar códigos postales (pueden tener diferentes formatos)
+                const cpSucursalLimpio = cpSucursal.replace(/\D/g, '').trim();
+                // Comparar últimos 4 dígitos o coincidencia exacta
+                const matchExacto = cpSucursalLimpio === cpLimpio;
+                const matchUltimos4 = cpSucursalLimpio.length >= 4 && cpLimpio.length >= 4 &&
+                  cpSucursalLimpio.slice(-4) === cpLimpio.slice(-4);
+                return matchExacto || matchUltimos4;
+              }
+              return false;
+            });
+            
+            if (sucursalPorCP) {
+              const cpEncontrado = extraerCPDeDireccion(sucursalPorCP.direccion);
+              sugerencia = {
+                sucursal: sucursalPorCP,
+                razon: `Sucursal encontrada por código postal ${cpLimpio} (sucursal CP: ${cpEncontrado})`,
+                score: 70
+              };
+              console.log(`✅ Sugerencia por código postal para ${numeroOrden}: ${sucursalPorCP.nombre_sucursal} (CP: ${cpEncontrado})`);
+            } else {
+              console.log(`⚠️ No se encontró sucursal con código postal ${cpLimpio}, buscando por ciudad...`);
+            }
+          }
+
+          // Si no se encontró por CP, buscar por ciudad/localidad
+          if (!sugerencia || !sugerencia.sucursal) {
+            if (localidad && localidad.trim()) {
+              const localidadNorm = localidad.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+              const sucursalPorCiudad = sucursales.find(s => {
+                const dirNorm = s.direccion.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const nombreNorm = s.nombre_sucursal.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                return dirNorm.includes(localidadNorm) || nombreNorm.includes(localidadNorm);
+              });
+
+              if (sucursalPorCiudad) {
+                sugerencia = {
+                  sucursal: sucursalPorCiudad,
+                  razon: `Sucursal encontrada en la ciudad/localidad ${localidad}`,
+                  score: 50
+                };
+                console.log(`✅ Sugerencia por ciudad para ${numeroOrden}: ${sucursalPorCiudad.nombre_sucursal}`);
+              }
+            }
+          }
+
+          // Si todavía no hay sugerencia, buscar por provincia (último recurso)
+          if (!sugerencia || !sugerencia.sucursal) {
+            if (provincia && provincia.trim()) {
+              const provinciaNorm = provincia.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+              const sucursalPorProvincia = sucursales.find(s => {
+                const dirNorm = s.direccion.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const nombreNorm = s.nombre_sucursal.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                return dirNorm.includes(provinciaNorm) || nombreNorm.includes(provinciaNorm);
+              });
+
+              if (sucursalPorProvincia) {
+                sugerencia = {
+                  sucursal: sucursalPorProvincia,
+                  razon: `Sucursal encontrada en la provincia ${provincia} (verificar manualmente)`,
+                  score: 30
+                };
+                console.log(`⚠️ Sugerencia por provincia (baja confianza) para ${numeroOrden}: ${sucursalPorProvincia.nombre_sucursal}`);
+              }
+            }
+          }
+
+          // Si todavía no hay sugerencia, usar la primera sucursal disponible (último recurso absoluto)
+          if (!sugerencia || !sugerencia.sucursal) {
+            if (sucursales.length > 0) {
+              sugerencia = {
+                sucursal: sucursales[0],
+                razon: 'No se encontró sucursal específica, usando primera disponible - REVISAR MANUALMENTE',
+                score: 10
+              };
+              console.log(`⚠️ Sugerencia de último recurso para ${numeroOrden}: ${sucursales[0].nombre_sucursal}`);
+            }
+          }
+        }
+
+        // Si tenemos una sugerencia, agregarla SIEMPRE
+        if (sugerencia && sugerencia.sucursal) {
+          sugerenciasSucursalShopify.push({
+            numeroOrden: numeroOrden,
+            direccionPedido: direccionCompleta,
+            numero: numeroCalle,
+            localidad: localidad,
+            ciudad: localidad,
+            codigoPostal: codigoPostal,
+            provincia: provincia,
+            sucursalSugerida: sugerencia.sucursal,
+            razon: sugerencia.razon,
+            score: sugerencia.score,
+            decision: 'pendiente',
+            pedidoData: {
+              peso: baseData['Peso (grs)'],
+              alto: baseData['Alto (cm)'],
+              ancho: baseData['Ancho (cm)'],
+              profundidad: baseData['Profundidad (cm)'],
+              valorDeclarado: baseData['Valor declarado ($ C/IVA) *'],
+              nombre: baseData['Nombre *'],
+              apellido: baseData['Apellido *'],
+              dni: baseData['DNI *'],
+              email: baseData['Email *'],
+              celularCodigo: baseData['Celular código *'],
+              celularNumero: baseData['Celular número *']
+            }
+          });
+          console.log(`💡 Sugerencia SIEMPRE generada para pedido ${numeroOrden}: ${sugerencia.sucursal.nombre_sucursal} (${sugerencia.razon})`);
+        } else {
+          // Esto no debería pasar nunca, pero por si acaso
+          console.error(`❌ ERROR: No se pudo generar sugerencia para pedido ${numeroOrden} - no hay sucursales disponibles`);
+          const motivoDetallado = `no se pudo generar sugerencia de sucursal - Provincia: "${provincia}", Localidad: "${localidad}", CP: "${codigoPostal}"`;
+          droppedOrders.push(`${numeroOrden} - ${motivoDetallado}`);
+          contadorNoProcesados++;
+        }
+      } else {
+        // Sucursal encontrada, agregar directamente al output (sin modal)
+        sucursalesOutput.push({
+          ...baseData,
+          'Sucursal *': nombreSucursal,
+        });
+        contadorSucursales++;
+        console.log(`✅ Sucursal asignada directamente para pedido ${numeroOrden}: ${nombreSucursal}`);
+      }
+    } else {
+      // Procesar como envío a domicilio
       if (!formatoProvinciaLocalidadCP) {
         contadorNoProcesados++;
-        droppedOrders.push(`${numeroOrden} - sin match Provincia/Localidad/CP`);
+        const motivoDetallado = `sin match Provincia/Localidad/CP - Provincia: "${provincia}", Localidad: "${localidad}", CP: "${codigoPostal}"`;
+        droppedOrders.push(`${numeroOrden} - ${motivoDetallado}`);
+        console.error(`❌ [NO PROCESADO] Pedido ${numeroOrden}`);
+        console.error(`   Tipo: DOMICILIO`);
+        console.error(`   Provincia: "${provincia}"`);
+        console.error(`   Localidad: "${localidad}"`);
+        console.error(`   Código Postal: "${codigoPostal}"`);
+        console.error(`   Email: "${email}"`);
+        console.error(`   Razón: No se encontró coincidencia en catálogo de códigos postales`);
         continue;
       }
       contadorDomicilios++;
@@ -1849,35 +2202,60 @@ const processShopifyOrders = async (
         'Departamento': pisoDepto,
         'Provincia / Localidad / CP *': formatoProvinciaLocalidadCP,
       });
-      
-      // Marcar el pedido como procesado para evitar duplicados
-      if (numeroOrden) {
-        pedidosProcesados.add(numeroOrden);
-      }
-    } else {
-      contadorNoProcesados++;
-      console.warn(`Pedido Shopify omitido: Name="${numeroOrden}", Email="${email}"`);
+    }
+    
+    // Marcar el pedido como procesado para evitar duplicados
+    if (numeroOrden) {
+      pedidosProcesados.add(numeroOrden);
     }
   }
 
   const processingInfo: ProcessingInfo = {
     totalOrders: rows.length,
     domiciliosProcessed: contadorDomicilios,
-    sucursalesProcessed: 0,
+    sucursalesProcessed: contadorSucursales,
     noProcessed: contadorNoProcesados,
     processingLogs: [
       `Total pedidos cargados: ${rows.length}`,
       `Domicilios procesados: ${contadorDomicilios}`,
-      `Sucursales procesadas: 0`,
+      `Sucursales procesadas: ${contadorSucursales}`,
       `No procesados: ${contadorNoProcesados}`,
+      ...(sugerenciasSucursalShopify.length > 0 ? [`Sugerencias de sucursal pendientes: ${sugerenciasSucursalShopify.length}`] : []),
+      ...(droppedOrders.length > 0 ? [`Pedidos no procesados: ${droppedOrders.length}`] : []),
     ],
-    noProcessedReason: contadorNoProcesados > 0 ? 'Pedidos descartados por Provincia/Localidad/CP no encontrados' : '',
+    noProcessedReason: contadorNoProcesados > 0 ? 'Pedidos descartados por Provincia/Localidad/CP no encontrados o campos faltantes' : '',
     sugerenciasSucursal: sugerenciasSucursalShopify.length > 0 ? sugerenciasSucursalShopify : undefined,
+    droppedOrders: droppedOrders.length > 0 ? droppedOrders : undefined,
   };
+
+  console.log('\n=== RESUMEN PROCESAMIENTO SHOPIFY ===');
+  console.log(`Total pedidos: ${rows.length}`);
+  console.log(`Domicilios procesados: ${contadorDomicilios}`);
+  console.log(`Sucursales procesadas: ${contadorSucursales}`);
+  console.log(`Sugerencias pendientes: ${sugerenciasSucursalShopify.length}`);
+  console.log(`No procesados: ${contadorNoProcesados}`);
+  console.log(`Total procesados: ${contadorDomicilios + contadorSucursales}`);
+  console.log(`Suma esperada: ${rows.length - contadorNoProcesados}`);
+  
+  if (droppedOrders.length > 0) {
+    console.log('\n🚨 PEDIDOS NO PROCESADOS DETALLADOS:');
+    droppedOrders.forEach((pedido, idx) => {
+      console.log(`  ${idx + 1}. ${pedido}`);
+    });
+  }
+  
+  if (contadorDomicilios + contadorSucursales + contadorNoProcesados !== rows.length) {
+    console.error(`\n⚠️ ADVERTENCIA: La suma no coincide!`);
+    console.error(`  Esperado: ${rows.length}`);
+    console.error(`  Calculado: ${contadorDomicilios + contadorSucursales + contadorNoProcesados}`);
+    console.error(`  Diferencia: ${rows.length - (contadorDomicilios + contadorSucursales + contadorNoProcesados)}`);
+  }
+  
+  console.log('======================================\n');
 
   return {
     domicilioCSV: unparseCSV(domicilios),
-    sucursalCSV: '',
+    sucursalCSV: unparseCSV(sucursalesOutput),
     processingInfo,
   };
 };
@@ -2767,7 +3145,43 @@ export const processVentasOrders = async (
     throw new Error('El archivo CSV no tiene datos válidos');
   }
 
-  const headers = lines[0].split(';');
+  // Detectar delimitador automáticamente: contar comas y punto y coma en la primera línea
+  const primeraLinea = lines[0];
+  const countComas = (primeraLinea.match(/,/g) || []).length;
+  const countPuntoComa = (primeraLinea.match(/;/g) || []).length;
+  
+  // Usar el delimitador que aparezca más veces (o coma por defecto si hay empate)
+  const delimiter = countPuntoComa > countComas ? ';' : ',';
+  console.log(`📊 Delimitador detectado: "${delimiter}" (comas: ${countComas}, punto y coma: ${countPuntoComa})`);
+
+  // Parsear headers respetando comillas
+  const headers: string[] = [];
+  if (delimiter === ',') {
+    let currentHeader = '';
+    let insideQuotes = false;
+    
+    for (let j = 0; j < primeraLinea.length; j++) {
+      const char = primeraLinea[j];
+      if (char === '"') {
+        if (j + 1 < primeraLinea.length && primeraLinea[j + 1] === '"') {
+          currentHeader += '"';
+          j++;
+        } else {
+          insideQuotes = !insideQuotes;
+        }
+      } else if (char === ',' && !insideQuotes) {
+        headers.push(currentHeader.trim().replace(/^"|"$/g, ''));
+        currentHeader = '';
+      } else {
+        currentHeader += char;
+      }
+    }
+    if (currentHeader || !insideQuotes) {
+      headers.push(currentHeader.trim().replace(/^"|"$/g, ''));
+    }
+  } else {
+    headers.push(...primeraLinea.split(';').map(h => h.trim().replace(/^"|"$/g, '')));
+  }
   console.log('Headers del archivo de ventas:', headers);
 
   const domicilios: any[] = [];
@@ -2777,6 +3191,7 @@ export const processVentasOrders = async (
   let contadorSucursales = 0;
   let contadorNoProcesados = 0;
   let contadorErroresSucursal = 0;
+  const droppedOrders: string[] = [];
   const erroresSucursal: string[] = [];
   const erroresSucursalDetallados: Array<{
     numeroOrden: string;
@@ -2801,8 +3216,64 @@ export const processVentasOrders = async (
     const line = lines[i].trim();
     if (!line) continue;
 
-    const values = line.split(';');
-    if (values.length < headers.length) continue;
+    // Parsear la línea respetando comas dentro de comillas si el delimitador es coma
+    const values: string[] = [];
+    if (delimiter === ',') {
+      // Parsear respetando comas dentro de comillas usando un enfoque más robusto
+      let currentValue = '';
+      let insideQuotes = false;
+      let j = 0;
+      
+      while (j < line.length) {
+        const char = line[j];
+        
+        if (char === '"') {
+          // Verificar si es una comilla doble escapada ("")
+          if (j + 1 < line.length && line[j + 1] === '"') {
+            // Es una comilla doble escapada, agregar una comilla al valor
+            currentValue += '"';
+            j += 2; // Saltar ambas comillas
+            continue;
+          } else {
+            // Es el inicio o fin de un campo entre comillas
+            insideQuotes = !insideQuotes;
+            j++;
+            continue;
+          }
+        }
+        
+        if (char === ',' && !insideQuotes) {
+          // Es un delimitador fuera de comillas, finalizar el valor actual
+          values.push(currentValue.trim());
+          currentValue = '';
+          j++;
+          continue;
+        }
+        
+        // Agregar el carácter al valor actual
+        currentValue += char;
+        j++;
+      }
+      
+      // Agregar el último valor (si existe)
+      if (currentValue.length > 0 || !insideQuotes) {
+        values.push(currentValue.trim());
+      }
+      
+      // Limpiar comillas iniciales y finales de cada valor
+      for (let k = 0; k < values.length; k++) {
+        values[k] = values[k].replace(/^"|"$/g, '').replace(/""/g, '"');
+      }
+    } else {
+      // Para punto y coma, usar split simple
+      const valuesTemp = line.split(';');
+      values.push(...valuesTemp.map(v => v.trim().replace(/^"|"$/g, '')));
+    }
+    
+    if (values.length < headers.length) {
+      console.warn(`⚠️ Línea ${i} tiene menos columnas (${values.length}) que headers (${headers.length}), omitiendo`);
+      continue;
+    }
 
     // Extraer datos del pedido
     const numeroOrden = values[0]?.replace(/"/g, '') || '';
@@ -2824,19 +3295,46 @@ export const processVentasOrders = async (
     let apellidoComprador = nombreComprador.split(' ')[0] || '';
     let nombreCompleto = nombreComprador.split(' ').slice(1).join(' ') || '';
     const dni = values[12]?.replace(/"/g, '') || '';
-    const email = values[1]?.replace(/"/g, '') || '';
+    let email = values[1]?.replace(/"/g, '') || '';
     const telefono = values[13]?.replace(/"/g, '') || '';
     const direccion = values[16]?.replace(/"/g, '') || '';
     const numero = values[17]?.replace(/"/g, '') || '';
     const piso = values[18]?.replace(/"/g, '') || '';
-    const localidad = values[19]?.replace(/"/g, '') || '';
+    let localidad = values[19]?.replace(/"/g, '') || '';
+    const ciudad = values[20]?.replace(/"/g, '') || '';
+    
+    // Si la localidad está vacía pero hay ciudad, usar la ciudad como localidad
+    if ((!localidad || localidad.trim() === '') && ciudad && ciudad.trim() !== '') {
+      localidad = ciudad;
+      console.log(`⚠️ Pedido ${numeroOrden}: Localidad vacía, usando ciudad "${ciudad}" como localidad`);
+    }
+    
+    // Debug: mostrar información de parseo para las primeras líneas
+    if (i <= 3) {
+      console.log(`🔍 DEBUG Línea ${i} - Pedido ${numeroOrden}:`);
+      console.log(`   - Total valores parseados: ${values.length}`);
+      console.log(`   - Email (índice 1): "${email}"`);
+      console.log(`   - Dirección (índice 16): "${direccion}"`);
+      console.log(`   - Localidad (índice 19): "${values[19]}"`);
+      console.log(`   - Ciudad (índice 20): "${ciudad}"`);
+      console.log(`   - Localidad final usada: "${localidad}"`);
+      console.log(`   - Primeros 5 valores:`, values.slice(0, 5));
+    }
+    
+    // Completar email si falta
+    if (!email || email.trim() === '') {
+      email = 'ejemplo@gmail.com';
+      console.log(`⚠️ Pedido ${numeroOrden} sin email, usando: ${email}`);
+    }
     
     // Verificar si es una línea incompleta (tiene número de orden pero le faltan campos esenciales)
-    if (!email || !direccion || !localidad) {
-      console.log(`⏭️ Saltando línea incompleta del pedido ${numeroOrden} (email: "${email}", dirección: "${direccion}")`);
+    if (!direccion || !localidad) {
+      console.log(`⏭️ Saltando línea incompleta del pedido ${numeroOrden} (dirección: "${direccion}", localidad: "${localidad}", ciudad: "${ciudad}")`);
+      console.log(`   - Total valores: ${values.length}, Headers: ${headers.length}`);
+      console.log(`   - Valores clave: direccion[16]="${values[16]}", localidad[19]="${values[19]}", ciudad[20]="${values[20]}"`);
+      droppedOrders.push(`Pedido ${numeroOrden}: Faltan datos esenciales (dirección: ${direccion ? 'OK' : 'FALTA'}, localidad: ${localidad ? 'OK' : 'FALTA'}, ciudad: ${ciudad ? 'OK' : 'FALTA'})`);
       continue;
     }
-    const ciudad = values[20]?.replace(/"/g, '') || '';
     const codigoPostal = values[21]?.replace(/"/g, '') || '';
     const provincia = values[22]?.replace(/"/g, '') || '';
     const medioEnvio = values[24]?.replace(/"/g, '') || '';
@@ -3686,6 +4184,7 @@ export const processVentasOrders = async (
     sugerenciasSucursal: sugerenciasSucursal.length > 0 ? sugerenciasSucursal : undefined,
     erroresSucursal: erroresSucursal.length > 0 ? erroresSucursal : undefined,
     erroresSucursalDetallados: erroresSucursalDetallados.length > 0 ? erroresSucursalDetallados : undefined,
+    droppedOrders: droppedOrders.length > 0 ? droppedOrders : undefined,
     tasaEfectividad
   };
   

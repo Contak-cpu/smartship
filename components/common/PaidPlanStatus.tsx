@@ -166,7 +166,9 @@ export const PaidPlanStatus: React.FC = () => {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Puede manejar todas las tiendas desde un solo panel
+                {user?.user_metadata?.cantidad_tiendas 
+                  ? `Puedes manipular hasta ${user.user_metadata.cantidad_tiendas} tiendas`
+                  : 'Puedes manejar todas las tiendas desde un solo panel'}
               </p>
             </div>
           )}

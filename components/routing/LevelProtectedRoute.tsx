@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { levelService } from '../../services/levelService';
+import { isProPlusUser } from '../../services/tiendasClientesService';
 import LockedOverlay from '../common/LockedOverlay';
 
 interface LevelProtectedRouteProps {
@@ -10,7 +11,7 @@ interface LevelProtectedRouteProps {
 }
 
 const LevelProtectedRoute: React.FC<LevelProtectedRouteProps> = ({ children, requiredLevel, sectionName }) => {
-  const { isAuthenticated, hasAccess, isLoading } = useAuth();
+  const { isAuthenticated, hasAccess, isLoading, userLevel, username } = useAuth();
 
   // Mostrar loading mientras se verifica la autenticación
   if (isLoading) {
@@ -28,7 +29,13 @@ const LevelProtectedRoute: React.FC<LevelProtectedRouteProps> = ({ children, req
     return <Navigate to="/login" replace />;
   }
 
-  if (!hasAccess(requiredLevel)) {
+  // Para nivel 4 (Pro+), verificar también usuarios específicos como "yael"
+  let canAccess = hasAccess(requiredLevel);
+  if (requiredLevel === 4 && !canAccess) {
+    canAccess = isProPlusUser(userLevel, username || '');
+  }
+
+  if (!canAccess) {
     return (
       <div className="relative">
         <div className="blur-md pointer-events-none select-none opacity-40">

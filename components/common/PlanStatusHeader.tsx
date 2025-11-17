@@ -16,7 +16,8 @@ export const PlanStatusHeader: React.FC<PlanStatusHeaderProps> = ({
   userLevel,
   username,
 }) => {
-  const { user, isPaid } = useAuth();
+  const { user, isPaid, hasEmpresaPlan, refreshUserProfile } = useAuth();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [paidUntil, setPaidUntil] = useState<string | null>(null);
   const [trialExpiresAt, setTrialExpiresAt] = useState<string | null>(null);
   const [isEmpresaPlan, setIsEmpresaPlan] = useState<boolean>(false);
@@ -166,7 +167,7 @@ export const PlanStatusHeader: React.FC<PlanStatusHeaderProps> = ({
                   </span>
                 )}
                 <span className={`px-3 py-1 ${config.bg} ${config.text} text-xs font-semibold rounded-full border ${config.border}`}>
-                  {getLevelName(userLevel)} {userLevel === 999 ? '👑' : ''}
+                  {hasEmpresaPlan ? 'Plan Empresa' : getLevelName(userLevel)} {userLevel === 999 ? '👑' : ''}
                 </span>
               </div>
               <p className={`text-sm mt-1 ${config.text} opacity-90`}>
@@ -177,7 +178,9 @@ export const PlanStatusHeader: React.FC<PlanStatusHeaderProps> = ({
                   : expirationDate && daysRemaining !== null
                   ? `Activo hasta el ${expirationDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}`
                   : userPaidStatus
-                  ? 'Acceso completo a todas las funcionalidades'
+                  ? (hasEmpresaPlan && user?.user_metadata?.cantidad_tiendas 
+                      ? `Puedes manipular hasta ${user.user_metadata.cantidad_tiendas} tiendas`
+                      : 'Acceso completo a todas las funcionalidades')
                   : 'Tienes acceso completo durante tu período de prueba'}
               </p>
             </div>
@@ -185,6 +188,32 @@ export const PlanStatusHeader: React.FC<PlanStatusHeaderProps> = ({
 
           {/* Acciones rápidas */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={async () => {
+                setIsRefreshing(true);
+                try {
+                  await refreshUserProfile();
+                  // Pequeño delay para feedback visual
+                  setTimeout(() => setIsRefreshing(false), 500);
+                } catch (error) {
+                  console.error('Error refrescando perfil:', error);
+                  setIsRefreshing(false);
+                }
+              }}
+              disabled={isRefreshing}
+              className={`px-3 py-2 ${config.bg} ${config.text} font-semibold rounded-lg border-2 ${config.border} hover:opacity-80 transition-opacity text-sm flex items-center gap-2 disabled:opacity-50`}
+              title="Refrescar información del plan"
+            >
+              <svg 
+                className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+            </button>
             {(isExpired || isExpiringSoon) && (
               <button
                 onClick={() => window.location.href = '/precios'}

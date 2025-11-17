@@ -74,7 +74,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const { username, userLevel, logout, hasAccess, isPaid } = useAuth();
+  const { username, userLevel, logout, hasAccess, isPaid, hasEmpresaPlan } = useAuth();
   const [userPaidStatus, setUserPaidStatus] = React.useState<boolean | null>(null);
   const { theme } = useTheme();
 
@@ -232,6 +232,30 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       ),
     },
     {
+      id: 'tiendas-clientes',
+      label: 'Tiendas de Clientes',
+      path: '/tiendas-clientes',
+      description: 'Configura tiendas de clientes para descontar stock',
+      requiredLevel: 4, // Plan Pro+
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      ),
+    },
+    {
+      id: 'descontar-stock-pdf',
+      label: 'Descontar Stock PDF',
+      path: '/descontar-stock-pdf',
+      description: 'Descontar stock desde PDFs de Andreani',
+      requiredLevel: 4, // Plan Pro+
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
+    },
+    {
       id: 'cupones',
       label: 'Cupones',
       path: '/cupones',
@@ -360,7 +384,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{username}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Nivel {userLevel} {getLevelName(userLevel)} {userLevel === 999 ? '👑' : ''}
+                  {hasEmpresaPlan ? 'Plan Empresa' : `Nivel ${userLevel} ${getLevelName(userLevel)}`} {userLevel === 999 ? '👑' : ''}
                 </p>
               </div>
               {/* Botón de logout compacto */}

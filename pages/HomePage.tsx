@@ -166,6 +166,7 @@ const HomePage: React.FC = () => {
   const [sugerenciasPendientes, setSugerenciasPendientes] = useState<SucursalSugerencia[] | null>(null);
   const [mostrarModalSugerencias, setMostrarModalSugerencias] = useState(false);
   const [pedidosUnicosCSV, setPedidosUnicosCSV] = useState<number>(0);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [config, setConfig] = useState<SmartShipConfigValues>({
     peso: 400,
     alto: 10,
@@ -181,15 +182,19 @@ const HomePage: React.FC = () => {
     setError(null);
     setSugerenciasPendientes(null);
     setMostrarModalSugerencias(false);
+    setDebugLogs([]);
   };
 
   const handleProcessClick = useCallback(async () => {
     if (!selectedFile) return;
 
+    // No mostrar logs de inicio, solo errores importantes
     setStatus(ProcessStatus.PROCESSING);
     setError(null);
     setResults(null);
 
+    // No usar addDebugLog - los pedidos no procesados se agregarán directamente al estado
+    
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
@@ -197,11 +202,21 @@ const HomePage: React.FC = () => {
         if (!csvText) {
           throw new Error('El archivo está vacío o no se pudo leer.');
         }
+        
         console.log('Starting to process CSV...');
         
-        // Detectar archivo de ventas (Tiendanube) - normalizar para manejar caracteres especiales
-        const normalizedCsv = csvText.replace(/[àáâãäå]/gi, 'a').replace(/[èéêë]/gi, 'e').replace(/[ìíîï]/gi, 'i').replace(/[òóôõö]/gi, 'o').replace(/[ùúûü]/gi, 'u').replace(/[ñ]/gi, 'n');
-        const isVentasFile = normalizedCsv.includes('Número de orden') && normalizedCsv.includes('Email') && normalizedCsv.includes('Estado de la orden');
+        // Detectar archivo de ventas (Tiendanube) - buscar en el CSV original sin normalizar primero
+        // Los archivos de ventas tienen estas características:
+        // 1. Tienen "Número de orden" (con o sin tilde)
+        // 2. Tienen "Email" 
+        // 3. Tienen "Estado de la orden"
+        // 4. Usan comas como delimitador (no punto y coma)
+        const hasNumeroOrden = csvText.includes('Número de orden') || csvText.includes('Numero de orden') || csvText.toLowerCase().includes('número de orden');
+        const hasEmail = csvText.includes('Email');
+        const hasEstadoOrden = csvText.includes('Estado de la orden') || csvText.toLowerCase().includes('estado de la orden');
+        const usesComma = csvText.split(',').length > csvText.split(';').length;
+        
+        const isVentasFile = hasNumeroOrden && hasEmail && hasEstadoOrden;
         
         // Contar pedidos únicos del CSV original antes de procesar
         let pedidosUnicosOriginales = 0;
@@ -304,13 +319,44 @@ const HomePage: React.FC = () => {
         let processedData;
         if (isVentasFile) {
           console.log('Detectado archivo de ventas, usando processVentasOrders...');
-          processedData = await processVentasOrders(csvText, config);
+          
+          try {
+            processedData = await processVentasOrders(csvText, config);
+          } catch (error: any) {
+            console.error('Error en processVentasOrders:', error);
+            throw error;
+          }
         } else {
           console.log('Detectado archivo de pedidos Andreani, usando processOrders...');
           processedData = await processOrders(csvText, config);
         }
-        
         console.log('Processing completed:', processedData);
+        
+        // 🐛 DEBUG LOCAL: Mostrar pedidos no procesados en consola y en el panel
+        if (processedData.processingInfo.droppedOrders && processedData.processingInfo.droppedOrders.length > 0) {
+          // Agregar al panel de logs con formato mejorado (sin timestamp)
+          const pedidosFormateados: string[] = [];
+          processedData.processingInfo.droppedOrders.forEach((pedido) => {
+            // Formatear el mensaje: convertir "Pedido 123" o "123 -" a "#123"
+            let formattedPedido = pedido;
+            // Buscar número de pedido al inicio y reemplazarlo con formato #número
+            formattedPedido = formattedPedido.replace(/^(?:Pedido\s+)?(\d+)(?:\s*-\s*|:\s*)/, '#$1 - ');
+            pedidosFormateados.push(formattedPedido);
+          });
+          
+          // Agregar todos los pedidos formateados al estado
+          setDebugLogs(pedidosFormateados);
+          
+          // También mostrar en consola
+          console.group('🚨 DEBUG LOCAL: PEDIDOS NO PROCESADOS');
+          console.log(`Total de pedidos no procesados: ${processedData.processingInfo.droppedOrders.length}`);
+          console.log('\n📋 Lista detallada:');
+          processedData.processingInfo.droppedOrders.forEach((pedido, idx) => {
+            console.log(`${idx + 1}. ${pedido}`);
+          });
+          console.table(processedData.processingInfo.droppedOrders);
+          console.groupEnd();
+        }
         
         // Verificar si hay sugerencias pendientes
         if (processedData.processingInfo.sugerenciasSucursal && processedData.processingInfo.sugerenciasSucursal.length > 0) {
@@ -522,7 +568,7 @@ const HomePage: React.FC = () => {
             // No interrumpir el flujo si falla
           }
         }
-      } catch (err) {
+      } catch (err: any) {
         const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error desconocido.';
         console.error('Processing error:', err);
         setError(errorMessage);
@@ -533,6 +579,7 @@ const HomePage: React.FC = () => {
       setError('Error al leer el archivo.');
       setStatus(ProcessStatus.ERROR);
     };
+    
     reader.readAsText(selectedFile, 'UTF-8');
   }, [selectedFile, config]);
   
@@ -612,6 +659,35 @@ const HomePage: React.FC = () => {
         </div>
 
         <StatusDisplay status={status} error={error} processingInfo={results?.processingInfo} />
+        
+        {/* Panel de logs de debugging - solo mostrar si hay logs importantes */}
+        {debugLogs.length > 0 && (
+          <div className="mt-4 bg-gray-900 dark:bg-gray-950 rounded-lg p-4 max-h-96 overflow-y-auto border-2 border-green-500/50">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-green-400">
+                🐛 DEBUG LOCAL
+              </h3>
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => setDebugLogs([])}
+                  className="text-xs text-gray-400 hover:text-gray-300 px-2 py-1 rounded border border-gray-600 hover:border-gray-500"
+                >
+                  Limpiar
+                </button>
+                <span className="text-xs text-gray-500">
+                  {debugLogs.length} logs
+                </span>
+              </div>
+            </div>
+            <div className="font-mono text-xs space-y-1">
+              {debugLogs.map((log, index) => (
+                <div key={index} className="text-gray-300 break-words hover:bg-gray-800 px-1 rounded">
+                  {log}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         
         {/* Modal de sugerencias - aparece antes de ResultsDisplay si hay sugerencias */}
         {mostrarModalSugerencias && sugerenciasPendientes && (

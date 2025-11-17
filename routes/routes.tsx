@@ -18,6 +18,8 @@ import EmailConfirmationPage from '../pages/EmailConfirmationPage';
 import CuponesPage from '../pages/CuponesPage';
 import StockPage from '../pages/StockPage';
 import LogsPage from '../pages/LogsPage';
+import TiendasClientesPage from '../pages/TiendasClientesPage';
+import DescontarStockPDFPage from '../pages/DescontarStockPDFPage';
 import { Login } from '../components/Login';
 import { PricingPage } from '../components/PricingPage';
 
@@ -158,6 +160,22 @@ export const routes: RouteObject[] = [
     element: (
       <LevelProtectedRoute requiredLevel={4} sectionName="Gestión de Stock">
         <StockPage />
+      </LevelProtectedRoute>
+    ),
+  },
+  {
+    path: '/tiendas-clientes',
+    element: (
+      <LevelProtectedRoute requiredLevel={4} sectionName="Tiendas de Clientes">
+        <TiendasClientesPage />
+      </LevelProtectedRoute>
+    ),
+  },
+  {
+    path: '/descontar-stock-pdf',
+    element: (
+      <LevelProtectedRoute requiredLevel={4} sectionName="Descontar Stock desde PDF">
+        <DescontarStockPDFPage />
       </LevelProtectedRoute>
     ),
   },
