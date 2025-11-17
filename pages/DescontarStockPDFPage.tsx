@@ -6,7 +6,7 @@ import {
   obtenerTiendasActivas,
   isProPlusUser,
 } from '../services/tiendasClientesService';
-import { descontarStockMultiple, obtenerStock, crearClaveSku } from '../services/stockService';
+import { descontarStockTiendaMultiple, obtenerStockTienda, crearClaveSku } from '../services/stockTiendasClientesService';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import LockedOverlay from '../components/common/LockedOverlay';
@@ -249,10 +249,10 @@ const DescontarStockPDFPage: React.FC = () => {
     setMessage(null);
 
     try {
-      // Obtener stock actual del usuario para verificar equivalencias
-      const stockUsuario = await obtenerStock(userId);
+      // Obtener stock actual de la tienda para verificar equivalencias
+      const stockTienda = await obtenerStockTienda(tiendaSeleccionada);
       const mapaEquivalencias = new Map(
-        stockUsuario.map(item => [crearClaveSku(item.sku), item.equivalencia ?? 1])
+        stockTienda.map(item => [crearClaveSku(item.sku), item.equivalencia ?? 1])
       );
 
       // Preparar items para descontar
@@ -265,14 +265,14 @@ const DescontarStockPDFPage: React.FC = () => {
         };
       });
 
-      showMessage('info', 'Descontando stock...');
-      const resultado = await descontarStockMultiple(userId, itemsParaDescontar);
+      showMessage('info', 'Descontando stock de la tienda...');
+      const resultado = await descontarStockTiendaMultiple(tiendaSeleccionada, itemsParaDescontar);
 
       if (resultado.errores.length > 0) {
         const erroresMsg = resultado.errores.map(e => `${e.sku}: ${e.motivo}`).join(', ');
         showMessage('error', `Se descontaron ${resultado.exitosos} SKU(s). Errores: ${erroresMsg}`);
       } else {
-        showMessage('success', `Stock descontado correctamente: ${resultado.exitosos} SKU(s)`);
+        showMessage('success', `Stock descontado correctamente de la tienda: ${resultado.exitosos} SKU(s)`);
         setStockExtraido([]);
         setPdfFile(null);
         // Resetear input de archivo

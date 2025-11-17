@@ -173,3 +173,25 @@ export interface StockDescontadoPDF {
   cantidad: number;
   nombreProducto?: string;
 }
+
+// Tipos para Stock de Tiendas de Clientes (Pro+)
+export interface StockTiendaCliente {
+  id: string;
+  user_id: string;
+  tienda_cliente_id: string;
+  username: string;
+  sku: string;
+  nombreproducto?: string;
+  cantidad: number;
+  equivalencia?: number;
+  fecha_actualizacion: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockTiendaClienteInput {
+  sku: string;
+  nombreproducto?: string;
+  cantidad: number;
+  equivalencia?: number;
+}

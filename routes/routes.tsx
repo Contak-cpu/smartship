@@ -20,6 +20,7 @@ import StockPage from '../pages/StockPage';
 import LogsPage from '../pages/LogsPage';
 import TiendasClientesPage from '../pages/TiendasClientesPage';
 import DescontarStockPDFPage from '../pages/DescontarStockPDFPage';
+import StockTiendaPage from '../pages/StockTiendaPage';
 import { Login } from '../components/Login';
 import { PricingPage } from '../components/PricingPage';
 
@@ -176,6 +177,14 @@ export const routes: RouteObject[] = [
     element: (
       <LevelProtectedRoute requiredLevel={4} sectionName="Descontar Stock desde PDF">
         <DescontarStockPDFPage />
+      </LevelProtectedRoute>
+    ),
+  },
+  {
+    path: '/tiendas-clientes/:tiendaId/stock',
+    element: (
+      <LevelProtectedRoute requiredLevel={4} sectionName="Stock de Tienda">
+        <StockTiendaPage />
       </LevelProtectedRoute>
     ),
   },

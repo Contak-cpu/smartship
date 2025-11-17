@@ -194,7 +194,7 @@ const HomePage: React.FC = () => {
     setResults(null);
 
     // No usar addDebugLog - los pedidos no procesados se agregarán directamente al estado
-    
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
@@ -321,7 +321,7 @@ const HomePage: React.FC = () => {
           console.log('Detectado archivo de ventas, usando processVentasOrders...');
           
           try {
-            processedData = await processVentasOrders(csvText, config);
+          processedData = await processVentasOrders(csvText, config);
           } catch (error: any) {
             console.error('Error en processVentasOrders:', error);
             throw error;
