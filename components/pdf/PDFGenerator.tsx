@@ -1142,34 +1142,14 @@ const PDFGenerator = () => {
         log(`📄 Página ${pageData.pageNumber} (índice ${pageIndex}): ${width}x${height}`);
         log(`📏 Dimensiones página: ancho=${width}, alto=${height}`);
         
-        // Agrupar productos de 2 en 2 y crear líneas
-        const lines: string[] = [];
-        log(`\n🔍 [DEBUG SKU] === AGRUPANDO PRODUCTOS EN LÍNEAS ===`);
-        log(`   📊 Total productos a agrupar: ${allProducts.length}`);
-        log(`   📋 Productos antes de agrupar:`, allProducts);
-        log(`🔄 Agrupando ${allProducts.length} productos en líneas...`);
-        for (let j = 0; j < allProducts.length; j += 2) {
-          const productosEnLinea = allProducts.slice(j, j + 2);
-          log(`   🔍 [DEBUG SKU] Procesando grupo ${Math.floor(j/2) + 1}:`, productosEnLinea);
-          const line = normalizarTextoWinAnsi(productosEnLinea.join(', '));
-          log(`   📝 Línea ${lines.length + 1} generada: "${line}"`);
-          log(`      - Productos originales: ${productosEnLinea.join(', ')}`);
-          log(`      - Después de normalizar: "${line}"`);
-          log(`      - Longitud: ${line.length}, Vacía: ${!line || !line.trim()}`);
-          if (line && line.trim()) {
-            lines.push(line);
-            log(`   ✅ Línea ${lines.length} agregada exitosamente`);
-          } else {
-            log(`   ⚠️ Línea vacía después de normalizar, NO se agregará`);
-          }
-        }
-        log(`\n🔍 [DEBUG SKU] === RESUMEN DE LÍNEAS ===`);
-        log(`   ✅ Total líneas creadas: ${lines.length}`);
-        log(`   📋 Líneas completas:`, lines);
+        // ✅ NUEVO: Dibujar cada producto individualmente, máximo 2 por fila
+        // Si el primer producto es muy largo (>70 caracteres), el segundo va abajo directamente
+        log(`\n🔍 [DEBUG SKU] === CONFIGURANDO DISPOSICIÓN DE PRODUCTOS ===`);
+        log(`   📊 Total productos a dibujar: ${allProducts.length}`);
+        log(`   📋 Productos:`, allProducts);
         
-        if (lines.length === 0) {
-          log(`⚠️ No hay líneas para dibujar en orden ${orderNumber}`);
-          // updateDebug(`Página ${i + 1}: Sin líneas para dibujar`);
+        if (allProducts.length === 0) {
+          log(`⚠️ No hay productos para dibujar en orden ${orderNumber}`);
           continue;
         }
         
@@ -1179,98 +1159,164 @@ const PDFGenerator = () => {
         // pero CÓMO se insertan (posición, tamaño, fuente) es siempre la misma configuración.
         
         // ✅ Usar siempre el tamaño de fuente seleccionado por el usuario
-        // No sobrescribir con tamaño dinámico - respetar la configuración del usuario
         const finalFontSize = fontSize;
         
-        // Dibujar cada línea: la primera línea en posY (configuración del usuario), las siguientes bajan
-        // Espaciado de 8px entre líneas (en PDF, menor Y = más abajo)
-        const lineSpacing = 8;
+        // Espaciado entre líneas (vertical)
+        const lineSpacing = 8; // Espacio vertical entre filas
+        const maxCharsForSideBySide = 70; // Si un producto tiene más caracteres, el siguiente va abajo SIEMPRE
         
-        log(`✅ Orden ${orderNumber}: ${allProducts.length} productos en ${lines.length} líneas`);
-        log('📦 Productos individuales:', allProducts);
-        log('📝 Líneas agrupadas:', lines);
+        // Función auxiliar para calcular el ancho aproximado del texto en puntos
+        // Aproximación: en Helvetica, cada carácter ocupa aproximadamente 0.6 * fontSize puntos
+        const calcularAnchoTexto = (texto: string, fontSize: number): number => {
+          return texto.length * fontSize * 0.6;
+        };
+        
+        log(`✅ Orden ${orderNumber}: ${allProducts.length} productos a dibujar`);
         log(`🔤 Tamaño de fuente (configurado): ${finalFontSize}pt`);
         log(`📍 Posición base configurada: X=${posX}, Y=${posY}`);
-        log(`📍 Primera línea en Y=${posY}, segunda en Y=${posY - lineSpacing}, etc.`);
-        // updateDebug(`Página ${i + 1}: ${lines.length} línea(s) para dibujar`);
-        let lineasDibujadas = 0;
-        
-        // FORZAR logs múltiples veces para asegurar visibilidad
-        log(`🎨 INICIANDO BUCLE DE DIBUJADO - Total líneas: ${lines.length}`);
-        log(`🎨 Verificando: lines.length=${lines.length}, pageIndex=${pageIndex}, helveticaFont=${helveticaFont ? 'existe' : 'NO EXISTE'}`);
-        // updateDebug(`Iniciando dibujado de ${lines.length} línea(s)`);
+        log(`📏 Espaciado vertical: ${lineSpacing}px`);
+        log(`📏 Límite de caracteres para lado a lado: ${maxCharsForSideBySide} (si un producto tiene más, el siguiente va abajo SIEMPRE)`);
         
         // Validar que tenemos todo lo necesario
         if (!helveticaFont) {
           log(`❌ ERROR CRÍTICO: helveticaFont no está disponible!`);
-          // updateDebug(`ERROR: Fuente no disponible`);
           continue;
         }
         
-        if (lines.length === 0) {
-          log(`⚠️ No hay líneas para procesar (pero debería haberlas)`);
-          continue;
+        let productosDibujados = 0;
+        
+        // Array para rastrear la posición de cada producto (fila, columna, xPosition)
+        const posicionesProductos: Array<{fila: number, columna: number, xPosition: number}> = [];
+        
+        log(`🎨 INICIANDO BUCLE DE DIBUJADO - Total productos: ${allProducts.length}`);
+        log(`🎨 Verificando: allProducts.length=${allProducts.length}, pageIndex=${pageIndex}, helveticaFont=${helveticaFont ? 'existe' : 'NO EXISTE'}`);
+        
+        // Primero, calcular las posiciones de todos los productos
+        for (let productIndex = 0; productIndex < allProducts.length; productIndex++) {
+          const productText = allProducts[productIndex];
+          const productTextNormalizado = normalizarTextoWinAnsi(productText);
+          const productLength = productTextNormalizado.length;
+          
+          let fila = 0;
+          let columna = 0;
+          let xPosition = posX;
+          
+          if (productIndex === 0) {
+            // Primer producto siempre va en la primera columna
+            fila = 0;
+            columna = 0;
+            xPosition = posX;
+          } else {
+            // Obtener posición del producto anterior
+            const posicionAnterior = posicionesProductos[productIndex - 1];
+            const productoAnterior = allProducts[productIndex - 1];
+            const productoAnteriorNormalizado = normalizarTextoWinAnsi(productoAnterior);
+            const longitudAnterior = productoAnteriorNormalizado.length;
+            
+            // ✅ REGLA PRINCIPAL: Si el producto anterior tiene más de 70 caracteres, 
+            // el siguiente va abajo SIEMPRE (no al lado)
+            if (longitudAnterior > maxCharsForSideBySide) {
+              // El producto anterior era muy largo, este va abajo
+              fila = posicionAnterior.fila + 1;
+              columna = 0;
+              xPosition = posX;
+              log(`   ⬇️ Producto ${productIndex}: Anterior tiene ${longitudAnterior} caracteres (>${maxCharsForSideBySide}), va abajo`);
+            } else if (posicionAnterior.columna === 0) {
+              // El anterior estaba en columna 0 y no era muy largo
+              // Calcular el ancho del texto anterior
+              const anchoAnterior = calcularAnchoTexto(productoAnteriorNormalizado, finalFontSize);
+              // Posición X del segundo producto: después del primero con un pequeño margen
+              const nuevaX = posicionAnterior.xPosition + anchoAnterior + 10; // 10px de margen
+              
+              // Verificar si cabe en la página
+              if (nuevaX + calcularAnchoTexto(productTextNormalizado, finalFontSize) <= width - 20) {
+                // Cabe al lado
+                fila = posicionAnterior.fila;
+                columna = 1;
+                xPosition = nuevaX;
+                log(`   ➡️ Producto ${productIndex}: Anterior tiene ${longitudAnterior} caracteres (<=${maxCharsForSideBySide}), va al lado en X=${xPosition}`);
+              } else {
+                // No cabe, va abajo
+                fila = posicionAnterior.fila + 1;
+                columna = 0;
+                xPosition = posX;
+                log(`   ⬇️ Producto ${productIndex}: Anterior no muy largo pero no cabe al lado, va abajo`);
+              }
+            } else {
+              // El anterior estaba en columna 1, este va abajo
+              fila = posicionAnterior.fila + 1;
+              columna = 0;
+              xPosition = posX;
+              log(`   ⬇️ Producto ${productIndex}: Anterior estaba en columna 1, va abajo`);
+            }
+          }
+          
+          posicionesProductos.push({ fila, columna, xPosition });
         }
         
-        for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-          const line = lines[lineIndex];
-          log(`\n🔍 [DEBUG SKU] === DIBUJANDO LÍNEA ${lineIndex + 1}/${lines.length} ===`);
-          log(`🔄 [ITERACIÓN ${lineIndex}] Procesando línea ${lineIndex + 1}/${lines.length}: "${line}"`);
-          log(`   📋 Contenido original de la línea: "${line}"`);
-          log(`   📏 Longitud de la línea: ${line.length} caracteres`);
+        // Dibujar cada producto individualmente usando las posiciones calculadas
+        for (let productIndex = 0; productIndex < allProducts.length; productIndex++) {
+          const productText = allProducts[productIndex];
+          log(`\n🔍 [DEBUG SKU] === DIBUJANDO PRODUCTO ${productIndex + 1}/${allProducts.length} ===`);
+          log(`🔄 [ITERACIÓN ${productIndex}] Procesando producto ${productIndex + 1}/${allProducts.length}: "${productText}"`);
           
-          // ✅ VERIFICAR VALORES DE CONFIGURACIÓN antes de calcular
-          log(`   🔍 Valores de configuración: posX=${posX}, posY=${posY}, fontSize=${fontSize}`);
-          log(`   🔍 Dimensiones página: width=${width}, height=${height}`);
+          // Normalizar el texto antes de calcular longitud
+          const productTextNormalizado = normalizarTextoWinAnsi(productText);
+          const productLength = productTextNormalizado.length;
           
-          // ✅ CORREGIDO: En PDF, Y más alto = más arriba. La primera línea va en posY, las siguientes BAJAN (menor Y)
-          // Línea 0: posY (más alta), Línea 1: posY - lineSpacing (8px más abajo), etc.
-          const yPosition = posY - (lineSpacing * lineIndex);
-          log(`   🔍 Cálculo Y: posY=${posY} - (lineSpacing=${lineSpacing} * lineIndex=${lineIndex}) = ${yPosition}`);
+          log(`   📏 Longitud del producto: ${productLength} caracteres`);
           
-          // Normalizar el texto antes de dibujarlo para asegurar compatibilidad WinAnsi
-          const lineNormalizada = normalizarTextoWinAnsi(line);
-          log(`   🔍 [DEBUG SKU] Normalización de texto:`);
-          log(`      - Línea original: "${line}"`);
-          log(`      - Línea normalizada: "${lineNormalizada}"`);
-          log(`      - ¿Son iguales?: ${line === lineNormalizada}`);
-          log(`      - Longitud original: ${line.length}, normalizada: ${lineNormalizada.length}`);
+          // Obtener posición calculada
+          const posicion = posicionesProductos[productIndex];
+          const currentFila = posicion.fila;
+          const columna = posicion.columna;
+          const xPosition = posicion.xPosition;
           
-          // Verificar que la línea no esté vacía
-          if (!lineNormalizada || !lineNormalizada.trim()) {
-            log(`   ⚠️ Línea ${lineIndex + 1} está vacía después de normalizar, saltando...`);
-            log(`      - lineNormalizada: "${lineNormalizada}"`);
-            log(`      - lineNormalizada.trim(): "${lineNormalizada.trim()}"`);
-            log(`      - ¿Está vacía?: ${!lineNormalizada || !lineNormalizada.trim()}`);
+          // Calcular posición Y: posY base - offset vertical según fila (en PDF, menor Y = más abajo)
+          const yPosition = posY - (currentFila * lineSpacing);
+          
+          log(`   📍 Posición calculada: fila ${currentFila}, columna ${columna}, X=${xPosition}`);
+          
+          if (productIndex > 0) {
+            const productoAnterior = allProducts[productIndex - 1];
+            const productoAnteriorNormalizado = normalizarTextoWinAnsi(productoAnterior);
+            const longitudAnterior = productoAnteriorNormalizado.length;
+            log(`   🔍 Producto anterior: "${productoAnteriorNormalizado.substring(0, 50)}..." (${longitudAnterior} caracteres)`);
+            
+            if (longitudAnterior > maxCharsForSideBySide) {
+              log(`   ⬇️ Producto anterior muy largo (${longitudAnterior} > ${maxCharsForSideBySide}), este va abajo`);
+            } else if (columna === 1) {
+              log(`   ➡️ Producto anterior no muy largo y en columna 0, este va en columna 1`);
+            } else {
+              log(`   ⬇️ Producto anterior en columna 1, este va abajo`);
+            }
+          }
+          
+          log(`   🔍 Cálculo de posición final:`);
+          log(`      - Producto índice: ${productIndex}`);
+          log(`      - Fila: ${currentFila}`);
+          log(`      - Columna: ${columna} (0=izquierda, 1=derecha)`);
+          log(`      - X: ${xPosition} (calculado basado en ancho del texto anterior)`);
+          log(`      - Y: ${posY} - (${currentFila} * ${lineSpacing}) = ${yPosition}`);
+          
+          // Verificar que el producto no esté vacío
+          if (!productTextNormalizado || !productTextNormalizado.trim()) {
+            log(`   ⚠️ Producto ${productIndex + 1} está vacío después de normalizar, saltando...`);
             continue;
           }
           
-          // ✅ CORREGIDO: Usar SIEMPRE las coordenadas configuradas por el usuario
-          // No ajustar automáticamente - respetar la configuración del usuario
-          let finalX = posX;
-          let finalY = yPosition;
-          
-          // Solo verificar y advertir si están fuera de rango, pero USAR las coordenadas configuradas de todas formas
-          const isOutOfBounds = yPosition < 0 || yPosition > height || posX < 0 || posX > width;
+          // Verificar si está fuera de rango (solo advertir, pero usar las coordenadas de todas formas)
+          const isOutOfBounds = yPosition < 0 || yPosition > height || xPosition < 0 || xPosition > width;
           
           if (isOutOfBounds) {
-            log(`⚠️ ADVERTENCIA: Coordenadas configuradas están fuera del rango de la página: X=${posX}, Y=${yPosition} (página: ${width}x${height})`);
-            log(`   ℹ️ Usando coordenadas configuradas de todas formas: X=${posX}, Y=${yPosition}`);
-            // updateDebug(`⚠️ Advertencia: Y=${yPosition} fuera de rango (0-${height}), pero usando valor configurado`);
+            log(`⚠️ ADVERTENCIA: Coordenadas están fuera del rango de la página: X=${xPosition}, Y=${yPosition} (página: ${width}x${height})`);
+            log(`   ℹ️ Usando coordenadas de todas formas: X=${xPosition}, Y=${yPosition}`);
           } else {
-            log(`✅ Coordenadas dentro de rango, usando posición exacta: X=${posX}, Y=${yPosition}`);
+            log(`✅ Coordenadas dentro de rango: X=${xPosition}, Y=${yPosition}`);
           }
           
-          // ✅ SIEMPRE usar las coordenadas configuradas, sin ajustes automáticos
-          // El usuario sabe mejor dónde quiere colocar el texto
-          
-          log(`✏️ Dibujando línea ${lineIndex + 1} en Y=${finalY} (desde base Y=${posY}, offset=${lineSpacing * lineIndex}): "${lineNormalizada}"`);
-          log(`   Coordenadas: X=${finalX}, Y=${finalY}, Tamaño=${finalFontSize}pt, Página=${width}x${height}`);
-          log(`   ✅ Usando coordenadas: posX=${posX}, posY base=${posY} -> finalX=${finalX}, finalY=${finalY}`);
-          
-          // ✅ Mostrar información de formato en el frontend
-          // updateDebug(`Línea ${lineIndex + 1}: X=${finalX}px, Y=${finalY}px, Fuente=Helvetica, Tamaño=${finalFontSize}pt`);
-          // updateDebug(`Texto: "${lineNormalizada.substring(0, 30)}..."`);
+          log(`✏️ Dibujando producto ${productIndex + 1} en posición (${xPosition}, ${yPosition}): "${productTextNormalizado}"`);
+          log(`   Coordenadas: X=${xPosition}, Y=${yPosition}, Tamaño=${finalFontSize}pt, Página=${width}x${height}`);
           
           try {
             // ✅ USAR LA REFERENCIA DIRECTA DE LA PÁGINA COPIADA - Esta es la página correcta
@@ -1290,27 +1336,22 @@ const PDFGenerator = () => {
             }
             log(`   ✅ Confirmado: página ${pageIndex} está en finalPdfDoc`);
             
-            // Usar la fuente embebida explícitamente para asegurar renderizado
-            log(`   📝 Llamando drawText en página COPIADA con: x=${finalX}, y=${finalY}, size=${finalFontSize}, texto="${lineNormalizada.substring(0, 30)}..."`);
-            log(`   🔤 Fuente: Helvetica, Tamaño: ${finalFontSize}pt (configurado: ${fontSize}pt)`);
-            
             // 🔍 DEBUG: Log detallado antes de dibujar
             log(`\n🔍 [DEBUG SKU] === ANTES DE DIBUJAR EN PDF ===`);
             log(`   📄 Página: ${pageIndex + 1} (índice ${pageIndex})`);
-            log(`   📝 Texto completo a dibujar: "${lineNormalizada}"`);
-            log(`   📏 Longitud del texto: ${lineNormalizada.length} caracteres`);
-            log(`   📍 Coordenadas: X=${finalX}, Y=${finalY}`);
+            log(`   📝 Texto completo a dibujar: "${productTextNormalizado}"`);
+            log(`   📏 Longitud del texto: ${productTextNormalizado.length} caracteres`);
+            log(`   📍 Coordenadas: X=${xPosition}, Y=${yPosition}`);
             log(`   🔤 Fuente: Helvetica, Tamaño: ${finalFontSize}pt`);
             log(`   🎨 Color: negro (rgb(0, 0, 0))`);
             log(`   ✅ targetPage existe: ${!!targetPage}`);
             log(`   ✅ helveticaFont existe: ${!!helveticaFont}`);
             
             // ✅ DIBUJAR EN LA PÁGINA COPIADA - Esta es la página que está en finalPdfDoc
-            // Usar las coordenadas finales (finalX, finalY) y el tamaño de fuente configurado
             try {
-              targetPage.drawText(lineNormalizada, {
-                x: finalX,
-                y: finalY,
+              targetPage.drawText(productTextNormalizado, {
+                x: xPosition,
+                y: yPosition,
                 size: finalFontSize,
                 font: helveticaFont,
                 color: rgb(0, 0, 0),
@@ -1319,42 +1360,37 @@ const PDFGenerator = () => {
               // 🔍 DEBUG: Log después de dibujar
               log(`\n🔍 [DEBUG SKU] === DESPUÉS DE DIBUJAR EN PDF ===`);
               log(`   ✅ drawText ejecutado sin errores`);
-              log(`   📝 Texto dibujado: "${lineNormalizada}"`);
-              log(`   📍 Posición: X=${finalX}, Y=${finalY}`);
+              log(`   📝 Texto dibujado: "${productTextNormalizado}"`);
+              log(`   📍 Posición: X=${xPosition}, Y=${yPosition}`);
             } catch (drawTextError: any) {
               log(`\n❌ [DEBUG SKU] === ERROR AL DIBUJAR ===`);
               log(`   ❌ Error en drawText:`, drawTextError);
-              log(`   📝 Texto que intentó dibujar: "${lineNormalizada}"`);
-              log(`   📍 Coordenadas: X=${finalX}, Y=${finalY}`);
+              log(`   📝 Texto que intentó dibujar: "${productTextNormalizado}"`);
+              log(`   📍 Coordenadas: X=${xPosition}, Y=${yPosition}`);
               log(`   🔤 Fuente: ${helveticaFont ? 'existe' : 'NO EXISTE'}`);
               throw drawTextError;
             }
             
-            lineasDibujadas++;
-            log(`✅ Línea ${lineIndex + 1} dibujada exitosamente en página ${pageIndex + 1} con fuente Helvetica`);
-            log(`   📊 Progreso: ${lineIndex + 1}/${lines.length} líneas procesadas, ${lineasDibujadas} dibujadas`);
-            // updateDebug(`✅ Completado (${lineasDibujadas}/${lines.length})`);
+            productosDibujados++;
+            log(`✅ Producto ${productIndex + 1} dibujado exitosamente en página ${pageIndex + 1} con fuente Helvetica`);
+            log(`   📊 Progreso: ${productIndex + 1}/${allProducts.length} productos procesados, ${productosDibujados} dibujados`);
             
             // Añadir un pequeño delay para asegurar que el proceso no se bloquea
             await new Promise(resolve => setTimeout(resolve, 10));
             
           } catch (drawError: any) {
-            log(`❌ Error al dibujar línea ${lineIndex + 1}:`, drawError);
+            log(`❌ Error al dibujar producto ${productIndex + 1}:`, drawError);
             log(`   Error detalle:`, drawError?.message, drawError?.stack);
-            // updateDebug(`ERROR dibujando: ${drawError?.message || drawError}`);
           }
         }
         
-        log(`🏁 FIN DEL BUCLE DE DIBUJADO - Líneas dibujadas: ${lineasDibujadas}/${lines.length}`);
-        // updateDebug(`Bucle completado: ${lineasDibujadas}/${lines.length} líneas`);
+        log(`🏁 FIN DEL BUCLE DE DIBUJADO - Productos dibujados: ${productosDibujados}/${allProducts.length}`);
         
-        if (lineasDibujadas > 0) {
+        if (productosDibujados > 0) {
           paginasConTexto++;
-          log(`✅ Página ${pageData.pageNumber}: ${lineasDibujadas} línea(s) dibujada(s) exitosamente`);
-          // updateDebug(`Página ${pageData.pageNumber}: ✅ ${lineasDibujadas} líneas`);
+          log(`✅ Página ${pageData.pageNumber}: ${productosDibujados} producto(s) dibujado(s) exitosamente`);
         } else {
-          log(`⚠️ Página ${pageData.pageNumber}: No se dibujaron líneas`);
-          // updateDebug(`Página ${pageData.pageNumber}: ⚠️ Sin líneas`);
+          log(`⚠️ Página ${pageData.pageNumber}: No se dibujaron productos`);
         }
         
         log(`🔄 Continuando con siguiente página... (${i + 1}/${pdfPagesData.length})`);
