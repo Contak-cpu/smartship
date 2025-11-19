@@ -90,3 +90,4 @@ COMMENT ON POLICY "Los usuarios pueden ver sus propias tiendas y las compartidas
 COMMENT ON POLICY "Los usuarios pueden ver su propio stock y el de tiendas compartidas" ON stock_tiendas_clientes IS 
   'Permite a los usuarios ver el stock de sus tiendas y el de las tiendas compartidas con ellos';
 
+

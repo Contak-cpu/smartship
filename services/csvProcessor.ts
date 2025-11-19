@@ -372,10 +372,17 @@ const parseCSV = <T,>(csvText: string): Promise<T[]> => {
       }
     }
     
+    // Detectar delimitador automáticamente
+    const firstLine = cleanText.split(/\r?\n/)[0] || '';
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const semicolonCount = (firstLine.match(/;/g) || []).length;
+    const detectedDelimiter = semicolonCount >= commaCount ? ';' : ',';
+    console.log(`Delimitador detectado: '${detectedDelimiter}' (comas: ${commaCount}, puntos y coma: ${semicolonCount})`);
+
     Papa.parse(cleanText, {
       header: true,
       skipEmptyLines: true,
-      delimiter: ';', // Usar punto y coma como separador
+      delimiter: detectedDelimiter,
       quoteChar: '"', // Especificar comillas como delimitador de texto
       escapeChar: '"', // Especificar carácter de escape
       complete: (results: { data: T[]; errors: any[] }) => {
@@ -394,7 +401,7 @@ const parseCSV = <T,>(csvText: string): Promise<T[]> => {
           Papa.parse(cleanText, {
             header: false,
             skipEmptyLines: true,
-            delimiter: ';',
+            delimiter: detectedDelimiter,
             quoteChar: '"',
             complete: (debugResults: { data: any[]; errors: any[] }) => {
               console.log('Debug - Total de filas sin header:', debugResults.data.length);

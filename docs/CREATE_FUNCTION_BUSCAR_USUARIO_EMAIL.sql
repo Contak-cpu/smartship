@@ -28,3 +28,4 @@ $$;
 -- Comentario
 COMMENT ON FUNCTION buscar_usuario_por_email IS 'Busca un usuario por email para compartir tiendas. Retorna id, email y username.';
 
+
