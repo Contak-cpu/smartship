@@ -159,12 +159,35 @@ export interface TiendaCliente {
   activa: boolean;
   created_at: string;
   updated_at: string;
+  // Campos adicionales para tiendas compartidas
+  es_compartida?: boolean; // true si el usuario actual no es el propietario
+  puede_editar?: boolean; // true si el usuario compartido puede editar
+  usuario_propietario_id?: string; // ID del propietario si es compartida
 }
 
 export interface TiendaClienteInput {
   nombre_tienda: string;
   descripcion?: string;
   activa?: boolean;
+}
+
+// Tipo para compartir tiendas
+export interface TiendaCompartida {
+  id: string;
+  tienda_cliente_id: string;
+  usuario_propietario_id: string;
+  usuario_compartido_id: string;
+  puede_editar: boolean;
+  created_at: string;
+  updated_at: string;
+  // Información del usuario compartido (se obtiene con JOIN)
+  usuario_compartido_email?: string;
+  usuario_compartido_username?: string;
+}
+
+export interface CompartirTiendaInput {
+  usuario_compartido_id: string;
+  puede_editar?: boolean;
 }
 
 // Stock descontado desde PDF de Andreani
