@@ -644,6 +644,8 @@ const normalizarNombre = (nombre: string): string => {
         default: return ''; // Remover otros caracteres no ASCII
       }
     })
+    // Remover cualquier carácter que no sea letra, número, espacio o guión (para cumplir validación de Andreani)
+    .replace(/[^a-zA-Z0-9\s\-]/g, '')
     .trim();
 };
 

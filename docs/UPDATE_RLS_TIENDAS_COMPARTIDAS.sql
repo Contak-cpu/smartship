@@ -93,3 +93,4 @@ COMMENT ON POLICY "Los usuarios pueden ver su propio stock y el de tiendas compa
 
 
 
+

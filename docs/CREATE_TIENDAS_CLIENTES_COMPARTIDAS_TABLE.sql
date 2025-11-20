@@ -79,3 +79,4 @@ COMMENT ON TABLE tiendas_clientes_compartidas IS 'Tabla para gestionar el acceso
 
 
 
+
