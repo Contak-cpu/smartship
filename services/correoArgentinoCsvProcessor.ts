@@ -284,7 +284,7 @@ const isShopifyCSV = (text: string): boolean => {
 // Función para separar código de área y número de teléfono
 const separarTelefono = (phone: string, prov: string): { codigo: string; numero: string } => {
   const provinciaLower = prov.toLowerCase();
-  let cleanPhone = phone.replace(/\D/g, '');
+  let cleanPhone = phone.replace(/\D/g, '').replace(/^0+/, '');
   
   // Remover prefijo internacional +54
   if (cleanPhone.startsWith('54')) {
@@ -310,7 +310,10 @@ const separarTelefono = (phone: string, prov: string): { codigo: string; numero:
   }
   
   // Códigos de 3 dígitos
-  const codigos3 = ['221', '223', '291', '341', '342', '343', '351', '358', '261', '381', '376', '362', '379', '370', '387', '388', '380', '383', '385', '264', '297', '299'];
+  const codigos3 = [
+    '221', '223', '291', '341', '342', '343', '351', '358', '261', '381', '376', '362', '379', '370', '387', '388', '380', '383', '385', '264', '297', '299',
+    '260', '263', '266', '236', '249', '348', '336', '345', '348', '230', '237'
+  ];
   for (const cod of codigos3) {
     if (cleanPhone.startsWith(cod)) {
       return { codigo: cod, numero: cleanPhone.substring(3) };

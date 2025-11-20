@@ -91,3 +91,5 @@ COMMENT ON POLICY "Los usuarios pueden ver su propio stock y el de tiendas compa
   'Permite a los usuarios ver el stock de sus tiendas y el de las tiendas compartidas con ellos';
 
 
+
+

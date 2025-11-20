@@ -1,0 +1,26 @@
+﻿tipo_producto(obligatorio);largo(obligatorio en CM);ancho(obligatorio en CM);altura(obligatorio en CM);peso(obligatorio en KG);valor_del_contenido(obligatorio en pesos argentinos);provincia_destino(obligatorio);sucursal_destino(obligatorio solo en caso de no ingresar localidad de destino);localidad_destino(obligatorio solo en caso de no ingresar sucursal de destino);calle_destino(obligatorio solo en caso de no ingresar sucursal de destino);altura_destino(obligatorio solo en caso de no ingresar sucursal de destino);piso(opcional solo en caso de no ingresar sucursal de destino);dpto(opcional solo en caso de no ingresar sucursal de destino);codpostal_destino(obligatorio solo en caso de no ingresar sucursal de destino);destino_nombre(obligatorio);destino_email(obligatorio, debe ser un email valido);cod_area_tel(opcional);tel(opcional);cod_area_cel(opcional);cel(opcional);numero_orden(opcional)
+CP;10;10;10;1.000;6000.00;B;BXT;;;;;;;Jacqueline Contrera;jacquelinecontrera11@gmail.com;11;72367736;11;72367736;77580
+CP;10;10;10;1.000;6000.00;U;UBL;;;;;;;Estefania gisel maidana;stefani2017hermosa@gmail.com;28;04381107;28;04381107;77672
+CP;10;10;10;1.000;6000.00;X;RVN;;;;;;;Ma Cecilia Segura;cecisegura89@hotmail.com;358;4372830;358;4372830;77678
+CP;10;10;10;1.000;6000.00;M;QPN;;;;;;;Liliana Vanesa Coronel;lilita.coronel097@gmail.com;261;5941861;261;5941861;77696
+CP;10;10;10;1.000;6000.00;S;SDH;;;;;;;Silvia Pittilini;silviapittilini69@gmail.com;34;76679660;34;76679660;77697
+CP;10;10;10;1.000;6000.00;K;KAA;;;;;;;Maria Estefania Gonzalez;tefygonzalez08@gmail.com;383;4770291;383;4770291;77702
+CP;10;10;10;1.000;6000.00;B;CRC;;;;;;;Patricia Lapadula;patrilapadula@hotmaol.com;11;36067189;11;36067189;77703
+CP;10;10;10;1.000;6000.00;X;XLW;;;;;;;Marisa Sanuy;marisa_sanuy@yahoo.com.ar;35;21432213;35;21432213;77706
+CP;10;10;10;1.000;6000.00;X;XFZ;;;;;;;Marina Avila;marinaemilceavila@gmail.com;351;6250804;351;6250804;77719
+CP;10;10;10;1.000;6000.00;X;XIH;;;;;;;Ana Belen Sanchez;ana_salsi@hotmail.com;35;43587116;35;43587116;77723
+CP;10;10;10;1.000;6000.00;M;MLF;;;;;;;Paula Eugenia Moyano;paumoyano.ps@gmail.com;26;34598261;26;34598261;77726
+CP;10;10;10;1.000;6000.00;B;CG6;;;;;;;Gabriela Torres;gabu812009@hotmail.com;11;32609939;11;32609939;77733
+CP;10;10;10;1.000;6000.00;D;UUS;;;;;;;Cecilia Cangiano;cangiceci@hotmail.com;26;64712373;26;64712373;77737
+CP;10;10;10;1.000;6000.00;B;CRC;;;;;;;CORDOVA LORENA;calc_07@hotmail.com;01;144095124;01;144095124;77740
+CP;10;10;10;1.000;6000.00;S;SDL;;;;;;;Gaston Buci;gbuci503@gmail.com;34;76232874;34;76232874;77742
+CP;10;10;10;1.000;6000.00;S;SFG;;;;;;;Daiana Balbastro;daianaayelenbalbastro@gmail.com;34;65660212;34;65660212;77773
+CP;10;10;10;1.000;6000.00;P;QSP;;;;;;;Lia Lopez;lialopez601@gmail.com;370;4710085;370;4710085;77781
+CP;10;10;10;1.000;6000.00;B;BSM;;;;;;;Magali Nouche;dmagalinouche@gmail.com;223;5398517;223;5398517;77782
+CP;10;10;10;1.000;6000.00;B;IOG;;;;;;;Giselle Luna;familiar1234luna@gmail.com;24;78478718;24;78478718;77786
+CP;10;10;10;1.000;6000.00;B;BHW;;;;;;;Florencia Alvez;florencia.fgca75@gmail.com;11;25320972;11;25320972;77787
+CP;10;10;10;1.000;6000.00;B;BXX;;;;;;;Nancy Liliana Romero;liliana.nancyromero@gmail.com;23;04696814;23;04696814;77788
+CP;10;10;10;1.000;6000.00;Q;QBC;;;;;;;Pamela Aedo;pameaedo762@gmail.com;299;6125889;299;6125889;77790
+CP;10;10;10;1.000;6000.00;E;EAU;;;;;;;Mariana All;marianaall99@icloud.com;34;44508342;34;44508342;77791
+CP;10;10;10;1.000;6000.00;B;IEL;;;;;;;Maria Belen Rios;38045894bi@gmail.com;23;17574952;23;17574952;77792
+CP;10;10;10;1.000;6000.00;Q;QCF;;;;;;;Nair Ximena Quinteros;nair07113@gmail.com;29;42658419;29;42658419;77802

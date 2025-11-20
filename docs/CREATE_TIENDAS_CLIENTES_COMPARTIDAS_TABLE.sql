@@ -77,3 +77,5 @@ CREATE TRIGGER trigger_update_tiendas_compartidas_updated_at
 COMMENT ON TABLE tiendas_clientes_compartidas IS 'Tabla para gestionar el acceso compartido a tiendas de clientes';
 
 
+
+

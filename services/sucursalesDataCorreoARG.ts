@@ -1,5 +1,5 @@
 // Datos embebidos de sucursales de Correo Argentino
-// Extraídos de public/codigos_sucursales_correo_argentino.csv
+// Extraídos de codigos_sucursales_y_provincias_MiCorreo (1).csv
 // GENERADO AUTOMÁTICAMENTE - NO EDITAR MANUALMENTE
 
 export interface CorreoArgentinoSucursalInfo {
@@ -1210,35 +1210,35 @@ export const CORREO_ARGENTINO_SUCURSALES_DATA: CorreoArgentinoSucursalInfo[] = [
   { codigo: "NQY", calle: "CASTEX PROFESOR DOCTOR MARIANO", numero: "920", localidad: "CANNING", provincia: "BUENOS AIRES" },
   { codigo: "NQZ", calle: "ALSINA DOCTOR ADOLFO", numero: "308", localidad: "BURZACO", provincia: "BUENOS AIRES" },
   { codigo: "GVV", calle: "ESPORA CORONEL DE MARINA TOMAS", numero: "96", localidad: "ADROGUE", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "ALBERDI JUAN BAUTISTA", numero: "3177", localidad: "CIUDAD AUTONOMA BUENOS AIRES", provincia: "CAPITAL FEDERAL" },
+  { codigo: "#N/D", calle: "ALBERDI JUAN BAUTISTA", numero: "3177", localidad: "CIUDAD AUTONOMA BUENOS AIRES", provincia: "CAPITAL FEDERAL" },
   { codigo: "FDL", calle: "SANTO DOMINGO", numero: "0", localidad: "PITUIL", provincia: "LA RIOJA" },
-  { codigo: "#N/A", calle: "73", numero: "919", localidad: "SAN LORENZO", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "GUIÑAZU ALCIDES", numero: "450", localidad: "LUJAN DE CUYO", provincia: "MENDOZA" },
-  { codigo: "#N/A", calle: "SEGUI ALMIRANTE FRANCISCO JOSE", numero: "880", localidad: "ADROGUE", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "73", numero: "919", localidad: "SAN LORENZO", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "GUIÑAZU ALCIDES", numero: "450", localidad: "LUJAN DE CUYO", provincia: "MENDOZA" },
+  { codigo: "#N/D", calle: "SEGUI ALMIRANTE FRANCISCO JOSE", numero: "880", localidad: "ADROGUE", provincia: "BUENOS AIRES" },
   { codigo: "LSJ", calle: "CERRITO", numero: "1080", localidad: "CIUDAD AUTONOMA BUENOS AIRES", provincia: "CAPITAL FEDERAL" },
-  { codigo: "#N/A", calle: "LOS QUILMES", numero: "1938", localidad: "BERNAL OESTE", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "ESCALADA DE SAN MARTIN REMEDIOS", numero: "723", localidad: "CLAYPOLE", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "ROSETTI MECANICO", numero: "736", localidad: "EL PALOMAR", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "GAGGINO GILBERTO", numero: "613", localidad: "ENSENADA", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "MITRE BARTOLOME", numero: "69", localidad: "FLORENCIO VARELA", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "YRIGOYEN HIPOLITO", numero: "214", localidad: "GENERAL PACHECO", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "BARRAGAN", numero: "4167", localidad: "GONZALEZ CATAN", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "VERGARA GOBERNADOR DOCTOR VALENTIN", numero: "3443", localidad: "HURLINGHAM", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "MONTT CORONEL", numero: "3951", localidad: "GREGORIO DE LAFERRERE", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "VELEZ SARSFIELD", numero: "1371", localidad: "LANUS OESTE", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "ALSINA DOCTOR ADOLFO", numero: "1953", localidad: "LOMAS DE ZAMORA", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "RIVADAVIA COMODORO MARTIN", numero: "2645", localidad: "LOS POLVORINES", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "YRIGOYEN PRESIDENTE HIPOLITO", numero: "823", localidad: "MANUEL ALBERTI", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "MARQUEZ TOMAS", numero: "1294", localidad: "PILAR", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "HUMBERTO PRIMO", numero: "336", localidad: "QUILMES", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "CALCHAQUI", numero: "3118", localidad: "QUILMES OESTE", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "PERON PRESIDENTE JUAN DOMINGO", numero: "724", localidad: "SAN FERNANDO", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "0", numero: "0", localidad: "SAN JOSE", provincia: "MENDOZA" },
-  { codigo: "#N/A", calle: "HUMAITA", numero: "1156", localidad: "TAPIALES", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "YRIGOYEN PRESIDENTE HIPOLITO", numero: "9720", localidad: "LOMAS DE ZAMORA", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "PELLIZA MARIANO", numero: "3750", localidad: "OLIVOS", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "REPUBLICA", numero: "5367", localidad: "VILLA BALLESTER", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "LAPRIDA FRANCISCO NARCISO DE", numero: "1348", localidad: "VILLA HIPODROMO", provincia: "MENDOZA" },
+  { codigo: "#N/D", calle: "LOS QUILMES", numero: "1938", localidad: "BERNAL OESTE", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "ESCALADA DE SAN MARTIN REMEDIOS", numero: "723", localidad: "CLAYPOLE", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "ROSETTI MECANICO", numero: "736", localidad: "EL PALOMAR", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "GAGGINO GILBERTO", numero: "613", localidad: "ENSENADA", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "MITRE BARTOLOME", numero: "69", localidad: "FLORENCIO VARELA", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "YRIGOYEN HIPOLITO", numero: "214", localidad: "GENERAL PACHECO", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "BARRAGAN", numero: "4167", localidad: "GONZALEZ CATAN", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "VERGARA GOBERNADOR DOCTOR VALENTIN", numero: "3443", localidad: "HURLINGHAM", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "MONTT CORONEL", numero: "3951", localidad: "GREGORIO DE LAFERRERE", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "VELEZ SARSFIELD", numero: "1371", localidad: "LANUS OESTE", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "ALSINA DOCTOR ADOLFO", numero: "1953", localidad: "LOMAS DE ZAMORA", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "RIVADAVIA COMODORO MARTIN", numero: "2645", localidad: "LOS POLVORINES", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "YRIGOYEN PRESIDENTE HIPOLITO", numero: "823", localidad: "MANUEL ALBERTI", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "MARQUEZ TOMAS", numero: "1294", localidad: "PILAR", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "HUMBERTO PRIMO", numero: "336", localidad: "QUILMES", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "CALCHAQUI", numero: "3118", localidad: "QUILMES OESTE", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "PERON PRESIDENTE JUAN DOMINGO", numero: "724", localidad: "SAN FERNANDO", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "0", numero: "0", localidad: "SAN JOSE", provincia: "MENDOZA" },
+  { codigo: "#N/D", calle: "HUMAITA", numero: "1156", localidad: "TAPIALES", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "YRIGOYEN PRESIDENTE HIPOLITO", numero: "9720", localidad: "LOMAS DE ZAMORA", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "PELLIZA MARIANO", numero: "3750", localidad: "OLIVOS", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "REPUBLICA", numero: "5367", localidad: "VILLA BALLESTER", provincia: "BUENOS AIRES" },
+  { codigo: "#N/D", calle: "LAPRIDA FRANCISCO NARCISO DE", numero: "1348", localidad: "VILLA HIPODROMO", provincia: "MENDOZA" },
   { codigo: "NTK", calle: "PLANAS DOCTOR TEODORO LUIS", numero: "3392", localidad: "NEUQUEN", provincia: "NEUQUEN" },
   { codigo: "MND", calle: "BROWN ALMIRANTE GUILLERMO", numero: "1518", localidad: "MAR DEL PLATA", provincia: "BUENOS AIRES" },
   { codigo: "KOL", calle: "FALUCHO", numero: "2396", localidad: "MAR DEL PLATA", provincia: "BUENOS AIRES" },
@@ -2672,7 +2672,7 @@ export const CORREO_ARGENTINO_SUCURSALES_DATA: CorreoArgentinoSucursalInfo[] = [
   { codigo: "SST", calle: "ALEM LEANDRO NICEFORO", numero: "2535", localidad: "ROSARIO", provincia: "SANTA FE" },
   { codigo: "SSX", calle: "LUNGHI INTENDENTE JOSE EMILIO", numero: "2223", localidad: "TANDIL", provincia: "BUENOS AIRES" },
   { codigo: "SSZ", calle: "13", numero: "566", localidad: "LIMA", provincia: "BUENOS AIRES" },
-  { codigo: "#N/A", calle: "SAN MARTIN", numero: "715", localidad: "LAS HERAS", provincia: "MENDOZA" },
+  { codigo: "#N/D", calle: "SAN MARTIN", numero: "715", localidad: "LAS HERAS", provincia: "MENDOZA" },
   { codigo: "STE", calle: "GUEMES GENERAL MARTIN MIGUEL DE", numero: "1152", localidad: "MORENO", provincia: "BUENOS AIRES" },
   { codigo: "STF", calle: "ESQUIU FRAY MAMERTO", numero: "511", localidad: "FRANCISCO ALVAREZ", provincia: "BUENOS AIRES" },
   { codigo: "STI", calle: "ALBERTI PRESBITERO MANUEL", numero: "3254", localidad: "MAR DEL PLATA", provincia: "BUENOS AIRES" },
@@ -4383,6 +4383,21 @@ export const findCodigoSucursalCorreoArgentino = (
         console.log(`✅ Código sucursal encontrado por localidad/provincia/dirección: ${matchesConDireccion[0].codigo}`);
         return matchesConDireccion[0].codigo;
       }
+    }
+
+    // Si hay múltiples matches, intentar evitar códigos problemáticos conocidos (como MLF)
+    // Preferir WMI si existe para La Dormida
+    const preferidos = matches.filter(suc => suc.codigo === 'WMI');
+    if (preferidos.length > 0) {
+       console.log(`✅ Código sucursal PREFERIDO encontrado: ${preferidos[0].codigo}`);
+       return preferidos[0].codigo;
+    }
+    
+    // Evitar MLF si hay otras opciones
+    const noProblematicos = matches.filter(suc => suc.codigo !== 'MLF');
+    if (noProblematicos.length > 0) {
+        console.log(`✅ Código sucursal alternativo encontrado (evitando MLF): ${noProblematicos[0].codigo}`);
+        return noProblematicos[0].codigo;
     }
     
     console.log(`✅ Código sucursal encontrado por localidad/provincia: ${matches[0].codigo}`);
